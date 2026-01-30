@@ -2,5 +2,8 @@
 **/.ipynb_checkpoints/**
 data/
 plots/
-pixi.lock
 pixi.toml
+pixi.lock
+# pixi environments
+.pixi/*
+!.pixi/config.toml
