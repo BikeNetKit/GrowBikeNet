@@ -166,3 +166,20 @@ def rank_df(df, method):
     a_edges.reset_index(drop=True, inplace=True)
     a_edges["rank"] = a_edges.index  # ranking is simply the order of appearance in the betweenness ranking
     return a_edges
+
+# column path_edges contains a set of osmnx edges for each row (abstract edge)
+def add_path_to_df(df, edges, g):
+    # get edge list that we can use to index our edges gdf
+    paths = []
+    for _, row in df.iterrows():
+        paths.append(
+            nx.shortest_path(
+                G=g,  # !! use undirected graph here
+                source=int(row.source),
+                target=int(row.target),
+                weight='length')
+        )
+    df["path_nodes"] = paths
+    df["path_edges"] = df.path_nodes.apply(lambda x: get_correct_edgetuples(edges, x))
+    return df
+
