@@ -4,6 +4,7 @@ import glob
 import re
 import pathlib
 import numpy as np
+import matplotlib.pyplot as plt
 
 def make_video(
         img_folder_name, # folder where imgs are stored
@@ -56,3 +57,40 @@ def make_video(
     video.release()
 
     return None
+
+def create_plots(routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, seedcolor, lws):
+    for rank in sorted(routed_edges_gdf["rank"].unique()):
+        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+
+        # first, plot street network as "base line"
+        routed_edges_gdf.plot(
+            ax=ax,
+            color=streetcolor,
+            lw=lws["street"],
+            zorder=0
+        )
+
+        # plot all edges up to current rank
+
+        routed_edges_gdf[routed_edges_gdf["rank"] <= rank].plot(
+            ax=ax,
+            color=edgecolor,
+            lw=lws["bike"],
+            zorder=1
+        )
+
+        seed_points_snapped.plot(
+            ax=ax,
+            color=seedcolor,
+            zorder=2
+        )
+
+        ax.set_axis_off()
+
+        plot_id = "{:03d}".format(rank)  # format plot ID with leading zeros
+
+        fig.savefig(f"./results/plots/{plot_id}.png", dpi=300)
+
+        plt.close()
+
+        return None
