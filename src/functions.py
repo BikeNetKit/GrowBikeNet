@@ -191,5 +191,5 @@ def create_gdf_with_geoms(df, edges):
     # convert a_edges into a gdf
     gdf = gpd.GeoDataFrame(df, crs=edges.crs, geometry="geometry")
     # merge multilinestring into linestring where possible (should be possible everywhere)
-    gdf["geometry"] = df.line_merge()
+    gdf["geometry"] = gdf.line_merge()
     return gdf

@@ -93,4 +93,4 @@ def create_plots(routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, 
 
         plt.close()
 
-        return None
+    return None
