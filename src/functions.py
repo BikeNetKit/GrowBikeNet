@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from shapely.prepared import prep
-from shapely.geometry import Point, LineString
+from shapely.geometry import Point, LineString, MultiLineString
 from itertools import combinations
 
 # helper function to check whether newly to be added edge intersects with already added edges
@@ -102,7 +102,7 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
 
 # create df with all potential edges in triangulation
 def create_potential_triangulation(seed_points_snapped):
-    # step 1: get list of potential edges, ordered by length
+    # get list of potential edges, ordered by length
     pairs = []
     potential_edges = []
     distances = []
@@ -125,3 +125,19 @@ def create_potential_triangulation(seed_points_snapped):
     df = df.sort_values(by="dist", ascending=True).reset_index(drop=True)
     df = df[df["dist"] > 0].reset_index(drop=True)  # only keep distances > 0
     return df
+
+# filter edges that intersect with existing edges
+def filter_triangulation(df):
+    # iterate through all potential edges;
+    # if they dont intersect with existing edges add to multilinestring
+
+    current_edges = MultiLineString()
+    edge_list = []
+
+    for i, row in df.iterrows():
+        new_edge = row.potential_edge
+        pair = row.pair
+        if not intersects_properly(current_edges, new_edge):
+            current_edges = MultiLineString([linestring for linestring in current_edges.geoms] + [new_edge])
+            edge_list.append(pair)
+    return edge_list
