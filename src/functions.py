@@ -145,7 +145,7 @@ def filter_triangulation(df):
 
 # create a dataframe from an input graph
 def df_from_graph(A, method):
-    a_edges = pd.DataFrame.from_dict(
+    df = pd.DataFrame.from_dict(
         nx.get_edge_attributes(
             G=A,
             name=method,
@@ -153,19 +153,19 @@ def df_from_graph(A, method):
         orient="index",
         columns=[method]
     )
-    a_edges["node_tuple"] = a_edges.index
-    a_edges["source"] = [t[0] for t in a_edges.node_tuple]
-    a_edges["target"] = [t[1] for t in a_edges.node_tuple]
-    a_edges.drop(columns=["node_tuple"], inplace=True)
-    return a_edges
+    df["node_tuple"] = df.index
+    df["source"] = [t[0] for t in df.node_tuple]
+    df["target"] = [t[1] for t in df.node_tuple]
+    df.drop(columns=["node_tuple"], inplace=True)
+    return df
 
 # rank df by specified sorting metric
 def rank_df(df, method):
     # rank by attribute/sorting metric
-    a_edges = df.sort_values(by=method, ascending=False)
-    a_edges.reset_index(drop=True, inplace=True)
-    a_edges["rank"] = a_edges.index  # ranking is simply the order of appearance in the betweenness ranking
-    return a_edges
+    df = df.sort_values(by=method, ascending=False)
+    df.reset_index(drop=True, inplace=True)
+    df["rank"] = df.index  # ranking is simply the order of appearance in the betweenness ranking
+    return df
 
 # column path_edges contains a set of osmnx edges for each row (abstract edge)
 def add_path_to_df(df, edges, g):
@@ -183,3 +183,13 @@ def add_path_to_df(df, edges, g):
     df["path_edges"] = df.path_nodes.apply(lambda x: get_correct_edgetuples(edges, x))
     return df
 
+def create_gdf_with_geoms(df, edges):
+    # get geometry by merging all geoms from edge gdf
+    df["geometry"] = df.path_edges.apply(
+        lambda x: edges.loc[x].geometry.union_all()
+    )
+    # convert a_edges into a gdf
+    gdf = gpd.GeoDataFrame(df, crs=edges.crs, geometry="geometry")
+    # merge multilinestring into linestring where possible (should be possible everywhere)
+    gdf["geometry"] = df.line_merge()
+    return gdf
