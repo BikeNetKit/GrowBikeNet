@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+import networkx as nx
 from shapely.prepared import prep
 from shapely.geometry import Point, LineString, MultiLineString
 from itertools import combinations
@@ -141,3 +142,18 @@ def filter_triangulation(df):
             current_edges = MultiLineString([linestring for linestring in current_edges.geoms] + [new_edge])
             edge_list.append(pair)
     return edge_list
+
+def df_from_graph(A, method):
+    a_edges = pd.DataFrame.from_dict(
+        nx.get_edge_attributes(
+            G=A,
+            name=method,
+        ),
+        orient="index",
+        columns=[method]
+    )
+    a_edges["node_tuple"] = a_edges.index
+    a_edges["source"] = [t[0] for t in a_edges.node_tuple]
+    a_edges["target"] = [t[1] for t in a_edges.node_tuple]
+    a_edges.drop(columns=["node_tuple"], inplace=True)
+    return a_edges
