@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import geopandas as gpd
 from shapely.prepared import prep
 from shapely.geometry import Point
@@ -49,3 +50,50 @@ def get_seed_points (edges, proj_crs, seed_point_spacing):
         crs=proj_crs
     )
     return seed_points
+
+# snap generated seed_points to actual osm nodes
+def snap_seed_points(seed_points, nodes):
+    # query nearest OSM nodes with sindex
+    q = nodes.sindex.nearest(seed_points.geometry)
+    seed_points["osmid"] = None
+    seed_points.iloc[q[0], -1] = list(nodes.iloc[q[1]]["osmid"])
+
+    # create a subset of OSM nodes - only those that seed points are snapped to
+    nodes_subset = nodes.loc[
+        nodes.osmid.isin(seed_points.osmid)
+    ].copy().reset_index(drop=True)
+
+    # merge seed points gdf (gives us the generated seed point location, "geometry_generated")
+    # with nodes subset gdf (gives us all other columns)
+    # (we need the geometry_generated column only for filtering by distance)
+    seed_points_snapped = pd.merge(
+        left=seed_points,
+        right=nodes_subset,
+        how="inner",
+        on="osmid",
+        suffixes=["_generated", "_osm"]
+    )
+    return seed_points_snapped
+
+# remove seed_points that are further than delta away from an actual osm node
+def filter_seed_points(seed_points_snapped, seed_point_delta):
+    # define our boolean distance_condition filter:
+    # snapped seed points must be not more than seed_point_delta away
+    # from their OSM nodes
+    distance_condition = seed_points_snapped.geometry_generated.distance(
+        seed_points_snapped.geometry_osm) <= seed_point_delta
+
+    # filter seed_points_snapped df by distance condition
+    seed_points_snapped = seed_points_snapped[distance_condition].reset_index(drop=True)
+    seed_points_snapped = seed_points_snapped[
+        ["osmid", "geometry_osm"]
+    ]  # drop not-needed columns
+    # rename geometry column
+    seed_points_snapped = seed_points_snapped.rename(
+        columns={"geometry_osm": "geometry"})
+
+    # set "geometry" as geometry column
+    seed_points_snapped = seed_points_snapped.set_geometry("geometry")
+    # set osmid as *index* of this df
+    seed_points_snapped = seed_points_snapped.set_index("osmid")
+    seed_points_snapped["osmid"] = seed_points_snapped.index
