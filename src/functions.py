@@ -164,7 +164,7 @@ def rank_df(df, method):
     # rank by attribute/sorting metric
     df = df.sort_values(by=method, ascending=False)
     df.reset_index(drop=True, inplace=True)
-    df["rank"] = df.index  # ranking is simply the order of appearance in the betweenness ranking
+    df["ordering"] = df.index  # ranking is simply the order of appearance in the betweenness ranking
     return df
 
 # column path_edges contains a set of osmnx edges for each row (abstract edge)

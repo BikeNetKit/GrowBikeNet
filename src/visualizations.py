@@ -59,7 +59,7 @@ def make_video(
     return None
 
 def create_plots(routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, seedcolor, lws):
-    for rank in sorted(routed_edges_gdf["rank"].unique()):
+    for ordering in sorted(routed_edges_gdf["ordering"].unique()):
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
         # first, plot street network as "base line"
@@ -72,7 +72,7 @@ def create_plots(routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, 
 
         # plot all edges up to current rank
 
-        routed_edges_gdf[routed_edges_gdf["rank"] <= rank].plot(
+        routed_edges_gdf[routed_edges_gdf["ordering"] <= ordering].plot(
             ax=ax,
             color=edgecolor,
             lw=lws["bike"],
@@ -87,7 +87,7 @@ def create_plots(routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, 
 
         ax.set_axis_off()
 
-        plot_id = "{:03d}".format(rank)  # format plot ID with leading zeros
+        plot_id = "{:03d}".format(ordering)  # format plot ID with leading zeros
 
         fig.savefig(f"./results/plots/{plot_id}.png", dpi=300)
 
