@@ -16,13 +16,13 @@ def test_intersect(create_geom_1, create_geom_2):
     assert intersects_properly(create_geom_1, create_geom_2) is False
 
 @pytest.fixture
-def create_test_data_rank():
-    df = pd.DataFrame((6, 2, 4), columns=['betweenness_centrality'])
+def create_test_data_rank(method):
+    df = pd.DataFrame((6, 2, 4), columns=[method])
     return df
 
 @pytest.fixture
-def create_validation_data_rank():
-    ranked_df = pd.DataFrame(([6, 0], [4, 1], [2, 2]), columns=['betweenness_centrality','ordering'])
+def create_validation_data_rank(method):
+    ranked_df = pd.DataFrame(([6, 0], [4, 1], [2, 2]), columns=[method,'ordering'])
     return ranked_df
 
 @pytest.fixture
@@ -65,4 +65,22 @@ def create_validation_triangulation():
 def test_triangulation_creation(create_validation_triangulation, create_filtered_seed_points):
     assert_frame_equal(create_potential_triangulation(create_filtered_seed_points), create_validation_triangulation, check_dtype=False)
 
-#def test_triangulation_filter():
+@pytest.fixture
+def create_unfiltered_triangulation():
+    linestring_1_3 = LineString([Point(1001, 1001), Point(3001, 3001)])
+    linestring_1_2 = LineString([Point(1001, 1001), Point(3001, 2001)])
+    linestring_2_3 = LineString([Point(3001, 2001), Point(3001, 3001)])
+    linestring_2_4 = LineString([Point(3001, 2001), Point(1001, 3001)])
+    d = {'pair': [['1', '3'], ['1', '2'], ['2', '3'], ['2', '4']],
+         'potential_edge': [linestring_1_3, linestring_1_2, linestring_2_3, linestring_2_4],
+         'dist': [linestring_1_3.length, linestring_1_2.length, linestring_2_3.length, linestring_2_4.length]}
+    df = pd.DataFrame(d)
+    return df
+
+@pytest.fixture
+def create_validation_filtered_triangulation():
+    edge_list = [['1','3'],['1','2'], ['2','3']]
+    return edge_list
+
+def test_triangulation_filter(create_unfiltered_triangulation, create_validation_filtered_triangulation):
+    assert filter_triangulation(create_unfiltered_triangulation) == create_validation_filtered_triangulation
