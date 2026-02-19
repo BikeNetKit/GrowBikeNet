@@ -167,6 +167,28 @@ def rank_df(df, method):
     df["ordering"] = df.index  # ranking is simply the order of appearance in the betweenness ranking
     return df
 
+def node_to_edge_attributes(values_nodes, edges):
+    """Map node to edge attributes.
+
+    Creates edge attributes by taking the average values of adjacent node attributes.
+
+    Parameters
+    ----------
+    values_nodes : dict
+        Keys: node ids, Values: Node attributes (for example a scalar)
+    edges : networkx.classes.reportviews.EdgeView
+        A view of edge attributes of a networkx graph. Could also be a list of tuples of node ids.
+
+    Returns
+    -------
+    values_edges: dict
+        Keys: tuples of node ids, Values: Edge attributes
+    """
+    values_edges = {}
+    for u,v in edges:
+        values_edges[(u,v)] = 0.5 * (values_nodes[u]+values_nodes[v])
+    return values_edges
+    
 # column path_edges contains a set of osmnx edges for each row (abstract edge)
 def add_path_to_df(df, edges, g):
     # get edge list that we can use to index our edges gdf
