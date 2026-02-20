@@ -20,4 +20,5 @@ GrowBikeNet does these things with these functions.
 
    functions.intersects_properly
    functions.get_seed_points
+   functions.node_to_edge_attributes
    functions
