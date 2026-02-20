@@ -29,6 +29,31 @@ def get_correct_edgetuples(edge_gdf, nodelist):
 
 # create seed points for greedy triangulation
 def get_seed_points (edges, proj_crs, seed_point_spacing):
+    """
+    Generates seed points for area covered by edges.
+
+    Also, let's cite an unrelated fractal paper :cite:`jiang_fractal_2015`.
+
+    Parameters
+    ----------
+    edges : geopandas.GeoDataFrame
+        A GeoDataFrame containing the street network edges.
+    proj_crs : str
+        A projected str as string.
+    seed_point_spacing : float
+        The distance (grid width) of seed points, in meters.
+        
+    Returns
+    -------
+    seed_points : geopandas.GeoDataFrame
+        A GeoDataFrame where each row contains a seed point.
+
+    Examples
+    --------
+    >>> seed_points = BikeNetKit.get_seed_points(street_network, proj_crs="EPSG:1234", seed_point_spacing = 1000) 
+    """
+
+
     # get convex hull around edge area
     hull = edges.union_all().convex_hull
     # get bounds of hull
