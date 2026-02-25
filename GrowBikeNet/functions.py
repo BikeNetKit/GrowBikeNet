@@ -6,10 +6,22 @@ from shapely.prepared import prep
 from shapely.geometry import Point, LineString, MultiLineString
 from itertools import combinations
 
-# helper function to check whether newly to be added edge intersects with already added edges
 def intersects_properly(geom1, geom2):
     '''
+    helper function to check whether newly to be added edge intersects with already added edges
     for 2 shapely geometries, check whether they "properly intersect" (i.e. intersect but not touch, i.e. don't share endpoints)
+
+    Parameters
+    ----------
+    geom1 : shapely geometry
+        A shapely geometry, for example shapely.geometry.Point() or shapely.geometry.LineString()
+    geom2 : shapely geometry
+        A shapely geometry, for example shapely.geometry.Point() or shapely.geometry.LineString()
+
+    Returns
+    -------
+    boolean
+        Returns true if the two provided geometries intersect but do not touch
     '''
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
@@ -17,6 +29,18 @@ def get_correct_edgetuples(edge_gdf, nodelist):
     '''
     helper function that maps a node list (output of nx.shortest_paths)
     to the correct set of edge tuples that can be used for INDEXING THE EDGE GDF
+
+    Parameters
+    ----------
+    edge_gdf: geopandas.geodataframe.GeoDataFrame
+        The street network, in a projected coordinate reference system
+    nodelist: list
+        A list of nodes that make up source and targets of edges
+
+    Returns
+    -------
+    edgelist_final: list
+        List of edge tuples that can be used for INDEXING THE EDGE GDF
     '''
     edgelist_prelim = zip(nodelist, nodelist[1:])
     edgelist_final = []
@@ -28,8 +52,6 @@ def get_correct_edgetuples(edge_gdf, nodelist):
     return edgelist_final
 
 
-    
-# create seed points for greedy triangulation
 def get_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing
 
@@ -165,9 +187,22 @@ def count_and_merge(n, bearings):
     bearings_merged = count[::2] + count[1::2]
     return bearings_merged
 
-    
-# snap generated seed_points to actual osm nodes
 def snap_seed_points(seed_points, nodes):
+    '''
+    snap generated seed_points to actual osm nodes
+    Parameters
+    ----------
+    seed_points: geopandas.geodataframe.GeoDataFrame
+        Seed points that were created within city area, to be snapped to actual osm nodes
+    nodes: geopandas.geodataframe.GeoDataFrame
+        actual osm nodes, downloaded from osmnx
+
+    Returns
+    -------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+
+    '''
     # query nearest OSM nodes with sindex
     q = nodes.sindex.nearest(seed_points.geometry)
     seed_points["osmid"] = None
@@ -190,8 +225,21 @@ def snap_seed_points(seed_points, nodes):
     )
     return seed_points_snapped
 
-# remove seed_points that are further than delta away from an actual osm node
 def filter_seed_points(seed_points_snapped, seed_point_delta):
+    '''
+    remove seed_points that are further than delta away from an actual osm node
+    Parameters
+    ----------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+    seed_point_delta: int
+        maximum distance a seed_point may be removed from an actual osm node
+
+    Returns
+    -------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed_points within delta away from an actual osm node, only columns are osmid and the associated osm geometry
+    '''
     # define our boolean distance_condition filter:
     # snapped seed points must be not more than seed_point_delta away
     # from their OSM nodes
