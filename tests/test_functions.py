@@ -1,6 +1,6 @@
 import pytest
 from pandas.testing import assert_frame_equal
-from src.functions import *
+from GrowBikeNet.functions import *
 
 @pytest.fixture
 def create_geom_1():
