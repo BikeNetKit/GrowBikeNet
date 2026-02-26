@@ -27,21 +27,47 @@ def get_correct_edgetuples(edge_gdf, nodelist):
             edgelist_final.append(tuple([edge_prelim[1], edge_prelim[0]]))
     return edgelist_final
 
+
+    
 # create seed points for greedy triangulation
-def get_seed_points (edges, proj_crs, seed_point_spacing):
+def get_seed_points(edges, seed_point_spacing, principal_bearing):
+    """Get grid seed points for street network, rotated by principal bearing
+
+    Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
+
+    Parameters
+    ----------
+    edges: geopandas.geodataframe.GeoDataFrame
+        The street network, in a projected coordinate reference system
+    seed_point_spacing: int
+        Distance between seed points, in meters
+    principal_bearing: float
+        Principal bearing (most common bearing of streets)
+
+    Returns
+    -------
+    seed_points: geopandas.geodataframe.GeoDataFrame
+        Seed points, rotated by principal bearing, to be snapped, in the same projected coordinate reference system as edges
+    """
+    
+    # Rotate edges counter to the principal bearing
+    edges_temp = edges.copy()
+    edges_temp.geometry = edges_temp.geometry.rotate(principal_bearing, origin=(0, 0))
+
+    # Create grid
     # get convex hull around edge area
-    hull = edges.union_all().convex_hull
+    hull = edges_temp.union_all().convex_hull
     # get bounds of hull
-    latmin, lonmin, latmax, lonmax = hull.bounds
+    xmin, ymin, xmax, ymax = hull.bounds
 
     # https://stackoverflow.com/questions/66010964/fastest-way-to-produce-a-grid-of-points-that-fall-within-a-polygon-or-shape
-    # populate hull bbox with evenly spaced seeding points
+    # Populate hull bbox with evenly spaced seeding points
     points = []
-    for lat in np.arange(latmin, latmax, seed_point_spacing):
-        for lon in np.arange(lonmin, lonmax, seed_point_spacing):
-            points.append(Point((round(lat, 4), round(lon, 4))))
+    for x in np.arange(xmin, xmax, seed_point_spacing):
+        for y in np.arange(ymin, ymax, seed_point_spacing):
+            points.append(Point((round(x, 4), round(y, 4))))
 
-    # keep only those seed points that are within the hull polygon
+    # Keep only those seed points that are within the hull polygon
     prep_polygon = prep(hull)
     valid_points = []
     valid_points.extend(filter(prep_polygon.contains, points))
@@ -49,10 +75,97 @@ def get_seed_points (edges, proj_crs, seed_point_spacing):
     # store seed points in gdf
     seed_points = gpd.GeoDataFrame(
         {"geometry": valid_points},
-        crs=proj_crs
+        crs=edges.crs
     )
+
+    # Rotate points back using the principal bearing
+    seed_points.geometry = seed_points.geometry.rotate(-1 * principal_bearing, origin=(0, 0))
+    
     return seed_points
 
+def get_principal_bearing(G):
+    """Determine the most common (principal) bearing, for the best grid orientation.
+
+    Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
+    The bearing is determined from edges weighted by length.
+
+    Parameters
+    ----------
+    Gu : networkx MultiGraph (undirected)
+        The graph from which to determine the principal bearing. Its coordinate reference system must be geographical, not projected.
+
+    Returns
+    -------
+    principal_bearing: float
+        The principal bearing, precise to 5 degrees.
+    """
+    
+    bearingbins = 72 # number of bins to determine bearing. e.g. 72 will create 5 degrees bins
+
+    bearings = {}    
+    # weight bearings by length (meters)
+    city_bearings = []
+    for u, v, k, d in G.edges(keys = True, data = True):
+        try:
+            city_bearings.extend([d['bearing']] * int(d['length']))
+        except: # Bearings cannot be calculated in rare edge cases
+            pass
+    b = pd.Series(city_bearings)
+    bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop = 'True')
+    bins = np.arange(bearingbins + 1) * 360 / bearingbins
+    count = count_and_merge(bearingbins, bearings)
+    principal_bearing = bins[np.where(count == max(count))][0]
+    
+    return principal_bearing
+    
+
+def reverse_bearing(x):
+    """Reverse bearing.
+
+    Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
+
+    Parameters
+    ----------
+    x: float
+        The bearing to reverse
+
+    Returns
+    -------
+    x_rev: float
+        The reversed bearing
+    """
+    x_rev = x + 180 if x < 180 else x - 180
+    return x_rev
+
+def count_and_merge(n, bearings):
+    """Double, then merge bins to avoid edge effects
+
+    Make twice as many bins as desired, then merge them in pairs.
+    Prevents bin-edge effects around common values like 0° and 90°.
+    Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
+
+    Parameters
+    ----------
+    n: int
+        Number of bins
+    bearings: pandas.Series
+        Series of bearings
+
+    Returns
+    -------
+    bearings_merged: numpy.ndarray, dtype=int
+        The frequencies of the new merged bearings
+    """
+    n *= 2
+    bins = np.arange(n + 1) * 360 / n
+    count, _ = np.histogram(bearings, bins=bins)
+    
+    # move the last bin to the front, so eg 0.01° and 359.99° will be binned together
+    count = np.roll(count, 1)
+    bearings_merged = count[::2] + count[1::2]
+    return bearings_merged
+
+    
 # snap generated seed_points to actual osm nodes
 def snap_seed_points(seed_points, nodes):
     # query nearest OSM nodes with sindex
@@ -167,6 +280,28 @@ def rank_df(df, method):
     df["ordering"] = df.index  # ranking is simply the order of appearance in the betweenness ranking
     return df
 
+def node_to_edge_attributes(values_nodes, edges):
+    """Map node to edge attributes.
+
+    Creates edge attributes by taking the average values of adjacent node attributes.
+
+    Parameters
+    ----------
+    values_nodes : dict
+        Keys: node ids, Values: Node attributes (for example a scalar)
+    edges : networkx.classes.reportviews.EdgeView
+        A view of edge attributes of a networkx graph. Could also be a list of tuples of node ids.
+
+    Returns
+    -------
+    values_edges: dict
+        Keys: tuples of node ids, Values: Edge attributes
+    """
+    values_edges = {}
+    for u,v in edges:
+        values_edges[(u,v)] = 0.5 * (values_nodes[u]+values_nodes[v])
+    return values_edges
+    
 # column path_edges contains a set of osmnx edges for each row (abstract edge)
 def add_path_to_df(df, edges, g):
     # get edge list that we can use to index our edges gdf
