@@ -49,18 +49,18 @@ mamba env create -f environment.yml
 Then, install the virtual environment's kernel in Jupyter:
 
 ```
-mamba activate ENVNAME
-ipython kernel install --user --name=ENVNAME
+mamba activate growbikenet
+ipython kernel install --user --name=growbikenet
 mamba deactivate
 ```
 
-You can now run `jupyter lab` with kernel `ENVNAME` (Kernel > Change Kernel > ENVNAME).
+You can now run `jupyter lab` with kernel `growbikenet` (Kernel > Change Kernel > growbikenet).
 
 ## Repository structure
 
 ```
-├── GrowBikeNet                   <- Packaged functions and visualizations
-├── tests                 <- tests to execute to ensure functionality
+├── GrowBikeNet             <- Packaged functions and visualizations
+├── tests                   <- tests to execute to ensure functionality
 ├── .gitignore              <- Files and folders ignored by git
 ├── .pre-commit-config.yaml <- Pre-commit hooks used
 ├── README.md
