@@ -6,18 +6,44 @@ from shapely.prepared import prep
 from shapely.geometry import Point, LineString, MultiLineString
 from itertools import combinations
 
-# helper function to check whether newly to be added edge intersects with already added edges
+
 def intersects_properly(geom1, geom2):
-    '''
+    """
+    helper function to check whether newly to be added edge intersects with already added edges
     for 2 shapely geometries, check whether they "properly intersect" (i.e. intersect but not touch, i.e. don't share endpoints)
-    '''
+
+    Parameters
+    ----------
+    geom1 : shapely geometry
+        A shapely geometry, for example shapely.geometry.Point() or shapely.geometry.LineString()
+    geom2 : shapely geometry
+        A shapely geometry, for example shapely.geometry.Point() or shapely.geometry.LineString()
+
+    Returns
+    -------
+    boolean
+        Returns true if the two provided geometries intersect but do not touch
+    """
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
+
 def get_correct_edgetuples(edge_gdf, nodelist):
-    '''
+    """
     helper function that maps a node list (output of nx.shortest_paths)
     to the correct set of edge tuples that can be used for INDEXING THE EDGE GDF
-    '''
+
+    Parameters
+    ----------
+    edge_gdf: geopandas.geodataframe.GeoDataFrame
+        The street network, in a projected coordinate reference system
+    nodelist: list
+        A list of nodes that make up source and targets of edges
+
+    Returns
+    -------
+    edgelist_final: list
+        List of edge tuples that can be used for INDEXING THE EDGE GDF
+    """
     edgelist_prelim = zip(nodelist, nodelist[1:])
     edgelist_final = []
     for edge_prelim in edgelist_prelim:
@@ -28,8 +54,6 @@ def get_correct_edgetuples(edge_gdf, nodelist):
     return edgelist_final
 
 
-    
-# create seed points for greedy triangulation
 def get_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing
 
@@ -49,7 +73,7 @@ def get_seed_points(edges, seed_point_spacing, principal_bearing):
     seed_points: geopandas.geodataframe.GeoDataFrame
         Seed points, rotated by principal bearing, to be snapped, in the same projected coordinate reference system as edges
     """
-    
+
     # Rotate edges counter to the principal bearing
     edges_temp = edges.copy()
     edges_temp.geometry = edges_temp.geometry.rotate(principal_bearing, origin=(0, 0))
@@ -80,8 +104,9 @@ def get_seed_points(edges, seed_point_spacing, principal_bearing):
 
     # Rotate points back using the principal bearing
     seed_points.geometry = seed_points.geometry.rotate(-1 * principal_bearing, origin=(0, 0))
-    
+
     return seed_points
+
 
 def get_principal_bearing(G):
     """Determine the most common (principal) bearing, for the best grid orientation.
@@ -91,7 +116,7 @@ def get_principal_bearing(G):
 
     Parameters
     ----------
-    Gu : networkx MultiGraph (undirected)
+    G : networkx MultiGraph (undirected)
         The graph from which to determine the principal bearing. Its coordinate reference system must be geographical, not projected.
 
     Returns
@@ -99,25 +124,25 @@ def get_principal_bearing(G):
     principal_bearing: float
         The principal bearing, precise to 5 degrees.
     """
-    
-    bearingbins = 72 # number of bins to determine bearing. e.g. 72 will create 5 degrees bins
 
-    bearings = {}    
+    bearingbins = 72  # number of bins to determine bearing. e.g. 72 will create 5 degrees bins
+
+    bearings = {}
     # weight bearings by length (meters)
     city_bearings = []
-    for u, v, k, d in G.edges(keys = True, data = True):
+    for u, v, k, d in G.edges(keys=True, data=True):
         try:
             city_bearings.extend([d['bearing']] * int(d['length']))
-        except: # Bearings cannot be calculated in rare edge cases
+        except:  # Bearings cannot be calculated in rare edge cases
             pass
     b = pd.Series(city_bearings)
-    bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop = 'True')
+    bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop='True')
     bins = np.arange(bearingbins + 1) * 360 / bearingbins
     count = count_and_merge(bearingbins, bearings)
     principal_bearing = bins[np.where(count == max(count))][0]
-    
+
     return principal_bearing
-    
+
 
 def reverse_bearing(x):
     """Reverse bearing.
@@ -136,6 +161,7 @@ def reverse_bearing(x):
     """
     x_rev = x + 180 if x < 180 else x - 180
     return x_rev
+
 
 def count_and_merge(n, bearings):
     """Double, then merge bins to avoid edge effects
@@ -159,15 +185,29 @@ def count_and_merge(n, bearings):
     n *= 2
     bins = np.arange(n + 1) * 360 / n
     count, _ = np.histogram(bearings, bins=bins)
-    
+
     # move the last bin to the front, so eg 0.01° and 359.99° will be binned together
     count = np.roll(count, 1)
     bearings_merged = count[::2] + count[1::2]
     return bearings_merged
 
-    
-# snap generated seed_points to actual osm nodes
+
 def snap_seed_points(seed_points, nodes):
+    """
+    snap generated seed_points to actual osm nodes
+    Parameters
+    ----------
+    seed_points: geopandas.geodataframe.GeoDataFrame
+        Seed points that were created within city area, to be snapped to actual osm nodes
+    nodes: geopandas.geodataframe.GeoDataFrame
+        actual osm nodes, downloaded from osmnx
+
+    Returns
+    -------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+
+    """
     # query nearest OSM nodes with sindex
     q = nodes.sindex.nearest(seed_points.geometry)
     seed_points["osmid"] = None
@@ -190,8 +230,22 @@ def snap_seed_points(seed_points, nodes):
     )
     return seed_points_snapped
 
-# remove seed_points that are further than delta away from an actual osm node
+
 def filter_seed_points(seed_points_snapped, seed_point_delta):
+    """
+    remove seed_points that are further than delta away from an actual osm node
+    Parameters
+    ----------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+    seed_point_delta: int
+        maximum distance a seed_point may be removed from an actual osm node
+
+    Returns
+    -------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed_points within delta away from an actual osm node, only columns are osmid and the associated osm geometry
+    """
     # define our boolean distance_condition filter:
     # snapped seed points must be not more than seed_point_delta away
     # from their OSM nodes
@@ -214,9 +268,20 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
     seed_points_snapped["osmid"] = seed_points_snapped.index
     return seed_points_snapped
 
-# create df with all potential edges in triangulation
+
 def create_potential_triangulation(seed_points_snapped):
-    # get list of potential edges, ordered by length
+    """
+    create df with all potential edges in triangulation, ordered by length
+    Parameters
+    ----------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed points with osmid and corresponding point geometry
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        Dataframe with egde pairs, edge geometries and distance of potential triangulation
+    """
     pairs = []
     potential_edges = []
     distances = []
@@ -240,11 +305,21 @@ def create_potential_triangulation(seed_points_snapped):
     df = df[df["dist"] > 0].reset_index(drop=True)  # only keep distances > 0
     return df
 
-# filter edges that intersect with existing edges
-def filter_triangulation(df):
-    # iterate through all potential edges;
-    # if they dont intersect with existing edges add to multilinestring
 
+def filter_triangulation(df):
+    """
+    filter edges that intersect with existing edges
+    iterate through all potential edges; if they do not intersect with existing edges add to multilinestring
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Dataframe with edge pairs, edge geometries and distance of potential triangulation
+
+    Returns
+    -------
+    edge_list: list
+        List of edge pairs that are part of the final triangulation
+    """
     current_edges = MultiLineString()
     edge_list = []
 
@@ -256,8 +331,22 @@ def filter_triangulation(df):
             edge_list.append(pair)
     return edge_list
 
-# create a dataframe from an input graph
+
 def df_from_graph(A, method):
+    """
+    create a dataframe from an input graph
+    Parameters
+    ----------
+    A: networkx.graph
+        graph created from triangulation edge list
+    method: string
+        Method choosen by user for sorting, for example betweenness centrality
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        Dataframe with source and target information for each edge, as well as edge attributes as columns
+    """
     df = pd.DataFrame.from_dict(
         nx.get_edge_attributes(
             G=A,
@@ -272,13 +361,27 @@ def df_from_graph(A, method):
     df.drop(columns=["node_tuple"], inplace=True)
     return df
 
-# rank df by specified sorting metric
+
 def rank_df(df, method):
-    # rank by attribute/sorting metric
+    """
+    rank df by specified sorting method
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Dataframe with source and target information for each edge, as well as edge attributes as columns
+    method: string
+        Method choosen by user for sorting, for example betweenness centrality
+
+    Results
+    -------
+    df: pandas.DataFrame
+        Dataframe sorted by specified sorting method
+    """
     df = df.sort_values(by=method, ascending=False)
     df.reset_index(drop=True, inplace=True)
     df["ordering"] = df.index  # ranking is simply the order of appearance in the betweenness ranking
     return df
+
 
 def node_to_edge_attributes(values_nodes, edges):
     """Map node to edge attributes.
@@ -298,13 +401,27 @@ def node_to_edge_attributes(values_nodes, edges):
         Keys: tuples of node ids, Values: Edge attributes
     """
     values_edges = {}
-    for u,v in edges:
-        values_edges[(u,v)] = 0.5 * (values_nodes[u]+values_nodes[v])
+    for u, v in edges:
+        values_edges[(u, v)] = 0.5 * (values_nodes[u] + values_nodes[v])
     return values_edges
-    
-# column path_edges contains a set of osmnx edges for each row (abstract edge)
+
+
 def add_path_to_df(df, edges, g):
-    # get edge list that we can use to index our edges gdf
+    """
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Dataframe with information about edges
+    edges: geopandas.geodataframe.GeoDataFrame
+        The street network, in a projected coordinate reference system
+    g: networkx.graph undirected
+        graph to use for routing
+
+    Returns
+    -------
+    df: pandas.DataFrame
+        Dataframe with added path nodes and path edges
+    """
     paths = []
     for _, row in df.iterrows():
         paths.append(
@@ -318,7 +435,21 @@ def add_path_to_df(df, edges, g):
     df["path_edges"] = df.path_nodes.apply(lambda x: get_correct_edgetuples(edges, x))
     return df
 
+
 def create_gdf_with_geoms(df, edges):
+    """
+    Parameters
+    ----------
+    df: pandas.DataFrame
+        Dataframe with path nodes and path edges
+    edges: geopandas.GeoDataFrame
+        The street network, in a projected coordinate reference system
+
+    Returns
+    -------
+    gdf: geopandas.GeoDataFrame
+        projected GeoDataFrame with path nodes and path edges and merged geometries
+    """
     # get geometry by merging all geoms from edge gdf
     df["geometry"] = df.path_edges.apply(
         lambda x: edges.loc[x].geometry.union_all()

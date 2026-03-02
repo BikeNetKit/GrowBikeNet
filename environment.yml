@@ -17,6 +17,9 @@ dependencies:
   - tqdm
   - geojson
   - pip
+  - momepy
+  - pytest
   - pip:
     # not available via conda-forge:
     - opencv-python
+    - pre-commit
