@@ -15,10 +15,10 @@ author = 'Szell, Vybornova, Knepper'
 
 import os
 import sys
-import GrowBikeNet  # noqa
+import growbikenet  # noqa
 # sys.path.insert(0, os.path.abspath("../"))
 
-version = GrowBikeNet.__version__
+version = growbikenet.__version__
 release = version
 
 # Add any Sphinx extension module names here, as strings. They can be
