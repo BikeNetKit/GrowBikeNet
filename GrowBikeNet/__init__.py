@@ -8,4 +8,4 @@ __author__ = "MS, AV, MK"
 __author_email__ = "email@domain.com"
 
 with contextlib.suppress(PackageNotFoundError):
-    __version__ = version("GrowBikeNet")
+    __version__ = version("growbikenet")
