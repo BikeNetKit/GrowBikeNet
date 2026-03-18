@@ -194,5 +194,7 @@ a_edges : geopandas.geodataframe.GeoDataFrame
                 img_folder_name="./results/plots/",
                 fps=1
             )
+    a_edges['path_nodes'] = a_edges['path_nodes'].astype(str)
+    a_edges['path_edges'] = a_edges['path_edges'].astype(str)
 
     return a_edges
