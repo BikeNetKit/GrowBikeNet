@@ -25,7 +25,7 @@ proj_crs : str
 ranking : str
     method used to rank edges. Must be 'betweenness_centrality' (default) or 'closeness_centrality'
 seed_point_type : string, optional
-    if set to 'grid' (default), creates a quadratic grid
+    if set to 'grid' (default), creates a square grid
     if set to 'rail', uses rail stations
 seed_point_grid_spacing : int, optional
     if seed_point_type is set to 'grid', this is the spacing between seed points, in meters
@@ -118,6 +118,10 @@ a_edges : geopandas.geodataframe.GeoDataFrame
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
     seed_points_snapped = filter_seed_points(seed_points_snapped, seed_point_delta)
+
+    # Abort if only 0 or 1 seed points
+    if len(seed_points_snapped) < 2:
+        raise RuntimeError("Found less than 2 seed points")
     
 
     ### running greedy triangulation
