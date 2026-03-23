@@ -59,7 +59,7 @@ You can now run `jupyter lab` with kernel `growbikenet` (Kernel > Change Kernel 
 ## Repository structure
 
 ```
-├── GrowBikeNet             <- Packaged functions and visualizations
+├── growbikenet             <- Packaged functions and visualizations
 ├── tests                   <- tests to execute to ensure functionality
 ├── .gitignore              <- Files and folders ignored by git
 ├── .pre-commit-config.yaml <- Pre-commit hooks used
