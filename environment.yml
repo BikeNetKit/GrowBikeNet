@@ -19,6 +19,7 @@ dependencies:
   - pip
   - momepy
   - pytest
+  - contextily
   - pip:
     # not available via conda-forge:
     - opencv-python
