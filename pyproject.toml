@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "growbikenet"
+authors = [
+  { name = "Manuel Knepper" },
+  { name = "Anastassia Vybornova" },
+  { name = "Michael Szell" },
+]
+maintainers = [{ name = "Manuel Knepper", email = "manuel.knepper@gmx.net" }]
+license = "AGPL-3.0-or-later"
+readme = "README.md"
+description = "Python package to grow urban bicycle networks from scratch, spin-off from the paper 'Growing urban bicycle networks'"
+keywords = ["Bicycle network planning", "Networks", "OpenStreetMap", "Urban Planning", "Urban Mobility"]
+classifiers = [
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Natural Language :: English",
+]
+dynamic = ["version"]
+requires-python = ">=3.12"
+dependencies = [
+    "geopandas>=0.14",
+    "matplotlib",
+    "osmnx>=1.9.4",
+    "geojson",
+    "tqdm",
+    "pip",
+    "momepy",
+    "opencv-python",
+    "python-igraph"
+]
+
+[project.urls]
+Repository = "https://github.com/BikeNetKit/GrowBikeNet"
+Issues = "https://github.com/BikeNetKit/GrowBikeNet/issues"
+
+[project.optional-dependencies]
+test = ["pytest"]
+doc = ["sphinx", "momepy"]
+
+[tool.setuptools.packages.find]
+exclude = [
+    "examples*",
+    "tests*",
+    "results",
+    "docs*",
+    "data*",
+    "scripts*",
+]
+namespaces = false
