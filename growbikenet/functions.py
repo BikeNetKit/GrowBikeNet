@@ -54,7 +54,7 @@ def get_correct_edgetuples(edge_gdf, nodelist):
     return edgelist_final
 
 
-def get_seed_points(edges, seed_point_spacing, principal_bearing):
+def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing
 
     Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb

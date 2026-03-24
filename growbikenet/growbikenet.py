@@ -4,10 +4,10 @@ from growbikenet.visualizations import *
 
 def growbikenet(
         city_name,
-        proj_crs,
-        ranking,
-        # seed_point_type="grid",
-        seed_point_spacing=1707,
+        proj_crs='3857',
+        ranking='betweenness_centrality',
+        seed_point_type='grid',
+        seed_point_grid_spacing=1707,
         seed_point_delta=500,
         export_data=True,
         export_plots=False,
@@ -21,11 +21,14 @@ Parameters
 city_name : str
     name of the city that the analysis should be performed on
 proj_crs : str
-    coordinate reference system that is used to project osm data
+    coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator)
 ranking : str
-    method used to rank edges
-seed_point_spacing : int, optional
-    spacing between seed points, in meters
+    method used to rank edges. Must be 'betweenness_centrality' (default) or 'closeness_centrality'
+seed_point_type : string, optional
+    if set to 'grid' (default), creates a square grid
+    if set to 'rail', uses rail stations
+seed_point_grid_spacing : int, optional
+    if seed_point_type is set to 'grid', this is the spacing between seed points, in meters
 seed_point_delta : int, optional
     maximum distance between generated seed points and osm nodes for snapping
 export_data : bool, optional
@@ -50,8 +53,10 @@ a_edges : geopandas.geodataframe.GeoDataFrame
         raise TypeError("ranking must be a string")
     if ranking != 'betweenness_centrality' and ranking != 'closeness_centrality':
         raise ValueError("ranking must be 'betweenness_centrality' or 'closeness_centrality'")
-    if type(seed_point_spacing) != int:
-        raise TypeError("seed_point_spacing must be an integer")
+    if seed_point_type != 'grid' and seed_point_type != 'rail':
+        raise ValueError("seed_point_type must be 'grid' or 'rail'")
+    if seed_point_type == 'grid' and type(seed_point_grid_spacing) != int:
+        raise TypeError("seed_point_grid_spacing must be an integer")
     if type(seed_point_delta) != int:
         raise TypeError("seed_point_delta must be an integer")
     if type(export_data) != bool:
@@ -61,22 +66,23 @@ a_edges : geopandas.geodataframe.GeoDataFrame
     if type(export_video) != bool:
         raise TypeError("export_video must be a boolean")
 
-    ### getting and preprocessing data from OSM
-    print("getting osm data")
+
+    ### downloading and preprocessing data from OSM
+    print("Downloading OSM data..")
 
     # fetch street network data from osmnx
     g = ox.graph_from_place(
-        city_name, network_type='all'
+    city_name, network_type='all'
     )
-    g_undir = g.to_undirected().copy()  # convert to undirected (dropping OSMnx keys!)
+    g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     # export osmnx data to gdfs
     nodes, edges = ox.graph_to_gdfs(
-        g_undir,
-        nodes=True,
-        edges=True,
-        node_geometry=True,
-        fill_edge_geometry=True
+    g_undir,
+    nodes=True,
+    edges=True,
+    node_geometry=True,
+    fill_edge_geometry=True
     )
 
     # # save "original" graph data (in orig_crs)
@@ -84,7 +90,7 @@ a_edges : geopandas.geodataframe.GeoDataFrame
     # edges.to_file("edges.gpkg", driver='GPKG')
 
     # replace after dropping edges with key = 1
-    edges = edges.loc[:, :, 0].copy()
+    edges = edges.loc[:,:,0].copy()
     # this also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
 
     # project geometries of nodes, edges, seed points
@@ -95,21 +101,31 @@ a_edges : geopandas.geodataframe.GeoDataFrame
     nodes["osmid"] = nodes.index
 
     ### creating seed points
-    print("making seed points")
+    print("Creating " + seed_point_type + " seed points..")
 
-    # Bearings work on unprojected graph
-    ox.bearing.add_edge_bearings(g_undir)
-    principal_bearing = get_principal_bearing(g_undir)
+    if seed_point_type == "grid":
+        # Bearings work on unprojected graph
+        ox.bearing.add_edge_bearings(g_undir)
+        principal_bearing = get_principal_bearing(g_undir)
 
-    # But this is on the projected edges now
-    seed_points = get_seed_points(edges, seed_point_spacing, principal_bearing)
+        # But this is on the projected edges now
+        seed_points = get_grid_seed_points(edges, seed_point_grid_spacing, principal_bearing)
+    elif seed_point_type == "rail":
+        seed_points = ox.features_from_place(city_name, {'railway':['station','halt']})
+        seed_points = seed_points[seed_points['geometry'].type == "Point"]
+        seed_points.to_crs(edges.crs, inplace=True)
 
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
     seed_points_snapped = filter_seed_points(seed_points_snapped, seed_point_delta)
 
+    # Abort if only 0 or 1 seed points
+    if len(seed_points_snapped) < 2:
+        raise RuntimeError("Found less than 2 seed points")
+    
+
     ### running greedy triangulation
-    print("greedy triangulation")
+    print("Greedy triangulation..")
 
     # create df with all potential edges in triangulation
     df = create_potential_triangulation(seed_points_snapped)
@@ -123,7 +139,7 @@ a_edges : geopandas.geodataframe.GeoDataFrame
     A.add_edges_from(edge_list)
 
     ### compute edge attributes
-    print("edge attributes")
+    print("Computing edge attributes..")
 
     if ranking == 'betweenness_centrality':
         # add betweenness attributes to edges
@@ -150,21 +166,22 @@ a_edges : geopandas.geodataframe.GeoDataFrame
     a_edges = add_path_to_df(a_edges, edges, g_undir)
 
     ### route abstract edges on street network
-    print("routing")
+    print("Routing..")
 
     # get "routed" geometry (LineString) for each abstract edge (row)
     a_edges = create_gdf_with_geoms(a_edges, edges)
 
-    ### save data
-    print("data save")
     # save to file
     if export_data:
+        ### save data
+        print("Saving data..")
         a_edges.to_file("a_edges.gpkg", driver="GPKG")
 
-    ### Visualization
-    print("viz")
 
     if export_plots or export_video:
+        ### Visualization
+        print("Creating visualizations..")
+
         # create directories
         os.makedirs("./results/", exist_ok=True)
         os.makedirs("./results/plots/", exist_ok=True)
@@ -183,18 +200,16 @@ a_edges : geopandas.geodataframe.GeoDataFrame
         # define linewidths
 
         lws = {
-            "street": 0.75,
-            "bike": 2
+        "street": 0.75,
+        "bike": 2
         }
 
-        create_plots(routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, seedcolor, lws)
+        create_plots(routed_edges_gdf,seed_points_snapped,streetcolor,edgecolor,seedcolor,lws)
         if export_video:
-            print("video")
+            print("Generating video..")
             make_video(
                 img_folder_name="./results/plots/",
-                fps=1
+                fps = 1
             )
-    a_edges['path_nodes'] = a_edges['path_nodes'].astype(str)
-    a_edges['path_edges'] = a_edges['path_edges'].astype(str)
 
     return a_edges
