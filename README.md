@@ -4,7 +4,7 @@
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-This is the source code for the project *GrowBikeNet*.
+Source code for the project *GrowBikeNet*, building on [the code from the research paper](https://github.com/mszell/bikenwgrowth) *Growing Urban Bicycle Networks*.
 
 ## Installation
 To install and use the code, you need to have installed [JupyterLab](https://pypi.org/project/jupyterlab/).
@@ -15,7 +15,7 @@ First clone the repository:
 git clone https://github.com/BikeNetKit/GrowBikeNet.git
 ```
 
-Go to the cloned folder and create a new virtual environment. 
+Go to the cloned folder and create a new virtual environment, see below. 
 
 ### Installation with pixi
 
@@ -34,6 +34,10 @@ pixi run jupyter lab
 An instance of Jupyter lab is automatically going to open in your browser after the environment is built.
 
 ### Installation with pip/mamba/conda
+
+Alternatively, use pip, or [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) (or `conda`, which is slower).
+
+<details><summary>Instructions</summary>
 
 You can either create a new virtual environment then install the necessary dependencies with `pip` using the `requirements.txt` file:
 
@@ -55,6 +59,7 @@ mamba deactivate
 ```
 
 You can now run `jupyter lab` with kernel `growbikenet` (Kernel > Change Kernel > growbikenet).
+</details>
 
 ## Repository structure
 
