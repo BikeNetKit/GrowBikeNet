@@ -1,6 +1,6 @@
-﻿GrowBikeNet.functions.intersects\_properly
+﻿growbikenet.functions.intersects\_properly
 ==========================================
 
-.. currentmodule:: GrowBikeNet.functions
+.. currentmodule:: growbikenet.functions
 
 .. autofunction:: intersects_properly
