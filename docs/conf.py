@@ -28,7 +28,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.linkcode",
-    "sphinxcontrib.bibtex",
+    #"sphinxcontrib.bibtex",
     "sphinx.ext.mathjax",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
