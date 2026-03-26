@@ -1,10 +1,10 @@
 .. _api_ref:
 
-.. automodule:: GrowBikeNet
+.. automodule:: growbikenet
    :members:
    :undoc-members:
 
-.. currentmodule:: GrowBikeNet
+.. currentmodule:: growbikenet
 
 GrowBikeNet API reference
 ==========================
