@@ -14,9 +14,9 @@ author = 'Szell, Vybornova, Knepper'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 import os
-import sys
-import growbikenet  # noqa
+import sys  # noqa
 sys.path.insert(0, os.path.abspath(".."))
+import growbikenet
 
 version = growbikenet.__version__
 release = version
