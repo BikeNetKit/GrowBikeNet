@@ -13,7 +13,7 @@ jobs:
         persist-credentials: false
     - name: Install project + docs dependencies
       run:
-        pip install .
+        pip install -e .
         pip install -r docs/requirements.txt
     - name: Build HTML
       uses: ammaraskar/sphinx-action@master

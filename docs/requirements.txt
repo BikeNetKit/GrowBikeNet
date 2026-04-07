@@ -1,3 +1,4 @@
+-e ..
 furo==2021.11.16
 sphinx
 numpydoc
