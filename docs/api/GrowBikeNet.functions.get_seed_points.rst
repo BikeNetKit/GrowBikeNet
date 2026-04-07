@@ -1,6 +1,6 @@
-﻿GrowBikeNet.functions.get\_seed\_points
+﻿growbikenet.functions.get\_seed\_points
 =======================================
 
-.. currentmodule:: GrowBikeNet.functions
+.. currentmodule:: growbikenet.functions
 
 .. autofunction:: get_seed_points

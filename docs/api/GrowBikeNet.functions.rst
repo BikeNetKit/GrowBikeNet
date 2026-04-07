@@ -1,7 +1,7 @@
-﻿GrowBikeNet.functions
+﻿growbikenet.functions
 =====================
 
-.. automodule:: GrowBikeNet.functions
+.. automodule:: growbikenet.functions
 
    
    .. rubric:: Functions

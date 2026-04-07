@@ -1,6 +1,6 @@
-﻿GrowBikeNet.functions.node\_to\_edge\_attributes
+﻿growbikenet.functions.node\_to\_edge\_attributes
 ================================================
 
-.. currentmodule:: GrowBikeNet.functions
+.. currentmodule:: growbikenet.functions
 
 .. autofunction:: node_to_edge_attributes
