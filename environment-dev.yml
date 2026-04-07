@@ -24,8 +24,13 @@ dependencies:
   - numpydoc
   - myst-nb
   - sphinx-book-theme
+  - nbsphinx
+  - myst-parser
+  - ipython
   - pip:
     # not available via conda-forge:
     - opencv-python
     - pre-commit
     - sphinxcontrib-bibtex
+    - sphinx-copybutton
+    - sphinx-gallery
