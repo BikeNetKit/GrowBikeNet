@@ -5,6 +5,7 @@ import networkx as nx
 from shapely.prepared import prep
 from shapely.geometry import Point, LineString, MultiLineString
 from itertools import combinations
+from slugify import slugify
 
 
 def intersects_properly(geom1, geom2):
@@ -454,7 +455,7 @@ def create_gdf_with_geoms(df, edges):
     df["geometry"] = df.path_edges.apply(
         lambda x: edges.loc[x].geometry.union_all()
     )
-    # convert a_edges into a gdf
+    # convert edges into a gdf
     gdf = gpd.GeoDataFrame(df, crs=edges.crs, geometry="geometry")
     # merge multilinestring into linestring where possible (should be possible everywhere)
     gdf["geometry"] = gdf.line_merge()
