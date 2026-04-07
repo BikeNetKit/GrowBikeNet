@@ -1,0 +1,83 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+      - dow_workflow
+    paths:
+      - 'growbikenet/**'
+      - 'docs/**'
+      - 'logging.cfg'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  generate-deploy-docs:
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+        os: [ubuntu-latest]
+    name: Generate documentation
+    runs-on: ${{ matrix.os }}
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    environment:
+      name: Deploy to github pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - name: Check if GHSL site is under maintenance
+        run: |
+          content=$(curl -s https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/)
+          if echo "$content" | grep -q "Under Maintenance"; then
+            echo "GHSL site is under maintenance. Exiting."
+            exit 1
+          fi
+
+      - name: Check out Git repository
+        uses: actions/checkout@v6
+
+      - name: Get week number
+        run: echo "WEEK=$(date +'%V')" >> $GITHUB_ENV
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          create-args: python=${{ matrix.python-version }}
+          environment-file: environment.yml
+          cache-environment: true
+          cache-environment-key: W${{ env.WEEK }}
+
+      - name: Add Notebook Kernel
+        run: python -m ipykernel install --user --name growbikenet --display-name "Python (growbikenet)"
+
+      - name: Generating .rst files
+        run: sphinx-apidoc -o docs/api/ growbikenet/
+      - name: Generating html
+        run: sphinx-build docs public -b dirhtml
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          # Upload generated html
+          path: 'public/'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
