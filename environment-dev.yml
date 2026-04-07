@@ -1,0 +1,30 @@
+name: growbikenet
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - geopandas>=0.14
+  - jupyter
+  - jupyterlab
+  - ipywidgets
+  - ipykernel
+  - matplotlib
+  - osmnx>=1.9.4
+  - python-igraph
+  - watermark
+  - haversine
+  - rasterio
+  - tqdm
+  - geojson
+  - pip
+  - momepy
+  - pytest
+  - contextily
+  - sphinx
+  - numpydoc
+  - myst-nb
+  - sphinx-book-theme
+  - pip:
+    # not available via conda-forge:
+    - opencv-python
+    - pre-commit
