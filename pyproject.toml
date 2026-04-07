@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "growbikenet"
-version = "0.5.1"
+version = "0.5.2"
 authors = [
   { name = "Manuel Knepper" },
   { name = "Anastassia Vybornova" },
@@ -36,7 +36,6 @@ dependencies = [
     "pip",
     "momepy",
     "opencv-python",
-    "python-igraph"
 ]
 
 [project.urls]
