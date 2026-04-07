@@ -1,19 +1,19 @@
 .. _api_ref:
 
-.. automodule:: GrowBikeNet
+.. automodule:: growbikenet
    :members:
    :undoc-members:
 
-.. currentmodule:: GrowBikeNet
+.. currentmodule:: growbikenet
 
-GrowBikeNet API reference
+growbikenet API reference
 ==========================
 
-Some tasks with GrowBikeNet
+Some tasks with growbikenet
 -------------------------------
 .. _elements:
 
-GrowBikeNet does these things with these functions.
+growbikenet does these things with these functions.
 
 .. autosummary::
    :toctree: api/
