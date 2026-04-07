@@ -28,3 +28,4 @@ dependencies:
     # not available via conda-forge:
     - opencv-python
     - pre-commit
+    - sphinxcontrib-bibtex
