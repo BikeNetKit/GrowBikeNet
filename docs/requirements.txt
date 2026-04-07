@@ -6,3 +6,8 @@ pandas
 geopandas
 networkx
 shapely
+cv2
+glob
+re
+pathlib
+matplotlib
