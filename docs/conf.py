@@ -15,11 +15,11 @@ author = 'Szell, Vybornova, Knepper'
 
 import os
 import sys
-#import growbikenet  # noqa
+import growbikenet  # noqa
 # sys.path.insert(0, os.path.abspath("../"))
 
-#version = growbikenet.__version__
-#release = version
+version = growbikenet.__version__
+release = version
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -28,7 +28,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.linkcode",
-    #"sphinxcontrib.bibtex",
+    "sphinxcontrib.bibtex",
     "sphinx.ext.mathjax",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
@@ -104,14 +104,14 @@ def linkcode_resolve(domain, info):
         import os
 
         fn = inspect.getsourcefile(obj)
-        fn = os.path.relpath(fn, start=os.path.dirname(GrowBikeNet.__file__))
+        fn = os.path.relpath(fn, start=os.path.dirname(growbikenet.__file__))
         source, lineno = inspect.getsourcelines(obj)
         return fn, lineno, lineno + len(source) - 1
 
     if domain != "py" or not info["module"]:
         return None
     try:
-        filename = "GrowBikeNet/%s#L%d-L%d" % find_source()  # noqa: UP031
+        filename = "growbikenet/%s#L%d-L%d" % find_source()  # noqa: UP031
     except Exception:
         filename = info["module"].replace(".", "/") + ".py"
     tag = "main" if "+" in release else ("v" + release)
