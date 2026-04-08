@@ -34,3 +34,4 @@ dependencies:
     - sphinxcontrib-bibtex
     - sphinx-copybutton
     - sphinx-gallery
+    - python-slugify
