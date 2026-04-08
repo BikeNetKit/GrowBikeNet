@@ -84,3 +84,23 @@ def create_validation_filtered_triangulation():
 
 def test_filter_triangulation(create_unfiltered_triangulation, create_validation_filtered_triangulation):
     assert filter_triangulation(create_unfiltered_triangulation) == create_validation_filtered_triangulation
+
+
+@pytest.fixture
+def create_validation_streets():
+    streets_nodes = gpd.read_file("./tests/test_data/oelde_streets.gpkg", layer = 'nodes').set_index('osmid') 
+    streets_edges = gpd.read_file("./tests/test_data/oelde_streets.gpkg", layer = 'edges').set_index(['u', 'v', 'key']) 
+    streets = ox.convert.graph_from_gdfs(streets_nodes, streets_edges)
+    return streets
+
+def test_get_principal_bearing(create_validation_streets):
+    assert get_principal_bearing(create_validation_streets) == 65.0
+
+@pytest.fixture
+def create_validation_grid():
+    grid = gpd.read_file("./tests/test_data/oelde_grid.gpkg")
+    return grid
+
+def test_get_grid_seed_points(create_validation_grid,create_validation_streets):
+    edges = ox.convert.graph_to_gdfs(create_validation_streets, nodes=False, edges=True, node_geometry=False, fill_edge_geometry=False)
+    create_validation_grid.equals(get_grid_seed_points(edges, 1707, 65.0))

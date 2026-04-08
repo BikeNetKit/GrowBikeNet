@@ -2,7 +2,7 @@
 import growbikenet as gbn
 
 a_edges = gbn.growbikenet(
-    city_name="Bath",
+    city_name = "Bath",
     proj_crs = '3857',
     ranking = 'betweenness_centrality',
     export_data = True,
