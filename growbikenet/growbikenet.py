@@ -10,6 +10,7 @@ def growbikenet(
         seed_point_grid_spacing=1707,
         seed_point_delta=500,
         export_data=True,
+        export_data_slug=None,
         export_plots=False,
         export_video=False,
 ):
@@ -20,23 +21,25 @@ Parameters
 ----------
 city_name : str
     name of the city that the analysis should be performed on
-proj_crs : str
+proj_crs : str, default '3857'
     coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator)
-ranking : str
+ranking : str, default 'betweenness_centrality'
     method used to rank edges. Must be 'betweenness_centrality' (default) or 'closeness_centrality'
-seed_point_type : string, optional
-    if set to 'grid' (default), creates a square grid
+seed_point_type : str, optional, default 'grid'
+    if set to 'grid', creates a square grid
     if set to 'rail', uses rail stations
-seed_point_grid_spacing : int, optional
+seed_point_grid_spacing : int, optional, default 1707
     if seed_point_type is set to 'grid', this is the spacing between seed points, in meters
-seed_point_delta : int, optional
+seed_point_delta : int, optional, default 500
     maximum distance between generated seed points and osm nodes for snapping
-export_data : bool, optional
-    if set to 'True' data will be saved to a file
-export_plots : bool, optional
-    if set to 'True' plots will be saved to a file
-export_video : bool, optional
-    if set to 'True' video will be saved to a file (only possible if export_plots is set to True)
+export_data : bool, optional, default True
+    if set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name
+export_data_slug : string, optional, default None
+    if not set to None, it will be slugified and used as the slug in the filename of the data export
+export_plots : bool, optional, default False
+    if set to True, plots will be saved to a file
+export_video : bool, optional, default False
+    if set to True, video will be saved to a file (only possible if export_plots is set to True)
 
 Returns
 -------
@@ -61,6 +64,10 @@ a_edges : geopandas.geodataframe.GeoDataFrame
         raise TypeError("seed_point_delta must be an integer")
     if type(export_data) != bool:
         raise TypeError("export_data must be a boolean")
+    if export_data_slug is not None and type(export_data_slug) != str:
+        raise TypeError("export_data_slug must be None or a string")
+    if type(export_data_slug) == str and (len(export_data_slug) < 1 or len(slugify(export_data_slug)) < 1):
+        raise ValueError("export_data_slug must contain at least one non-special character")
     if type(export_plots) != bool:
         raise TypeError("export_plots must be a boolean")
     if type(export_video) != bool:
@@ -171,12 +178,20 @@ a_edges : geopandas.geodataframe.GeoDataFrame
     # get "routed" geometry (LineString) for each abstract edge (row)
     a_edges = create_gdf_with_geoms(a_edges, edges)
 
+    
+    # generate export data filename
+    if export_data or export_plots or export_video:
+        if export_data_slug is None:
+            city_string = city_name
+        else:
+            city_string = export_data_slug
+        export_data_filename = slugify(city_string) + "-" + ranking + "-" + seed_point_type + ".gpkg"
+
     # save to file
     if export_data:
         ### save data
         print("Saving data..")
-        a_edges.to_file("a_edges.gpkg", driver="GPKG")
-
+        a_edges.to_file(export_data_filename, driver="GPKG")
 
     if export_plots or export_video:
         ### Visualization
@@ -188,7 +203,7 @@ a_edges : geopandas.geodataframe.GeoDataFrame
         os.makedirs("./results/plots/video/", exist_ok=True)
 
         # read in file to plot
-        routed_edges_gdf = gpd.read_file("a_edges.gpkg")
+        routed_edges_gdf = gpd.read_file(export_data_filename)
 
         # viz/plot settings (move to config file later)
 
