@@ -12,7 +12,7 @@ def create_geom_2():
     linestring = LineString([(3, 3), (4, 4), (5, 5)])
     return linestring
 
-def test_intersect(create_geom_1, create_geom_2):
+def test_intersects_properly(create_geom_1, create_geom_2):
     assert intersects_properly(create_geom_1, create_geom_2) is False
 
 @pytest.fixture
@@ -29,7 +29,7 @@ def create_validation_data_rank(method):
 def method():
     return "betweenness_centrality"
 
-def test_rank(create_test_data_rank, method, create_validation_data_rank):
+def test_rank_df(create_test_data_rank, method, create_validation_data_rank):
     assert_frame_equal(rank_df(create_test_data_rank, method), create_validation_data_rank, check_dtype=False)
 
 @pytest.fixture
@@ -51,7 +51,7 @@ def create_filtered_seed_points():
     gdf['osmid'] = gdf.index
     return gdf
 
-def test_seed_point_filter(create_snapped_seed_points, create_filtered_seed_points, define_seed_point_delta):
+def test_filter_seed_points(create_snapped_seed_points, create_filtered_seed_points, define_seed_point_delta):
     assert_frame_equal(filter_seed_points(create_snapped_seed_points, define_seed_point_delta), create_filtered_seed_points, check_dtype=False)
 
 @pytest.fixture
@@ -62,7 +62,7 @@ def create_validation_triangulation():
     df = pd.DataFrame(d)
     return df
 
-def test_triangulation_creation(create_validation_triangulation, create_filtered_seed_points):
+def test_create_potential_triangulation(create_validation_triangulation, create_filtered_seed_points):
     assert_frame_equal(create_potential_triangulation(create_filtered_seed_points), create_validation_triangulation, check_dtype=False)
 
 @pytest.fixture
@@ -82,5 +82,5 @@ def create_validation_filtered_triangulation():
     edge_list = [['1','3'],['1','2'], ['2','3']]
     return edge_list
 
-def test_triangulation_filter(create_unfiltered_triangulation, create_validation_filtered_triangulation):
+def test_filter_triangulation(create_unfiltered_triangulation, create_validation_filtered_triangulation):
     assert filter_triangulation(create_unfiltered_triangulation) == create_validation_filtered_triangulation
