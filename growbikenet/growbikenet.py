@@ -14,8 +14,9 @@ def growbikenet(
         export_plots=False,
         export_video=False,
 ):
-    """
-creates list of edges that form city network, ordered by specified ranking method
+    """Creates a list of edges ordered by a specified ranking method. 
+
+The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_.
 
 Parameters
 ----------
@@ -45,6 +46,10 @@ Returns
 -------
 a_edges : geopandas.geodataframe.GeoDataFrame
     ordered geodataframe of all edges in street network
+
+References
+----------
+.. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
 
 """
     # check if user input is valid
