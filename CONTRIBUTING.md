@@ -118,6 +118,7 @@ git checkout -b feature/your-feature-name
 
 - All new features must include tests
 - Tests should be deterministic (no flaky tests)
+- Tests will run automatically on GitHub when a pull request is created, this is not meant to replace testing while in development. Do not use GitHub as a testing environment.
 
 
 ---
