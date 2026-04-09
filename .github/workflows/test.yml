@@ -85,6 +85,5 @@ jobs:
         run: pip install --no-build-isolation --no-deps -e .
 
       - name: "Run tests ${{ matrix.submodule.name }}"
-        if: matrix.python-version != '3.12' || matrix.os != 'ubuntu-latest'
         run: |
           pytest ${{ matrix.submodule.pytest_args }}
