@@ -9,25 +9,59 @@
 Source code for the project *GrowBikeNet*, building on [the code from the research paper](https://github.com/mszell/bikenwgrowth) *Growing Urban Bicycle Networks*.
 
 ## Installation
-To install and use the code, you need to have installed [JupyterLab](https://pypi.org/project/jupyterlab/).
+### Set up environment
+The main step is to set up a virtual environment `gbnenv` in which to install the package, and then to use or run the environment.
 
-First clone the repository:
+#### With Pixi
+Installation with [`Pixi`](https://pixi.prefix.dev/latest/) is fastest and most stable:
 
 ```
-git clone https://github.com/BikeNetKit/GrowBikeNet.git
+pixi init gbnenv
+pixi add --pypi growbikenet
 ```
 
-Go to the cloned folder and create a new virtual environment, see below. 
+At this point you can run growbikenet in the environment, for example as such:
 
-### Installation with pixi
+```
+pixi run python examples/mwe.py
+```
 
-Installation with [`pixi`](https://pixi.prefix.dev/latest/) is fastest and most stable. Setup a new virtual environment using the `environment.yml` file:
+> [!NOTE]  
+> The first time you run code with Pixi, it might take a minute longer, as Pixi resolves the environment's dependencies only at this point.
+
+*Alternatively*, or if you run into issues, [clone this repository](https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip) and create the environment via the [`environment.yml`](environment.yml) file:
 
 ```
 pixi init --import environment.yml
 ```
 
-Now build the environment and run it:
+#### With mamba/conda/pip
+Alternatively to Pixi, use [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) or [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html).
+
+<details><summary>Instructions</summary>
+
+```
+mamba create -n gbnenv -c conda-forge growbikenet
+mamba activate gbnenv
+```
+
+*Alternatively*, or if you run into issues, [clone this repository](https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip) and create the environment via the [`environment.yml`](environment.yml) file:
+
+```
+mamba env create --file environment.yml
+mamba activate gbnenv
+pip install growbikenet
+```
+> [!NOTE]  
+> While pip can install growbikenet, it is not officially supported due to potential issues with C dependencies needed for OSMnx. If unsure, use only mamba/conda as instructed above to avoid problems.
+</details>
+
+### Run growbikenet in Jupyter lab
+
+After having set up the environment above, if you wish to run growbikenet via [JupyterLab](https://pypi.org/project/jupyterlab/), follow the 
+<details><summary>Instructions</summary>
+#### With Pixi
+Running growbikenet in Jupter lab with [`Pixi`](https://pixi.prefix.dev/latest/) is straightforward:
 
 ```
 pixi run jupyter lab
@@ -35,33 +69,35 @@ pixi run jupyter lab
 
 An instance of Jupyter lab is automatically going to open in your browser after the environment is built.
 
-### Installation with pip/mamba/conda
-
-Alternatively, use pip, or [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) (or `conda`, which is slower).
-
-<details><summary>Instructions</summary>
-
-You can either create a new virtual environment then install the necessary dependencies with `pip` using the `requirements.txt` file:
+#### With mamba/conda
+Using mamba/conda, run:
 
 ```
-pip install -r requirements.txt
-```
-
-Or create a new environment with the dependencies with `conda` or [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) using the `environment.yml` file:
-
-```
-mamba env create -f environment.yml
-```
-Then, install the virtual environment's kernel in Jupyter:
-
-```
-mamba activate growbikenet
-ipython kernel install --user --name=growbikenet
+mamba activate gbnenv
+ipython kernel install --user --name=gbnenv
 mamba deactivate
+jupyter lab
 ```
+Once Jupyter lab opens, switch the kernel (Kernel > Change Kernel > gbnenv)
 
-You can now run `jupyter lab` with kernel `growbikenet` (Kernel > Change Kernel > growbikenet).
+#### With pip
+Using pip, run:
+
+```
+pip install --user ipykernel
+python -m ipykernel install --user --name=gbnenv
+jupyter lab
+```
+Once Jupyter lab opens, switch the kernel (Kernel > Change Kernel > gbnenv)
 </details>
+
+## Usage
+
+We provide a minimum working example in two formats:
+
+* Python script ([examples/mwe.py](examples/mwe.py))
+* Jupyter notebook ([examples/mwe.ipynb](examples/mwe.ipynb))
+
 
 ## Repository structure
 
