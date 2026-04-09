@@ -14,7 +14,7 @@ permissions:
 jobs:
   publish:
     name: Publish to PyPI
-    if: {{ github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'autorelease: tagged') }}
+    if: ${{ github.event.pull_request.merged && contains(github.event.pull_request.labels.*.name, 'autorelease: tagged') }}
     runs-on: ubuntu-latest
     environment:
       name: pypi
