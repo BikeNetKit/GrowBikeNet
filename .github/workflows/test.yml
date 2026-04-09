@@ -21,7 +21,7 @@ jobs:
   caching:
     strategy:
       matrix:
-        python-version: [ "3.10", "3.11", "3.12" ]
+        python-version: ["3.12"]
         os: [ ubuntu-latest ]
       fail-fast: false
     env:
@@ -51,7 +51,7 @@ jobs:
     needs: caching
     strategy:
       matrix:
-        python-version: [ "3.10", "3.11", "3.12" ]
+        python-version: ["3.12"]
         os: [ ubuntu-latest ]
         submodule:
           - {
