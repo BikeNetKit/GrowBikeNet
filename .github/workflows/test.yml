@@ -1,0 +1,90 @@
+name: Test
+
+on:
+  push:
+    branches: # on all branches except `typos`
+      - '**'
+      - '!typos'
+    paths-ignore:
+      - 'docs/**'
+      - 'examples/**'
+      - 'data/**'
+      - '.git*'
+      - 'README.md'
+  pull_request:
+    branches:
+      - '**'
+  schedule: # Every Monday at 04:00 UTC
+    - cron: '0 4 * * 1'
+
+jobs:
+  caching:
+    strategy:
+      matrix:
+        python-version: [ "3.10", "3.11", "3.12" ]
+        os: [ ubuntu-latest ]
+      fail-fast: false
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+    defaults:
+      run:
+        shell: bash -elo pipefail {0}
+
+    name: Cache for ${{ matrix.python-version }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get week number
+        run: echo "WEEK=$(date +'%V')" >> $GITHUB_ENV
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          create-args: python=${{ matrix.python-version }}
+          environment-file: environment-dev.yml
+          cache-environment: true
+          cache-environment-key: W${{ env.WEEK }}
+
+  run-tests:
+    needs: caching
+    strategy:
+      matrix:
+        python-version: [ "3.10", "3.11", "3.12" ]
+        os: [ ubuntu-latest ]
+        submodule:
+          - {
+            name: "Functions",
+            pytest_args: "tests/test_functions.py" }
+          - { name: "Main", pytest_args: "tests/test_main.py" }
+      fail-fast: false
+
+    name: ${{ matrix.submodule.name }} (${{ matrix.python-version }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get week number
+        run: echo "WEEK=$(date +'%V')" >> $GITHUB_ENV
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          create-args: python=${{ matrix.python-version }}
+          environment-file: environment-dev.yml
+          cache-environment: true
+          cache-environment-key: W${{ env.WEEK }}
+
+      - name: Install growbikenet
+        run: pip install --no-build-isolation --no-deps -e .
+
+      - name: "Run tests ${{ matrix.submodule.name }}"
+        if: matrix.python-version != '3.12' || matrix.os != 'ubuntu-latest'
+        run: |
+          pytest ${{ matrix.submodule.pytest_args }}
