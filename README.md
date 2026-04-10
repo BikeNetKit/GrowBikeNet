@@ -52,8 +52,6 @@ mamba env create --file environment.yml
 mamba activate gbnenv
 pip install growbikenet
 ```
-> [!NOTE]  
-> While pip can install growbikenet, it is not officially supported due to potential issues with C dependencies needed for OSMnx. If unsure, use only mamba/conda as instructed above to avoid problems.
 </details>
 
 ### Run growbikenet in Jupyter lab
@@ -91,6 +89,14 @@ jupyter lab
 Once Jupyter lab opens, switch the kernel (Kernel > Change Kernel > gbnenv)
 </details>
 
+## Development installation
+If you want to develop the project, [clone this repository](https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip) and create the environment via the [`environment-dev.yml`](environment-dev.yml) file:
+
+```
+pixi init --import environment-dev.yml
+```
+Make sure to also read [our contribution guidelines](CONTRIBUTING.md).
+
 ## Usage
 
 We provide a minimum working example in two formats:
@@ -103,7 +109,7 @@ We provide a minimum working example in two formats:
 
 ```
 ├── growbikenet             <- Packaged functions and visualizations
-├── tests                   <- tests to execute to ensure functionality
+├── tests                   <- Tests to execute to ensure functionality
 ├── .gitignore              <- Files and folders ignored by git
 ├── .pre-commit-config.yaml <- Pre-commit hooks used
 ├── README.md
