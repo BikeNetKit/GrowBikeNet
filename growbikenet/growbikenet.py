@@ -94,6 +94,7 @@ References
     print("Downloading OSM data..")
 
     nodes, edges = prepare_network(city_name, proj_crs, network_type='all')
+    
     if existing_network_spacing:
         cf = ['["cycleway"~"track"]',
               '["highway"~"cycleway"]',
@@ -123,8 +124,9 @@ References
 
     if existing_network_spacing:
         # If the existing bicycle network is used, create extra seed points on it.
+        seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
         # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
-        seed_points_exnw = get_existing_network_seed_points(edges, existing_network_spacing) # to implement
+        # to do
         
 
     # Snap seed points to OSM nodes

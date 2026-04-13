@@ -70,7 +70,7 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
     fill_edge_geometry=True
     )
 
-    # Save "original" graph data (in orig_crs), for debugging purposes
+    # Save "original" graph data (in orig_crs). Uncomment for debugging purposes
     # nodes.to_file("nodes.gpkg", driver='GPKG')
     # edges.to_file("edges.gpkg", driver='GPKG')
     
@@ -113,7 +113,44 @@ def get_correct_edgetuples(edge_gdf, nodelist):
     return edgelist_final
 
 
+def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
+    """Get seed points on an existing bicycle network
+
+    Start with the first (arbitrary) node from nodes_exnw. Then, for each node: delete all other nodes closer than existing_network_spacing, proceed with the closest of the remaining nodes. Finish once all nodes are found or deleted.
     
+    Parameters
+    ----------
+    nodes_exnw: geopandas.geodataframe.GeoDataFrame
+        Nodes of the existing bicycle network, in a projected coordinate reference system.
+    existing_network_spacing: int
+        Distance between seed points, in meters.
+
+    Returns
+    -------
+    seed_points_exnw: geopandas.geodataframe.GeoDataFrame
+        Seed points, already part of the network, in the same projected coordinate reference system as edges
+    """
+    # Start with the first (arbitrary) node from nodes_exnw
+    node_current = nodes_exnw.iloc[[0]]
+    
+    seed_points_exnw = gpd.GeoDataFrame()
+    while len(node_current)>0 and len(nodes_exnw)>1:
+        # Find all too close nodes to the current nodes
+        nodes_too_close = nodes_exnw.loc[(nodes_exnw.geometry.distance(Point(node_current.iloc[0].geometry)) <= existing_network_spacing)]
+        nodes_too_close = nodes_too_close.iloc[:, :-1] # osmid is there twice now (once in the end), so it needs to be dropped
+        
+        # Delete the nodes that are too close to nodes_exnw
+        nodes_exnw = nodes_exnw.overlay(nodes_too_close, how='difference')
+        
+        # Add current node to seed_points_exnw
+        seed_points_exnw = pd.concat([seed_points_exnw, node_current], ignore_index=True)
+        
+        # Find the node in nodes_exnw that is closest to the existing seed points
+        node_current = seed_points_exnw.sjoin_nearest(nodes_exnw, how="inner") 
+        node_current = nodes_exnw[nodes_exnw.osmid == node_current["osmid_right"].values[0]]
+    
+    return seed_points_exnw
+
 def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing
 
