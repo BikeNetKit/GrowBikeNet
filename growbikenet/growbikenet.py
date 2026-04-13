@@ -93,36 +93,19 @@ References
     ### Download and preprocess data from OSM
     print("Downloading OSM data..")
 
-    # Fetch street network data from osmnx
-    g = ox.graph_from_place(
-    city_name, network_type='all'
-    )
-    g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
+    nodes, edges = prepare_network(city_name, proj_crs, network_type='all')
+    if existing_network_spacing:
+        cf = ['["cycleway"~"track"]',
+              '["highway"~"cycleway"]',
+              '["highway"~"path"]["bicycle"~"designated"]',
+              '["cycleway:right"~"track"]',
+              '["cycleway:left"~"track"]',
+              '["cyclestreet"]',
+              '["highway"~"living_street"]'
+             ]
+        nodes_exnw,_ = prepare_network(city_name, proj_crs, custom_filter=cf)
 
-    # Export osmnx data to gdfs
-    nodes, edges = ox.graph_to_gdfs(
-    g_undir,
-    nodes=True,
-    edges=True,
-    node_geometry=True,
-    fill_edge_geometry=True
-    )
-
-    # # save "original" graph data (in orig_crs)
-    # nodes.to_file("nodes.gpkg", driver='GPKG')
-    # edges.to_file("edges.gpkg", driver='GPKG')
-
-    # Replace after dropping edges with key = 1
-    edges = edges.loc[:,:,0].copy()
-    # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
-
-    # Project geometries of nodes, edges, seed points
-    edges = edges.to_crs(proj_crs)
-    nodes = nodes.to_crs(proj_crs)
-
-    # Add osm ID as column to node gdf
-    nodes["osmid"] = nodes.index
-
+    
     ### Create seed points
     print("Creating " + seed_point_type + " seed points..")
 
@@ -137,6 +120,12 @@ References
         seed_points = ox.features_from_place(city_name, {'railway':['station','halt']})
         seed_points = seed_points[seed_points['geometry'].type == "Point"]
         seed_points.to_crs(edges.crs, inplace=True)
+
+    if existing_network_spacing:
+        # If the existing bicycle network is used, create extra seed points on it.
+        # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
+        seed_points_exnw = get_existing_network_seed_points(edges, existing_network_spacing) # to implement
+        
 
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)

@@ -29,6 +29,63 @@ def intersects_properly(geom1, geom2):
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
 
+def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None):
+    """Download and prepare a street network from OSM via OSMnx
+
+    Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
+    Then, stores the undirected OSM data in gdfs and projects using proj_crs.
+
+    Parameters
+    ----------
+    city_name : str
+        Name of the city that the analysis should be performed on.
+    proj_crs : str, default '3857'
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+    network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”} 
+        What type of street network to retrieve if custom_filter is None.
+    custom_filter : (str | list[str] | None)
+        A custom ways filter to be used instead of the network_type presets
+
+    Returns
+    -------
+    nodes: geopandas.geodataframe.GeoDataFrame
+        Extracted OSM nodes, projected
+    edges: geopandas.geodataframe.GeoDataFrame
+        Extracted OSM edges, projected
+    """
+    # Fetch street network data from osmnx
+    if custom_filter:
+        ox.settings.useful_tags_way.extend(custom_filter)
+    g = ox.graph_from_place(
+    city_name, network_type=network_type, custom_filter=custom_filter
+    )
+    g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
+
+    # Export osmnx data to gdfs
+    nodes, edges = ox.graph_to_gdfs(
+    g_undir,
+    nodes=True,
+    edges=True,
+    node_geometry=True,
+    fill_edge_geometry=True
+    )
+
+    # Save "original" graph data (in orig_crs), for debugging purposes
+    # nodes.to_file("nodes.gpkg", driver='GPKG')
+    # edges.to_file("edges.gpkg", driver='GPKG')
+    
+    # Replace after dropping edges with key = 1
+    edges = edges.loc[:,:,0].copy()
+    # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
+
+    # Project geometries of nodes, edges, seed points
+    edges = edges.to_crs(proj_crs)
+    nodes = nodes.to_crs(proj_crs)
+
+    # Add osm ID as column to node gdf
+    nodes["osmid"] = nodes.index
+    return nodes, edges
+
 def get_correct_edgetuples(edge_gdf, nodelist):
     """
     helper function that maps a node list (output of nx.shortest_paths)
@@ -56,6 +113,7 @@ def get_correct_edgetuples(edge_gdf, nodelist):
     return edgelist_final
 
 
+    
 def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing
 
