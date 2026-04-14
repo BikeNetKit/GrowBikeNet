@@ -64,17 +64,33 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     # Export osmnx data to gdfs
+    nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
+    return nodes, edges, g_undir
+
+def nx_to_nodes_edges(G, proj_crs='3857'):
+    """Get nodes and projected edges from networkX graph
+
+    Parameters
+    ----------
+    G : networkx.classes.multigraph.MultiGraph
+        networkX graph, undirected
+    proj_crs : str, default '3857'
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+
+    Returns
+    -------
+    nodes : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM nodes, projected, osmid is index
+    edges : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM edges, projected
+    """
     nodes, edges = ox.graph_to_gdfs(
-    g_undir,
+    G,
     nodes=True,
     edges=True,
     node_geometry=True,
     fill_edge_geometry=True
     )
-
-    # Save "original" graph data (in orig_crs). Uncomment for debugging purposes
-    # nodes.to_file("nodes.gpkg", driver='GPKG')
-    # edges.to_file("edges.gpkg", driver='GPKG')
     
     # Replace after dropping edges with key = 1
     edges = edges.loc[:,:,0].copy()
@@ -86,11 +102,11 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
 
     # Add osm ID as column to node gdf
     nodes["osmid"] = nodes.index
-    return nodes, edges, g_undir
-
+    return nodes, edges
+    
 def get_correct_edgetuples(edge_gdf, nodelist):
     """
-    helper function that maps a node list (output of nx.shortest_paths)
+    Helper function that maps a node list (output of nx.shortest_paths)
     to the correct set of edge tuples that can be used for INDEXING THE EDGE GDF
 
     Parameters
@@ -118,7 +134,7 @@ def get_correct_edgetuples(edge_gdf, nodelist):
 def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     """Get seed points on an existing bicycle network
 
-    Start with the first (arbitrary) node from nodes_exnw. Then, for each node: delete all other nodes closer than existing_network_spacing, proceed with the closest of the remaining nodes. Finish once all nodes are found or deleted.
+    Start with the first (arbitrary) node from nodes_exnw. Then, for each node: Delete all other nodes closer than existing_network_spacing, proceed with the closest of the remaining nodes. Finish once all nodes are found or deleted.
     
     Parameters
     ----------

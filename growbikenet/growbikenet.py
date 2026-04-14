@@ -106,24 +106,7 @@ References
              ]
         nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf)
         g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
-
-        # Put the following into a function, to be used also within prepare_network()
-        # -----
-        _, edges = ox.graph_to_gdfs(
-        g_undir,
-        nodes=True,
-        edges=True,
-        node_geometry=True,
-        fill_edge_geometry=True
-        )
-        
-        # Replace after dropping edges with key = 1
-        edges = edges.loc[:,:,0].copy()
-        # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
-    
-        # Project geometries of nodes, edges, seed points
-        edges = edges.to_crs(proj_crs)
-        # -----
+        _, edges = nx_to_nodes_edges(g_undir, proj_crs)
 
     
     ### Create seed points
@@ -160,11 +143,12 @@ References
 
         # Merge original snapped points with new existing network points (=already snapped)
         seed_points_snapped = seed_points_snapped.overlay(seed_points_exnw, how='union')
+        # seed_points_snapped.to_file(seed_points_snapped, driver="GPKG")
         
         # Bring back to original form (pandas df, columns, osmid index)
         # This is a bit of a mess but it works. Simplify it in the future.
         seed_points_snapped = pd.DataFrame(seed_points_snapped)
-        seed_points_snapped.loc[seed_points_snapped['osmid_1'].isnull(), 'osmid_1'] = seed_points_snapped['osmid_2']
+        seed_points_snapped.loc[seed_points_snapped['osmid_1'].isnull(), 'osmid_1'] = seed_points_snapped['osmid_2'] # _1 comes from one side, _2 from the other. One has NaNs, the other too. https://stackoverflow.com/a/60132614
         seed_points_snapped.drop(["y","x","street_count", "highway", "osmid_2"], axis=1, inplace=True)
         seed_points_snapped.rename(columns={"osmid_1": "osmid"}, inplace=True)
         seed_points_snapped.set_index("osmid", drop=False, inplace=True)
