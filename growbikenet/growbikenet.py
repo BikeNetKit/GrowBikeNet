@@ -93,7 +93,7 @@ References
     ### Download and preprocess data from OSM
     print("Downloading OSM data..")
 
-    nodes, edges = prepare_network(city_name, proj_crs, network_type='all')
+    nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public')
     
     if existing_network_spacing:
         cf = ['["cycleway"~"track"]',
@@ -104,7 +104,26 @@ References
               '["cyclestreet"]',
               '["highway"~"living_street"]'
              ]
-        nodes_exnw,_ = prepare_network(city_name, proj_crs, custom_filter=cf)
+        nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf)
+        g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
+
+        # Put the following into a function, to be used also within prepare_network()
+        # -----
+        _, edges = ox.graph_to_gdfs(
+        g_undir,
+        nodes=True,
+        edges=True,
+        node_geometry=True,
+        fill_edge_geometry=True
+        )
+        
+        # Replace after dropping edges with key = 1
+        edges = edges.loc[:,:,0].copy()
+        # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
+    
+        # Project geometries of nodes, edges, seed points
+        edges = edges.to_crs(proj_crs)
+        # -----
 
     
     ### Create seed points
@@ -122,18 +141,36 @@ References
         seed_points = seed_points[seed_points['geometry'].type == "Point"]
         seed_points.to_crs(edges.crs, inplace=True)
 
-    if existing_network_spacing:
-        # If the existing bicycle network is used, create extra seed points on it.
-        seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
-        # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
-        # to do
-        
-
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
     seed_points_snapped = filter_seed_points(seed_points_snapped, seed_point_delta)
+    
+    if existing_network_spacing:
+        # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
+        seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
+        seed_points_exnw.to_crs(edges.crs, inplace=True)
+        
+        # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
+        buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing))
+        buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
+        buffer_seed_points_exnw.to_crs(edges.crs, inplace=True)
+        
+        # Delete the seed points that are too close to seed_points_exnw via its buffer
+        seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
 
-    # Abort if only 0 or 1 seed points
+        # Merge original snapped points with new existing network points (=already snapped)
+        seed_points_snapped = seed_points_snapped.overlay(seed_points_exnw, how='union')
+        
+        # Bring back to original form (pandas df, columns, osmid index)
+        # This is a bit of a mess but it works. Simplify it in the future.
+        seed_points_snapped = pd.DataFrame(seed_points_snapped)
+        seed_points_snapped.loc[seed_points_snapped['osmid_1'].isnull(), 'osmid_1'] = seed_points_snapped['osmid_2']
+        seed_points_snapped.drop(["y","x","street_count", "highway", "osmid_2"], axis=1, inplace=True)
+        seed_points_snapped.rename(columns={"osmid_1": "osmid"}, inplace=True)
+        seed_points_snapped.set_index("osmid", drop=False, inplace=True)
+
+
+    # Abort if we have only 0 or 1 seed points
     if len(seed_points_snapped) < 2:
         raise RuntimeError("Found less than 2 seed points")
     

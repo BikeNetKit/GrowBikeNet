@@ -48,10 +48,12 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
 
     Returns
     -------
-    nodes: geopandas.geodataframe.GeoDataFrame
+    nodes : geopandas.geodataframe.GeoDataFrame
         Extracted OSM nodes, projected
-    edges: geopandas.geodataframe.GeoDataFrame
+    edges : geopandas.geodataframe.GeoDataFrame
         Extracted OSM edges, projected
+    g_undir : networkx.classes.multigraph.MultiGraph
+        Extracted networkX graph, undirected
     """
     # Fetch street network data from osmnx
     if custom_filter:
@@ -84,7 +86,7 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
 
     # Add osm ID as column to node gdf
     nodes["osmid"] = nodes.index
-    return nodes, edges
+    return nodes, edges, g_undir
 
 def get_correct_edgetuples(edge_gdf, nodelist):
     """
