@@ -104,6 +104,9 @@ References
               '["cyclestreet"]',
               '["highway"~"living_street"]'
              ]
+        for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cyclestreet"]:
+            if custom_tag not in ox.settings.useful_tags_way:
+                ox.settings.useful_tags_way.extend(custom_tag)
         nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf)
         g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
         _, edges = nx_to_nodes_edges(g_undir, proj_crs)

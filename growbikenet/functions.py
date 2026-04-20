@@ -56,8 +56,6 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
         Extracted networkX graph, undirected
     """
     # Fetch street network data from osmnx
-    if custom_filter:
-        ox.settings.useful_tags_way.extend(custom_filter)
     g = ox.graph_from_place(
     city_name, network_type=network_type, custom_filter=custom_filter
     )
