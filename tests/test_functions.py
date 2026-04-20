@@ -101,6 +101,33 @@ def create_validation_grid():
     grid = gpd.read_file("./tests/test_data/oelde_grid.gpkg")
     return grid
 
-def test_get_grid_seed_points(create_validation_grid,create_validation_streets):
+def test_get_grid_seed_points(create_validation_grid, create_validation_streets):
     edges = ox.convert.graph_to_gdfs(create_validation_streets, nodes=False, edges=True, node_geometry=False, fill_edge_geometry=False)
     create_validation_grid.equals(get_grid_seed_points(edges, 1707, 65.0))
+
+
+# TO DO. The code below is not working yet
+# # get_existing_network_seed_points
+# @pytest.fixture
+# def define_existing_network_spacing():
+#     return 500
+    
+# @pytest.fixture
+# def create_existing_network_nodes():
+#     d = {'osmid': ['1', '2', '3', '4', '5'], 'geometry': [Point(1000, 1000), Point(2000, 2000), Point(3000, 3000), Point(3100, 3100), Point(3200, 3200)]}
+#     gdf = gpd.GeoDataFrame(d, geometry='geometry', crs='EPSG:3857')
+#     gdf = gdf.set_index('osmid')
+#     gdf['osmid'] = gdf.index
+#     return gdf
+
+# @pytest.fixture
+# def create_existing_network_seed_points():
+#     d = {'osmid': ['1', '2', '3'], 'geometry': [Point(1000, 1000), Point(2000, 2000), Point(3000, 3000)]}
+#     gdf = gpd.GeoDataFrame(d, geometry = 'geometry', crs='EPSG:3857')
+#     gdf = gdf.set_index('osmid')
+#     gdf['osmid'] = gdf.index
+#     return gdf
+    
+# def test_get_existing_network_seed_points(define_existing_network_spacing, create_existing_network_nodes, create_existing_network_seed_points):
+#     assert_frame_equal(get_existing_network_seed_points(create_existing_network_nodes, define_existing_network_spacing), create_existing_network_seed_points, check_dtype=False)
+    
