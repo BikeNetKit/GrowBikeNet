@@ -57,7 +57,7 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
     """
     # Fetch street network data from osmnx
     g = ox.graph_from_place(
-    city_name, network_type=network_type, custom_filter=custom_filter
+    city_name, network_type=network_type, custom_filter=custom_filter, retain_all=True
     )
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
