@@ -7,5 +7,5 @@ def create_validation_gdf():
     return gdf
 
 def test_growbikenet(create_validation_gdf):
-    create_validation_gdf.equals(growbikenet(city_name="Oelde", proj_crs='3857', ranking='betweenness_centrality', export_data=False, export_plots=False,
+    create_validation_gdf.equals(growbikenet(city_name="Oelde", proj_crs='3857', ranking='all', export_data=False, export_plots=False,
                            export_video=False))

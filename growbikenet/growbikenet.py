@@ -28,7 +28,7 @@ city_name : str
 proj_crs : str, default '3857'
     coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator)
 ranking : str, default 'betweenness_centrality'
-    method used to rank edges. Must be 'betweenness_centrality' (default) or 'closeness_centrality'
+    Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'all'. If 'all', will also add a random ranking.
 seed_point_type : str, optional, default 'grid'
     if set to 'grid', creates a square grid
     if set to 'rail', uses rail stations
@@ -62,8 +62,8 @@ References
         raise TypeError("proj_crs must be a string")
     if type(ranking) != str:
         raise TypeError("ranking must be a string")
-    if ranking != 'betweenness_centrality' and ranking != 'closeness_centrality':
-        raise ValueError("ranking must be 'betweenness_centrality' or 'closeness_centrality'")
+    if ranking not in ['betweenness_centrality', 'closeness_centrality', 'all']:
+        raise ValueError("ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'all'")
     if seed_point_type != 'grid' and seed_point_type != 'rail':
         raise ValueError("seed_point_type must be 'grid' or 'rail'")
     if seed_point_type == 'grid' and type(seed_point_grid_spacing) != int:
@@ -81,7 +81,8 @@ References
     if type(export_video) != bool:
         raise TypeError("export_video must be a boolean")
 
-
+    np.random.seed(42) # Set random number generator seed for reproducibility
+    
     ### downloading and preprocessing data from OSM
     print("Downloading OSM data..")
 
@@ -170,22 +171,20 @@ References
 
     ### compute edge attributes
     print("Computing edge attributes..")
-
-    if ranking == 'betweenness_centrality':
+    # metric_dict = 
+    if ranking == 'betweenness_centrality' or ranking == 'all':
         # add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(A, weight='distance', normalized=True)
         nx.set_edge_attributes(A, bc_values, name='betweenness_centrality')
-
-    elif ranking == 'closeness_centrality':
+    if ranking == 'closeness_centrality' or ranking == 'all':
         # add closeness attributes to nodes and edges
         cc_values_nodes = nx.closeness_centrality(A, distance='distance')
         nx.set_node_attributes(A, cc_values_nodes, name='closeness_centrality')
-
         cc_values = node_to_edge_attributes(cc_values_nodes, A.edges)
         nx.set_edge_attributes(A, cc_values, name='closeness_centrality')
 
     # export attributes to gdfs:
-
+    
     # create dataframe and add method as edge attribute
     a_edges = df_from_graph(A, ranking)
 

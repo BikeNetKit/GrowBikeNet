@@ -342,14 +342,14 @@ def create_delaunay_edges(nodes_gdf):
 
 
 def df_from_graph(A, method):
-    """
-    create a dataframe from an input graph
+    """Create a dataframe from an input graph
+    
     Parameters
     ----------
     A: networkx.graph
-        graph created from triangulation edge list
-    method: string
-        Method choosen by user for sorting, for example betweenness centrality
+        Graph created from triangulation edge list
+    method: str
+        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'all'. If 'all', will also add a random ranking.
 
     Returns
     -------
@@ -357,18 +357,33 @@ def df_from_graph(A, method):
         Dataframe with source and target information for each edge, as well as edge attributes as columns
     """
 
-    attrs = {
-        edge: {
-            method: data.get(method),
-            "geometry": data.get("geometry"),
+    if method == 'all':
+        attrs = {
+            edge: {
+                "betweenness_centrality": data.get("betweenness_centrality"),
+                "closeness_centrality": data.get("closeness_centrality"),
+                "geometry": data.get("geometry"),
+            }
+            for edge, data in A.edges.items()
         }
-        for edge, data in A.edges.items()
-    }
-    df = pd.DataFrame.from_dict(
-        attrs,
-        orient="index",
-        columns=[method, 'geometry']
-    )
+        df = pd.DataFrame.from_dict(
+            attrs,
+            orient="index",
+            columns=['betweenness_centrality', 'closeness_centrality', 'geometry']
+        )
+    else:
+        attrs = {
+            edge: {
+                method: data.get(method),
+                "geometry": data.get("geometry"),
+            }
+            for edge, data in A.edges.items()
+        }
+        df = pd.DataFrame.from_dict(
+            attrs,
+            orient="index",
+            columns=[method, 'geometry']
+        )
     df["node_tuple"] = df.index
     df["source"] = [t[0] for t in df.node_tuple]
     df["target"] = [t[1] for t in df.node_tuple]
@@ -377,23 +392,30 @@ def df_from_graph(A, method):
 
 
 def rank_df(df, method):
-    """
-    rank df by specified sorting method
+    """Rank dataframe by specified method
+    
     Parameters
     ----------
     df: pandas.DataFrame
         Dataframe with source and target information for each edge, as well as edge attributes as columns
-    method: string
-        Method choosen by user for sorting, for example betweenness centrality
+    method: str
+        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'all'. If 'all', will also add a random ranking.
 
     Results
     -------
     df: pandas.DataFrame
-        Dataframe sorted by specified sorting method
+        Dataframe sorted by specified ranking method.
     """
-    df = df.sort_values(by=method, ascending=False)
-    df.reset_index(drop=True, inplace=True)
-    df["ordering"] = df.index  # ranking is simply the order of appearance in the betweenness ranking
+    if method=='all':
+        for m in ['betweenness_centrality', 'closeness_centrality']:
+            df = df.sort_values(by=m, ascending=False)
+            df.reset_index(drop=True, inplace=True)
+            df["ordering_"+m] = df.index  # ranking is the order of appearance in the method's ranking
+        df["ordering_random"] = np.random.permutation(np.arange(df.shape[0]))
+    else:
+        df = df.sort_values(by=method, ascending=False)
+        df.reset_index(drop=True, inplace=True)
+        df["ordering_"+method] = df.index  # ranking is the order of appearance in the method's ranking
     return df
 
 
