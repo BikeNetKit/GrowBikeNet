@@ -18,6 +18,8 @@ def growbikenet(
     """Creates a list of edges ordered by a specified ranking method. 
 
 The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_.
+Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results.
+Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
 
 Parameters
 ----------
@@ -138,6 +140,7 @@ References
     
 
     ### running greedy triangulation
+    # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
     print("Greedy triangulation..")
 
     # create df with delaunay edges
