@@ -283,8 +283,10 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
 
 
 def create_delaunay_edges(nodes_gdf):
-    """
-    create df with edges that are part of delaunay triangulation
+    """Create df with edges that are part of Delaunay triangulation
+
+    Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results.
+    
     Parameters
     ----------
     nodes_gdf: geopandas.geodataframe.GeoDataFrame
@@ -294,6 +296,10 @@ def create_delaunay_edges(nodes_gdf):
     -------
     df : pandas.DataFrame
         DataFrame with Edge pairs and singled out source and target nodes
+
+    References
+    ----------
+    .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
     """
     # Ensure projected CRS
     if nodes_gdf.crs.is_geographic:
