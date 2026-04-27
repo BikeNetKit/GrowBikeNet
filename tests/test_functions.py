@@ -1,4 +1,5 @@
 import pytest
+import osmnx as ox
 from pandas.testing import assert_frame_equal
 from growbikenet.functions import *
 
@@ -49,41 +50,11 @@ def create_filtered_seed_points():
     gdf = gpd.GeoDataFrame(d, geometry = 'geometry', crs='EPSG:3857')
     gdf = gdf.set_index('osmid')
     gdf['osmid'] = gdf.index
+    gdf = gdf.iloc[:, [1,0]]
     return gdf
 
 def test_filter_seed_points(create_snapped_seed_points, create_filtered_seed_points, define_seed_point_delta):
     assert_frame_equal(filter_seed_points(create_snapped_seed_points, define_seed_point_delta), create_filtered_seed_points, check_dtype=False)
-
-@pytest.fixture
-def create_validation_triangulation():
-    linestring = LineString([Point(1001,1001), Point(3001, 3001)])
-    pair = '1', '3'
-    d = {'pair': [list(pair)], 'potential_edge': [linestring], 'dist': [linestring.length]}
-    df = pd.DataFrame(d)
-    return df
-
-def test_create_potential_triangulation(create_validation_triangulation, create_filtered_seed_points):
-    assert_frame_equal(create_potential_triangulation(create_filtered_seed_points), create_validation_triangulation, check_dtype=False)
-
-@pytest.fixture
-def create_unfiltered_triangulation():
-    linestring_1_3 = LineString([Point(1001, 1001), Point(3001, 3001)])
-    linestring_1_2 = LineString([Point(1001, 1001), Point(3001, 2001)])
-    linestring_2_3 = LineString([Point(3001, 2001), Point(3001, 3001)])
-    linestring_2_4 = LineString([Point(3001, 2001), Point(1001, 3001)])
-    d = {'pair': [['1', '3'], ['1', '2'], ['2', '3'], ['2', '4']],
-         'potential_edge': [linestring_1_3, linestring_1_2, linestring_2_3, linestring_2_4],
-         'dist': [linestring_1_3.length, linestring_1_2.length, linestring_2_3.length, linestring_2_4.length]}
-    df = pd.DataFrame(d)
-    return df
-
-@pytest.fixture
-def create_validation_filtered_triangulation():
-    edge_list = [['1','3'],['1','2'], ['2','3']]
-    return edge_list
-
-def test_filter_triangulation(create_unfiltered_triangulation, create_validation_filtered_triangulation):
-    assert filter_triangulation(create_unfiltered_triangulation) == create_validation_filtered_triangulation
 
 
 @pytest.fixture

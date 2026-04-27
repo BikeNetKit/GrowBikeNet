@@ -335,69 +335,6 @@ def create_delaunay_edges(nodes_gdf):
     return df
 
 
-def create_potential_triangulation(seed_points_snapped):
-    """
-    create df with all potential edges in triangulation, ordered by length
-    Parameters
-    ----------
-    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-        seed points with osmid and corresponding point geometry
-
-    Returns
-    -------
-    df: pandas.DataFrame
-        Dataframe with egde pairs, edge geometries and distance of potential triangulation
-    """
-    pairs = []
-    potential_edges = []
-    distances = []
-
-    for pair in combinations(seed_points_snapped["osmid"], 2):
-        edge = LineString(seed_points_snapped.loc[list(pair)].geometry)
-
-        pairs.append(pair)
-        potential_edges.append(edge)
-        distances.append(edge.length)
-
-    df = pd.DataFrame(
-        {
-            "pair": pairs,
-            "potential_edge": potential_edges,
-            "dist": distances
-        }
-    )
-
-    df = df.sort_values(by="dist", ascending=True).reset_index(drop=True)
-    df = df[df["dist"] > 0].reset_index(drop=True)  # only keep distances > 0
-    return df
-
-
-def filter_triangulation(df):
-    """
-    filter edges that intersect with existing edges
-    iterate through all potential edges; if they do not intersect with existing edges add to multilinestring
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Dataframe with edge pairs, edge geometries and distance of potential triangulation
-
-    Returns
-    -------
-    edge_list: list
-        List of edge pairs that are part of the final triangulation
-    """
-    current_edges = MultiLineString()
-    edge_list = []
-
-    for i, row in df.iterrows():
-        new_edge = row.potential_edge
-        pair = row.pair
-        if not intersects_properly(current_edges, new_edge):
-            current_edges = MultiLineString([linestring for linestring in current_edges.geoms] + [new_edge])
-            edge_list.append(pair)
-    return edge_list
-
-
 def df_from_graph(A, method):
     """
     create a dataframe from an input graph
