@@ -1,4 +1,5 @@
 import osmnx as ox
+from slugify import slugify
 from growbikenet.functions import *
 from growbikenet.visualizations import *
 
@@ -139,28 +140,42 @@ References
     ### running greedy triangulation
     print("Greedy triangulation..")
 
-    # create df with all potential edges in triangulation
-    df = create_potential_triangulation(seed_points_snapped)
+    # create df with delaunay edges
+    df = create_delaunay_edges(seed_points_snapped)
 
-    # filter edges that intersect with existing edges
-    edge_list = filter_triangulation(df)
+    # map each abstract edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
+    df = add_path_to_df(df, edges, g_undir)
+
+    # get "routed" geometry (LineString) for each abstract edge (row)
+    print("Routing..")
+    gdf = create_gdf_with_geoms(df, edges)
+
+    # add distances between source and target from geometry
+    gdf['dist'] = gdf['geometry'].length
+
+    edge_list = gdf['pair']
+    dist_list = gdf['dist']
+    dist_dict = dict(zip(edge_list, dist_list))
+    geom_dict = dict(zip(edge_list, gdf['geometry'].tolist()))
 
     # make graph object from edge list
     A = nx.Graph()
     A.add_nodes_from(seed_points_snapped.index)
     A.add_edges_from(edge_list)
+    nx.set_edge_attributes(A, dist_dict, 'distance')
+    nx.set_edge_attributes(A, geom_dict, 'geometry')
 
     ### compute edge attributes
     print("Computing edge attributes..")
 
     if ranking == 'betweenness_centrality':
         # add betweenness attributes to edges
-        bc_values = nx.edge_betweenness_centrality(A, normalized=True)
+        bc_values = nx.edge_betweenness_centrality(A, weight='distance', normalized=True)
         nx.set_edge_attributes(A, bc_values, name='betweenness_centrality')
 
     elif ranking == 'closeness_centrality':
         # add closeness attributes to nodes and edges
-        cc_values_nodes = nx.closeness_centrality(A)
+        cc_values_nodes = nx.closeness_centrality(A, distance='distance')
         nx.set_node_attributes(A, cc_values_nodes, name='closeness_centrality')
 
         cc_values = node_to_edge_attributes(cc_values_nodes, A.edges)
@@ -174,16 +189,8 @@ References
     # rank edges by specified method
     a_edges = rank_df(a_edges, ranking)
 
-    # map each abstract edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
-    a_edges = add_path_to_df(a_edges, edges, g_undir)
+    a_edges = gpd.GeoDataFrame(a_edges, crs=edges.crs, geometry="geometry")
 
-    ### route abstract edges on street network
-    print("Routing..")
-
-    # get "routed" geometry (LineString) for each abstract edge (row)
-    a_edges = create_gdf_with_geoms(a_edges, edges)
-
-    
     # generate export data filename
     if export_data or export_plots or export_video:
         if export_data_slug is None:
