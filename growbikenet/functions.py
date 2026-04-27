@@ -2,11 +2,10 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 import networkx as nx
-import osmnx as ox
+from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point, LineString, MultiLineString
 from itertools import combinations
-from slugify import slugify
 
 
 def intersects_properly(geom1, geom2):
@@ -196,142 +195,144 @@ def count_and_merge(n, bearings):
 
 def snap_seed_points(seed_points, nodes):
     """
-    snap generated seed_points to actual osm nodes
-    Parameters
-    ----------
-    seed_points: geopandas.geodataframe.GeoDataFrame
-        Seed points that were created within city area, to be snapped to actual osm nodes
-    nodes: geopandas.geodataframe.GeoDataFrame
-        actual osm nodes, downloaded from osmnx
+        snap generated seed_points to actual osm nodes
+        Parameters
+        ----------
+        seed_points: geopandas.geodataframe.GeoDataFrame
+            Seed points that were created within city area, to be snapped to actual osm nodes
+        nodes: geopandas.geodataframe.GeoDataFrame
+            actual osm nodes, downloaded from osmnx
 
-    Returns
-    -------
-    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+        Returns
+        -------
+        seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+            seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
 
-    """
-    # query nearest OSM nodes with sindex
-    q = nodes.sindex.nearest(seed_points.geometry)
-    seed_points["osmid"] = None
-    seed_points.iloc[q[0], -1] = list(nodes.iloc[q[1]]["osmid"])
+        """
+    # Ensure same CRS
+    if seed_points.crs != nodes.crs:
+        seed_points = seed_points.to_crs(nodes.crs)
 
-    # create a subset of OSM nodes - only those that seed points are snapped to
-    nodes_subset = nodes.loc[
-        nodes.osmid.isin(seed_points.osmid)
-    ].copy().reset_index(drop=True)
-
-    # merge seed points gdf (gives us the generated seed point location, "geometry_generated")
-    # with nodes subset gdf (gives us all other columns)
-    # (we need the geometry_generated column only for filtering by distance)
-    seed_points_snapped = pd.merge(
-        left=seed_points,
-        right=nodes_subset,
-        how="inner",
-        on="osmid",
-        suffixes=["_generated", "_osm"]
+    # Find nearest nodes (returns indices)
+    idx_seed, idx_nodes = nodes.sindex.nearest(
+        seed_points.geometry, return_all=False
     )
+
+    # Assign osmid safely
+    seed_points = seed_points.copy()
+    seed_points["osmid"] = nodes.iloc[idx_nodes]["osmid"].values
+
+    # Keep original geometry
+    seed_points = seed_points.rename(columns={"geometry": "geometry_generated"})
+
+    # Attach node geometry + attributes
+    nodes_subset = nodes[["osmid", "geometry"]].rename(
+        columns={"geometry": "geometry_osm"}
+    )
+
+    seed_points = seed_points.reset_index(drop=True)
+    nodes_subset = nodes_subset.reset_index(drop=True)
+
+    seed_points_snapped = seed_points.merge(
+        nodes_subset, on="osmid", how="left"
+    )
+
+    seed_points_snapped.set_geometry("geometry_osm")
+
     return seed_points_snapped
 
 
 def filter_seed_points(seed_points_snapped, seed_point_delta):
     """
-    remove seed_points that are further than delta away from an actual osm node
-    Parameters
-    ----------
-    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
-    seed_point_delta: int
-        maximum distance a seed_point may be removed from an actual osm node
+        remove seed_points that are further than delta away from an actual osm node
+        Parameters
+        ----------
+        seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+            seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+        seed_point_delta: int
+            maximum distance a seed_point may be removed from an actual osm node
 
-    Returns
-    -------
-    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-        seed_points within delta away from an actual osm node, only columns are osmid and the associated osm geometry
-    """
-    # define our boolean distance_condition filter:
-    # snapped seed points must be not more than seed_point_delta away
-    # from their OSM nodes
-    distance_condition = seed_points_snapped.geometry_generated.distance(
-        seed_points_snapped.geometry_osm) <= seed_point_delta
+        Returns
+        -------
+        seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+            seed_points within delta away from an actual osm node, only columns are osmid and the associated osm geometry
+        """
+    gdf = seed_points_snapped.copy()
 
-    # filter seed_points_snapped df by distance condition
-    seed_points_snapped = seed_points_snapped[distance_condition].reset_index(drop=True)
-    seed_points_snapped = seed_points_snapped[
-        ["osmid", "geometry_osm"]
-    ]  # drop not-needed columns
-    # rename geometry column
-    seed_points_snapped = seed_points_snapped.rename(
-        columns={"geometry_osm": "geometry"})
+    # Compute distance
+    gdf["snap_dist"] = gdf.geometry_generated.distance(gdf.geometry_osm)
 
-    # set "geometry" as geometry column
-    seed_points_snapped = seed_points_snapped.set_geometry("geometry")
-    # set osmid as *index* of this df
-    seed_points_snapped = seed_points_snapped.set_index("osmid")
-    seed_points_snapped["osmid"] = seed_points_snapped.index
+    # Filter by threshold
+    gdf = gdf[gdf["snap_dist"] <= seed_point_delta].copy()
+
+    # Drop duplicates: one row per osmid
+    gdf = gdf.sort_values("snap_dist").drop_duplicates("osmid")
+
+    # Keep only node geometry
+    gdf = gdf[["osmid", "geometry_osm"]].rename(
+        columns={"geometry_osm": "geometry"}
+    )
+
+    # Set geometry + index
+    gdf = gdf.set_geometry("geometry")
+    gdf = gdf.set_index("osmid", drop=False)
+
+    seed_points_snapped = gdf.copy()
+
     return seed_points_snapped
 
 
-def create_potential_triangulation(seed_points_snapped):
+def create_delaunay_edges(nodes_gdf):
     """
-    create df with all potential edges in triangulation, ordered by length
+    create df with edges that are part of delaunay triangulation
     Parameters
     ----------
-    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+    nodes_gdf: geopandas.geodataframe.GeoDataFrame
         seed points with osmid and corresponding point geometry
 
     Returns
     -------
-    df: pandas.DataFrame
-        Dataframe with egde pairs, edge geometries and distance of potential triangulation
+    df : pandas.DataFrame
+        DataFrame with Edge pairs and singled out source and target nodes
     """
+    # Ensure projected CRS
+    if nodes_gdf.crs.is_geographic:
+        raise ValueError("CRS must be projected for triangulation.")
+
+    # Extract coordinates
+    coords = np.array([(geom.x, geom.y) for geom in nodes_gdf.geometry])
+    osmids = nodes_gdf["osmid"].values
+
+    # Compute triangulation
+    tri = Delaunay(coords)
+
+    edges_set = set()
+
+    # Each triangle has 3 edges
+    for simplex in tri.simplices:
+        i, j, k = simplex
+
+        edges_set.add(tuple(sorted((i, j))))
+        edges_set.add(tuple(sorted((j, k))))
+        edges_set.add(tuple(sorted((i, k))))
+
     pairs = []
-    potential_edges = []
-    distances = []
+    sources = []
+    targets = []
 
-    for pair in combinations(seed_points_snapped["osmid"], 2):
-        edge = LineString(seed_points_snapped.loc[list(pair)].geometry)
+    for i, j in edges_set:
 
-        pairs.append(pair)
-        potential_edges.append(edge)
-        distances.append(edge.length)
+        pairs.append((osmids[i], osmids[j]))
+        sources.append(osmids[i])
+        targets.append(osmids[j])
 
-    df = pd.DataFrame(
-        {
-            "pair": pairs,
-            "potential_edge": potential_edges,
-            "dist": distances
-        }
-    )
+    df = pd.DataFrame({
+        "pair": pairs,
+        "source": sources,
+        "target": targets,
+    })
 
-    df = df.sort_values(by="dist", ascending=True).reset_index(drop=True)
-    df = df[df["dist"] > 0].reset_index(drop=True)  # only keep distances > 0
     return df
-
-
-def filter_triangulation(df):
-    """
-    filter edges that intersect with existing edges
-    iterate through all potential edges; if they do not intersect with existing edges add to multilinestring
-    Parameters
-    ----------
-    df: pandas.DataFrame
-        Dataframe with edge pairs, edge geometries and distance of potential triangulation
-
-    Returns
-    -------
-    edge_list: list
-        List of edge pairs that are part of the final triangulation
-    """
-    current_edges = MultiLineString()
-    edge_list = []
-
-    for i, row in df.iterrows():
-        new_edge = row.potential_edge
-        pair = row.pair
-        if not intersects_properly(current_edges, new_edge):
-            current_edges = MultiLineString([linestring for linestring in current_edges.geoms] + [new_edge])
-            edge_list.append(pair)
-    return edge_list
 
 
 def df_from_graph(A, method):
@@ -349,13 +350,18 @@ def df_from_graph(A, method):
     df: pandas.DataFrame
         Dataframe with source and target information for each edge, as well as edge attributes as columns
     """
+
+    attrs = {
+        edge: {
+            method: data.get(method),
+            "geometry": data.get("geometry"),
+        }
+        for edge, data in A.edges.items()
+    }
     df = pd.DataFrame.from_dict(
-        nx.get_edge_attributes(
-            G=A,
-            name=method,
-        ),
+        attrs,
         orient="index",
-        columns=[method]
+        columns=[method, 'geometry']
     )
     df["node_tuple"] = df.index
     df["source"] = [t[0] for t in df.node_tuple]
