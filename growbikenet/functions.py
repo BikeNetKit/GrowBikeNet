@@ -285,7 +285,7 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
 def create_delaunay_edges(nodes_gdf):
     """Create df with edges that are part of Delaunay triangulation
 
-    Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results.
+    Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
     
     Parameters
     ----------
