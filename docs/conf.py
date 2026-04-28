@@ -6,19 +6,20 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'GrowBikeNet'
-copyright = '2026, Szell, Vybornova, Knepper'
-author = 'Szell, Vybornova, Knepper'
+project = "GrowBikeNet"
+copyright = "2026, Szell, Vybornova, Knepper"
+author = "Szell, Vybornova, Knepper"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath("../"))
 import growbikenet  # noqa
 
-#version = growbikenet.__version__
+# version = growbikenet.__version__
 version = "0.6.0"
 release = version
 
@@ -42,8 +43,8 @@ extensions = [
     "sphinx_gallery.load_style",
 ]
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # path to bib file with references
 bibtex_bibfiles = ["_static/references.bib"]
@@ -51,7 +52,7 @@ bibtex_reference_style = "author_year"
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 ### select html theme
 # html_theme = 'alabaster'
@@ -93,6 +94,7 @@ nbsphinx_prolog = r"""
 
         __ https://github.com/BikeNetKit/GrowBikeNet/blob/master/docs/{{ docname }}
 """  # noqa: E501
+
 
 def linkcode_resolve(domain, info):
     def find_source():

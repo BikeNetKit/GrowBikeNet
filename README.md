@@ -6,13 +6,16 @@
 [![Docs](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml/badge.svg)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml)
 [![Test](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml)
 
-Source code for the project *GrowBikeNet*, building on [the code from the research paper](https://github.com/mszell/bikenwgrowth) *Growing Urban Bicycle Networks*.
+Source code for the project _GrowBikeNet_, building on [the code from the research paper](https://github.com/mszell/bikenwgrowth) _Growing Urban Bicycle Networks_.
 
 ## Installation
+
 ### Set up environment
+
 The main step is to set up a virtual environment `gbnenv` in which to install the package, and then to use or run the environment.
 
 #### With Pixi
+
 Installation with [`Pixi`](https://pixi.prefix.dev/latest/) is fastest and most stable:
 
 ```
@@ -29,13 +32,14 @@ pixi run python examples/mwe.py
 > [!NOTE]  
 > The first time you run code with Pixi, it might take a minute longer, as Pixi resolves the environment's dependencies only at this point.
 
-*Alternatively*, or if you run into issues, [clone this repository](https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip) and create the environment via the [`environment.yml`](environment.yml) file:
+_Alternatively_, or if you run into issues, [clone this repository](https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip) and create the environment via the [`environment.yml`](environment.yml) file:
 
 ```
 pixi init --import environment.yml
 ```
 
 #### With mamba/conda/pip
+
 Alternatively to Pixi, use [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) or [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html).
 
 <details><summary>Instructions</summary>
@@ -45,18 +49,20 @@ mamba create -n gbnenv -c conda-forge growbikenet
 mamba activate gbnenv
 ```
 
-*Alternatively*, or if you run into issues, [clone this repository](https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip) and create the environment via the [`environment.yml`](environment.yml) file:
+_Alternatively_, or if you run into issues, [clone this repository](https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip) and create the environment via the [`environment.yml`](environment.yml) file:
 
 ```
 mamba env create --file environment.yml
 mamba activate gbnenv
 pip install growbikenet
 ```
+
 </details>
 
 ### Run growbikenet in Jupyter lab
 
-After having set up the environment above, if you wish to run growbikenet via [JupyterLab](https://pypi.org/project/jupyterlab/), follow the 
+After having set up the environment above, if you wish to run growbikenet via [JupyterLab](https://pypi.org/project/jupyterlab/), follow the
+
 <details><summary>Instructions</summary>
 #### With Pixi
 Running growbikenet in Jupter lab with [`Pixi`](https://pixi.prefix.dev/latest/) is straightforward:
@@ -68,6 +74,7 @@ pixi run jupyter lab
 An instance of Jupyter lab is automatically going to open in your browser after the environment is built.
 
 #### With mamba/conda
+
 Using mamba/conda, run:
 
 ```
@@ -76,9 +83,11 @@ ipython kernel install --user --name=gbnenv
 mamba deactivate
 jupyter lab
 ```
+
 Once Jupyter lab opens, switch the kernel (Kernel > Change Kernel > gbnenv)
 
 #### With pip
+
 Using pip, run:
 
 ```
@@ -86,24 +95,27 @@ pip install --user ipykernel
 python -m ipykernel install --user --name=gbnenv
 jupyter lab
 ```
+
 Once Jupyter lab opens, switch the kernel (Kernel > Change Kernel > gbnenv)
+
 </details>
 
 ## Development installation
+
 If you want to develop the project, [clone this repository](https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip) and create the environment via the [`environment-dev.yml`](environment-dev.yml) file:
 
 ```
 pixi init --import environment-dev.yml
 ```
+
 The developemt environment is called `gbnenvdev`. Make sure to also read [our contribution guidelines](CONTRIBUTING.md).
 
 ## Usage
 
 We provide a minimum working example in two formats:
 
-* Python script ([examples/mwe.py](examples/mwe.py))
-* Jupyter notebook ([examples/mwe.ipynb](examples/mwe.ipynb))
-
+- Python script ([examples/mwe.py](examples/mwe.py))
+- Jupyter notebook ([examples/mwe.ipynb](examples/mwe.ipynb))
 
 ## Repository structure
 
@@ -118,10 +130,8 @@ We provide a minimum working example in two formats:
 
 ## Credits
 
-<!--Please cite as: 
->AUTHOR1, AUTHOR2, and AUTHOR3, PROJECTNAME, JOURNAL (YYYY), DOIURL  
+<!--Please cite as:
+>AUTHOR1, AUTHOR2, and AUTHOR3, PROJECTNAME, JOURNAL (YYYY), DOIURL
 -->
 
 Development of GrowBikeNet was supported by the Danish Innovation Fund (Innovationsfonden).
-
-

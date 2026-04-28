@@ -4,7 +4,7 @@ import geopandas as gpd
 import networkx as nx
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
-from shapely.geometry import Point, LineString, MultiLineString
+from shapely.geometry import Point
 
 
 def intersects_properly(geom1, geom2):
@@ -97,13 +97,12 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     valid_points.extend(filter(prep_polygon.contains, points))
 
     # store seed points in gdf
-    seed_points = gpd.GeoDataFrame(
-        {"geometry": valid_points},
-        crs=edges.crs
-    )
+    seed_points = gpd.GeoDataFrame({"geometry": valid_points}, crs=edges.crs)
 
     # Rotate points back using the principal bearing
-    seed_points.geometry = seed_points.geometry.rotate(-1 * principal_bearing, origin=(0, 0))
+    seed_points.geometry = seed_points.geometry.rotate(
+        -1 * principal_bearing, origin=(0, 0)
+    )
 
     return seed_points
 
@@ -125,18 +124,20 @@ def get_principal_bearing(G):
         The principal bearing, precise to 5 degrees.
     """
 
-    bearingbins = 72  # number of bins to determine bearing. e.g. 72 will create 5 degrees bins
+    bearingbins = (
+        72  # number of bins to determine bearing. e.g. 72 will create 5 degrees bins
+    )
 
     bearings = {}
     # weight bearings by length (meters)
     city_bearings = []
     for u, v, k, d in G.edges(keys=True, data=True):
         try:
-            city_bearings.extend([d['bearing']] * int(d['length']))
+            city_bearings.extend([d["bearing"]] * int(d["length"]))
         except:  # Bearings cannot be calculated in rare edge cases
             pass
     b = pd.Series(city_bearings)
-    bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop='True')
+    bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop="True")
     bins = np.arange(bearingbins + 1) * 360 / bearingbins
     count = count_and_merge(bearingbins, bearings)
     principal_bearing = bins[np.where(count == max(count))][0]
@@ -194,28 +195,26 @@ def count_and_merge(n, bearings):
 
 def snap_seed_points(seed_points, nodes):
     """
-        snap generated seed_points to actual osm nodes
-        Parameters
-        ----------
-        seed_points: geopandas.geodataframe.GeoDataFrame
-            Seed points that were created within city area, to be snapped to actual osm nodes
-        nodes: geopandas.geodataframe.GeoDataFrame
-            actual osm nodes, downloaded from osmnx
+    snap generated seed_points to actual osm nodes
+    Parameters
+    ----------
+    seed_points: geopandas.geodataframe.GeoDataFrame
+        Seed points that were created within city area, to be snapped to actual osm nodes
+    nodes: geopandas.geodataframe.GeoDataFrame
+        actual osm nodes, downloaded from osmnx
 
-        Returns
-        -------
-        seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-            seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+    Returns
+    -------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
 
-        """
+    """
     # Ensure same CRS
     if seed_points.crs != nodes.crs:
         seed_points = seed_points.to_crs(nodes.crs)
 
     # Find nearest nodes (returns indices)
-    idx_seed, idx_nodes = nodes.sindex.nearest(
-        seed_points.geometry, return_all=False
-    )
+    idx_seed, idx_nodes = nodes.sindex.nearest(seed_points.geometry, return_all=False)
 
     # Assign osmid safely
     seed_points = seed_points.copy()
@@ -232,9 +231,7 @@ def snap_seed_points(seed_points, nodes):
     seed_points = seed_points.reset_index(drop=True)
     nodes_subset = nodes_subset.reset_index(drop=True)
 
-    seed_points_snapped = seed_points.merge(
-        nodes_subset, on="osmid", how="left"
-    )
+    seed_points_snapped = seed_points.merge(nodes_subset, on="osmid", how="left")
 
     seed_points_snapped.set_geometry("geometry_osm")
 
@@ -243,19 +240,19 @@ def snap_seed_points(seed_points, nodes):
 
 def filter_seed_points(seed_points_snapped, seed_point_delta):
     """
-        remove seed_points that are further than delta away from an actual osm node
-        Parameters
-        ----------
-        seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-            seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
-        seed_point_delta: int
-            maximum distance a seed_point may be removed from an actual osm node
+    remove seed_points that are further than delta away from an actual osm node
+    Parameters
+    ----------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+    seed_point_delta: int
+        maximum distance a seed_point may be removed from an actual osm node
 
-        Returns
-        -------
-        seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-            seed_points within delta away from an actual osm node, only columns are osmid and the associated osm geometry
-        """
+    Returns
+    -------
+    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+        seed_points within delta away from an actual osm node, only columns are osmid and the associated osm geometry
+    """
     gdf = seed_points_snapped.copy()
 
     # Compute distance
@@ -268,9 +265,7 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
     gdf = gdf.sort_values("snap_dist").drop_duplicates("osmid")
 
     # Keep only node geometry
-    gdf = gdf[["osmid", "geometry_osm"]].rename(
-        columns={"geometry_osm": "geometry"}
-    )
+    gdf = gdf[["osmid", "geometry_osm"]].rename(columns={"geometry_osm": "geometry"})
 
     # Set geometry + index
     gdf = gdf.set_geometry("geometry")
@@ -285,7 +280,7 @@ def create_delaunay_edges(nodes_gdf):
     """Create df with edges that are part of Delaunay triangulation
 
     Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
-    
+
     Parameters
     ----------
     nodes_gdf: geopandas.geodataframe.GeoDataFrame
@@ -326,23 +321,24 @@ def create_delaunay_edges(nodes_gdf):
     targets = []
 
     for i, j in edges_set:
-
         pairs.append((osmids[i], osmids[j]))
         sources.append(osmids[i])
         targets.append(osmids[j])
 
-    df = pd.DataFrame({
-        "pair": pairs,
-        "source": sources,
-        "target": targets,
-    })
+    df = pd.DataFrame(
+        {
+            "pair": pairs,
+            "source": sources,
+            "target": targets,
+        }
+    )
 
     return df
 
 
 def df_from_graph(A, method):
     """Create a dataframe from an input graph
-    
+
     Parameters
     ----------
     A: networkx.graph
@@ -356,7 +352,7 @@ def df_from_graph(A, method):
         Dataframe with source and target information for each edge, as well as edge attributes as columns
     """
 
-    if method == 'all':
+    if method == "all":
         attrs = {
             edge: {
                 "betweenness_centrality": data.get("betweenness_centrality"),
@@ -368,7 +364,7 @@ def df_from_graph(A, method):
         df = pd.DataFrame.from_dict(
             attrs,
             orient="index",
-            columns=['betweenness_centrality', 'closeness_centrality', 'geometry']
+            columns=["betweenness_centrality", "closeness_centrality", "geometry"],
         )
     else:
         attrs = {
@@ -378,11 +374,7 @@ def df_from_graph(A, method):
             }
             for edge, data in A.edges.items()
         }
-        df = pd.DataFrame.from_dict(
-            attrs,
-            orient="index",
-            columns=[method, 'geometry']
-        )
+        df = pd.DataFrame.from_dict(attrs, orient="index", columns=[method, "geometry"])
     df["node_tuple"] = df.index
     df["source"] = [t[0] for t in df.node_tuple]
     df["target"] = [t[1] for t in df.node_tuple]
@@ -392,7 +384,7 @@ def df_from_graph(A, method):
 
 def rank_df(df, method):
     """Rank dataframe by specified method
-    
+
     Parameters
     ----------
     df: pandas.DataFrame
@@ -405,16 +397,20 @@ def rank_df(df, method):
     df: pandas.DataFrame
         Dataframe sorted by specified ranking method.
     """
-    if method=='all':
-        for m in ['betweenness_centrality', 'closeness_centrality']:
+    if method == "all":
+        for m in ["betweenness_centrality", "closeness_centrality"]:
             df = df.sort_values(by=m, ascending=False)
             df.reset_index(drop=True, inplace=True)
-            df["ordering_"+m] = df.index  # ranking is the order of appearance in the method's ranking
+            df["ordering_" + m] = (
+                df.index
+            )  # ranking is the order of appearance in the method's ranking
         df["ordering_random"] = np.random.permutation(np.arange(df.shape[0]))
     else:
         df = df.sort_values(by=method, ascending=False)
         df.reset_index(drop=True, inplace=True)
-        df["ordering_"+method] = df.index  # ranking is the order of appearance in the method's ranking
+        df["ordering_" + method] = (
+            df.index
+        )  # ranking is the order of appearance in the method's ranking
     return df
 
 
@@ -464,7 +460,8 @@ def add_path_to_df(df, edges, g):
                 G=g,  # !! use undirected graph here
                 source=int(row.source),
                 target=int(row.target),
-                weight='length')
+                weight="length",
+            )
         )
     df["path_nodes"] = paths
     df["path_edges"] = df.path_nodes.apply(lambda x: get_correct_edgetuples(edges, x))
@@ -486,9 +483,7 @@ def create_gdf_with_geoms(df, edges):
         projected GeoDataFrame with path nodes and path edges and merged geometries
     """
     # get geometry by merging all geoms from edge gdf
-    df["geometry"] = df.path_edges.apply(
-        lambda x: edges.loc[x].geometry.union_all()
-    )
+    df["geometry"] = df.path_edges.apply(lambda x: edges.loc[x].geometry.union_all())
     # convert edges into a gdf
     gdf = gpd.GeoDataFrame(df, crs=edges.crs, geometry="geometry")
     # merge multilinestring into linestring where possible (should be possible everywhere)
