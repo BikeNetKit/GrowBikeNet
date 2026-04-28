@@ -30,13 +30,13 @@ if len(sys.argv) >= 2:
 print("Exporting data for " + nominatimstring)
 
 for s in ['grid', 'rail']:
-    for r in ['betweenness_centrality', 'closeness_centrality']:
-        print("\n" + "Exporting " + r + ", " + s)
-        gbn.growbikenet(
-            city_name = nominatimstring,
-            proj_crs = '3857',
-            ranking = r,
-            seed_point_type = s,
-            export_plots = False,
-            export_video = False
-        )
+    print("\n" + "Exporting " + s)
+    gbn.growbikenet(
+        city_name = nominatimstring,
+        proj_crs = '3857',
+        ranking = 'all',
+        seed_point_type = s,
+        export_data = True,
+        export_plots = False,
+        export_video = False
+    )
