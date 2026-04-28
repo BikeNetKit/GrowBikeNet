@@ -10,7 +10,7 @@ from shapely.geometry import Point
 
 def intersects_properly(geom1, geom2):
     """
-    helper function to check whether newly to be added edge intersects with already added edges
+    Helper function to check whether newly to be added edge intersects with already added edges
     for 2 shapely geometries, check whether they "properly intersect" (i.e. intersect but not touch, i.e. don't share endpoints)
 
     Parameters
@@ -28,7 +28,7 @@ def intersects_properly(geom1, geom2):
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
 
-def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None):
+def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None, retain_all=True):
     """Download and prepare a street network from OSM via OSMnx
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
     Then, stores the undirected OSM data in gdfs and projects using proj_crs.
@@ -42,6 +42,8 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
         What type of street network to retrieve if custom_filter is None.
     custom_filter : (str | list[str] | None)
         A custom ways filter to be used instead of the network_type presets
+    retain_all : bool, default True
+        If True, return the entire graph even if it is not connected, useful for disconnected bicycle networks. If False, retain only the largest weakly connected component, useful for road networks.
     Returns
     -------
     nodes : geopandas.geodataframe.GeoDataFrame
@@ -53,7 +55,7 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
     """
     # Fetch street network data from osmnx
     g = ox.graph_from_place(
-    city_name, network_type=network_type, custom_filter=custom_filter, retain_all=True
+    city_name, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
     )
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
@@ -63,12 +65,14 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
 
 def nx_to_nodes_edges(G, proj_crs='3857'):
     """Get nodes and projected edges from networkX graph
+    
     Parameters
     ----------
     G : networkx.classes.multigraph.MultiGraph
         networkX graph, undirected
     proj_crs : str, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+        
     Returns
     -------
     nodes : geopandas.geodataframe.GeoDataFrame
@@ -143,7 +147,7 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     node_current = nodes_exnw.iloc[[0]]
 
     seed_points_exnw = gpd.GeoDataFrame()
-    while len(node_current)>0 and len(nodes_exnw)>1:
+    while len(node_current)>0 and len(nodes_exnw)>0:
         # Find all too close nodes to the current nodes
         nodes_too_close = nodes_exnw.loc[(nodes_exnw.geometry.distance(Point(node_current.iloc[0].geometry)) <= existing_network_spacing)]
         nodes_too_close = nodes_too_close.iloc[:, :-1] # osmid is there twice now (once in the end), so it needs to be dropped
@@ -156,7 +160,8 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
 
         # Find the node in nodes_exnw that is closest to the existing seed points
         node_current = seed_points_exnw.sjoin_nearest(nodes_exnw, how="inner") 
-        node_current = nodes_exnw[nodes_exnw.osmid == node_current["osmid_right"].values[0]]
+        if len(node_current)>0: # Current nodes could already be depleted here. Then loop will stop.
+            node_current = nodes_exnw[nodes_exnw.osmid == node_current["osmid_right"].values[0]]
 
     return seed_points_exnw
     

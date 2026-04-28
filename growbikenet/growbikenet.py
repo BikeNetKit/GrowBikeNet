@@ -105,7 +105,7 @@ def growbikenet(
     print("Downloading OSM data..")
 
     # Fetch street network data from osmnx
-    nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public')
+    nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False)
 
     if existing_network_spacing:
         cf = ['["cycleway"~"track"]',
@@ -119,8 +119,16 @@ def growbikenet(
         for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cyclestreet"]:
             if custom_tag not in ox.settings.useful_tags_way:
                 ox.settings.useful_tags_way.extend(custom_tag)
-        nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf)
+        nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True)
         g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
+        # Take largest connected component lcc
+        lcc = max(nx.connected_components(g_undir), key=len)
+        g_undir = g_undir.subgraph(lcc).copy() 
+        # TO DO: Restrict nodes and edges of existing net to the lcc
+        # print(g_undir.nodes())
+        # print(nodes_exnw)
+        # print(edges_exnw)
+        # sys.exit()
         _, edges = nx_to_nodes_edges(g_undir, proj_crs)
 
     ### Create seed points
@@ -145,9 +153,11 @@ def growbikenet(
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
     seed_points_snapped = filter_seed_points(seed_points_snapped, seed_point_delta)
-
+    
     if existing_network_spacing:
         # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
+        # print(nodes_exnw)
+        # sys.exit()
         seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
         seed_points_exnw.to_crs(edges.crs, inplace=True)
 
@@ -161,19 +171,21 @@ def growbikenet(
 
         # Merge original snapped points with new existing network points (=already snapped)
         seed_points_snapped = seed_points_snapped.overlay(seed_points_exnw, how='union')
-        # seed_points_snapped.to_file(seed_points_snapped, driver="GPKG")
 
-        # Bring back to original form (pandas df, columns, osmid index)
+        # Bring back to original form (geometry and osmid columns, osmid index)
         # This is a bit of a mess but it works. Simplify it in the future.
-        seed_points_snapped = pd.DataFrame(seed_points_snapped)
         seed_points_snapped.loc[seed_points_snapped['osmid_1'].isnull(), 'osmid_1'] = seed_points_snapped['osmid_2'] # _1 comes from one side, _2 from the other. One has NaNs, the other too. https://stackoverflow.com/a/60132614
-        seed_points_snapped.drop(["y","x","street_count", "highway", "osmid_2"], axis=1, inplace=True)
+        seed_points_snapped.drop(["y","x","street_count", "highway", "railway", "osmid_2"], axis=1, inplace=True)
         seed_points_snapped.rename(columns={"osmid_1": "osmid"}, inplace=True)
         seed_points_snapped.set_index("osmid", drop=False, inplace=True)
         
+        # seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
+        # print(seed_points_snapped)
+        # seed_points_snapped.to_file("test.gpkg", driver="GPKG")
+        
     # Abort if only 0 or 1 seed points
     if len(seed_points_snapped) < 2:
-        raise RuntimeError("Found less than 2 seed points")
+        raise RuntimeError("Found less than 2 seed points, but more are needed.")
 
     ### Triangulate
     # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
