@@ -1,4 +1,4 @@
-﻿growbikenet.functions.intersects\_properly
+growbikenet.functions.intersects\_properly
 ==========================================
 
 .. currentmodule:: growbikenet.functions

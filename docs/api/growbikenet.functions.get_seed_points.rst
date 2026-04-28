@@ -1,4 +1,4 @@
-﻿growbikenet.functions.get\_seed\_points
+growbikenet.functions.get\_seed\_points
 =======================================
 
 .. currentmodule:: growbikenet.functions

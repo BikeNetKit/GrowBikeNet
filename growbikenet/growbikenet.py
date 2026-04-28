@@ -3,58 +3,59 @@ from slugify import slugify
 from growbikenet.functions import *
 from growbikenet.visualizations import *
 
+
 def growbikenet(
-        city_name,
-        proj_crs='3857',
-        ranking='betweenness_centrality',
-        seed_point_type='grid',
-        seed_point_grid_spacing=1707,
-        seed_point_delta=500,
-        export_data=True,
-        export_data_slug=None,
-        export_plots=False,
-        export_video=False,
+    city_name,
+    proj_crs="3857",
+    ranking="betweenness_centrality",
+    seed_point_type="grid",
+    seed_point_grid_spacing=1707,
+    seed_point_delta=500,
+    export_data=True,
+    export_data_slug=None,
+    export_plots=False,
+    export_video=False,
 ):
-    """Creates a list of edges ordered by a specified ranking method. 
+    """Creates a list of edges ordered by a specified ranking method.
 
-The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_.
-Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results.
-Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
+    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_.
+    Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results.
+    Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
 
-Parameters
-----------
-city_name : str
-    name of the city that the analysis should be performed on
-proj_crs : str, default '3857'
-    coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator)
-ranking : str, default 'betweenness_centrality'
-    Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'all'. If 'all', will also add a random ranking.
-seed_point_type : str, optional, default 'grid'
-    if set to 'grid', creates a square grid
-    if set to 'rail', uses rail stations
-seed_point_grid_spacing : int, optional, default 1707
-    if seed_point_type is set to 'grid', this is the spacing between seed points, in meters
-seed_point_delta : int, optional, default 500
-    maximum distance between generated seed points and osm nodes for snapping
-export_data : bool, optional, default True
-    if set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name
-export_data_slug : string, optional, default None
-    if not set to None, it will be slugified and used as the slug in the filename of the data export
-export_plots : bool, optional, default False
-    if set to True, plots will be saved to a file
-export_video : bool, optional, default False
-    if set to True, video will be saved to a file (only possible if export_plots is set to True)
+    Parameters
+    ----------
+    city_name : str
+        name of the city that the analysis should be performed on
+    proj_crs : str, default '3857'
+        coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator)
+    ranking : str, default 'betweenness_centrality'
+        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'all'. If 'all', will also add a random ranking.
+    seed_point_type : str, optional, default 'grid'
+        if set to 'grid', creates a square grid
+        if set to 'rail', uses rail stations
+    seed_point_grid_spacing : int, optional, default 1707
+        if seed_point_type is set to 'grid', this is the spacing between seed points, in meters
+    seed_point_delta : int, optional, default 500
+        maximum distance between generated seed points and osm nodes for snapping
+    export_data : bool, optional, default True
+        if set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name
+    export_data_slug : string, optional, default None
+        if not set to None, it will be slugified and used as the slug in the filename of the data export
+    export_plots : bool, optional, default False
+        if set to True, plots will be saved to a file
+    export_video : bool, optional, default False
+        if set to True, video will be saved to a file (only possible if export_plots is set to True)
 
-Returns
--------
-a_edges : geopandas.geodataframe.GeoDataFrame
-    ordered geodataframe of all edges in street network
+    Returns
+    -------
+    a_edges : geopandas.geodataframe.GeoDataFrame
+        ordered geodataframe of all edges in street network
 
-References
-----------
-.. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
+    References
+    ----------
+    .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
 
-"""
+    """
     # check if user input is valid
     if type(city_name) != str:
         raise TypeError("city_name must be a string")
@@ -62,11 +63,13 @@ References
         raise TypeError("proj_crs must be a string")
     if type(ranking) != str:
         raise TypeError("ranking must be a string")
-    if ranking not in ['betweenness_centrality', 'closeness_centrality', 'all']:
-        raise ValueError("ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'all'")
-    if seed_point_type != 'grid' and seed_point_type != 'rail':
+    if ranking not in ["betweenness_centrality", "closeness_centrality", "all"]:
+        raise ValueError(
+            "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'all'"
+        )
+    if seed_point_type != "grid" and seed_point_type != "rail":
         raise ValueError("seed_point_type must be 'grid' or 'rail'")
-    if seed_point_type == 'grid' and type(seed_point_grid_spacing) != int:
+    if seed_point_type == "grid" and type(seed_point_grid_spacing) != int:
         raise TypeError("seed_point_grid_spacing must be an integer")
     if type(seed_point_delta) != int:
         raise TypeError("seed_point_delta must be an integer")
@@ -74,31 +77,29 @@ References
         raise TypeError("export_data must be a boolean")
     if export_data_slug is not None and type(export_data_slug) != str:
         raise TypeError("export_data_slug must be None or a string")
-    if type(export_data_slug) == str and (len(export_data_slug) < 1 or len(slugify(export_data_slug)) < 1):
-        raise ValueError("export_data_slug must contain at least one non-special character")
+    if type(export_data_slug) == str and (
+        len(export_data_slug) < 1 or len(slugify(export_data_slug)) < 1
+    ):
+        raise ValueError(
+            "export_data_slug must contain at least one non-special character"
+        )
     if type(export_plots) != bool:
         raise TypeError("export_plots must be a boolean")
     if type(export_video) != bool:
         raise TypeError("export_video must be a boolean")
 
-    np.random.seed(42) # Set random number generator seed for reproducibility
-    
+    np.random.seed(42)  # Set random number generator seed for reproducibility
+
     ### downloading and preprocessing data from OSM
     print("Downloading OSM data..")
 
     # fetch street network data from osmnx
-    g = ox.graph_from_place(
-    city_name, network_type='all'
-    )
-    g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
+    g = ox.graph_from_place(city_name, network_type="all")
+    g_undir = g.to_undirected().copy()  # convert to undirected (dropping OSMnx keys!)
 
     # export osmnx data to gdfs
     nodes, edges = ox.graph_to_gdfs(
-    g_undir,
-    nodes=True,
-    edges=True,
-    node_geometry=True,
-    fill_edge_geometry=True
+        g_undir, nodes=True, edges=True, node_geometry=True, fill_edge_geometry=True
     )
 
     # # save "original" graph data (in orig_crs)
@@ -106,7 +107,7 @@ References
     # edges.to_file("edges.gpkg", driver='GPKG')
 
     # replace after dropping edges with key = 1
-    edges = edges.loc[:,:,0].copy()
+    edges = edges.loc[:, :, 0].copy()
     # this also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
 
     # project geometries of nodes, edges, seed points
@@ -125,10 +126,14 @@ References
         principal_bearing = get_principal_bearing(g_undir)
 
         # But this is on the projected edges now
-        seed_points = get_grid_seed_points(edges, seed_point_grid_spacing, principal_bearing)
+        seed_points = get_grid_seed_points(
+            edges, seed_point_grid_spacing, principal_bearing
+        )
     elif seed_point_type == "rail":
-        seed_points = ox.features_from_place(city_name, {'railway':['station','halt']})
-        seed_points = seed_points[seed_points['geometry'].type == "Point"]
+        seed_points = ox.features_from_place(
+            city_name, {"railway": ["station", "halt"]}
+        )
+        seed_points = seed_points[seed_points["geometry"].type == "Point"]
         seed_points.to_crs(edges.crs, inplace=True)
 
     # Snap seed points to OSM nodes
@@ -138,7 +143,6 @@ References
     # Abort if only 0 or 1 seed points
     if len(seed_points_snapped) < 2:
         raise RuntimeError("Found less than 2 seed points")
-    
 
     ### running greedy triangulation
     # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
@@ -155,36 +159,38 @@ References
     gdf = create_gdf_with_geoms(df, edges)
 
     # add distances between source and target from geometry
-    gdf['dist'] = gdf['geometry'].length
+    gdf["dist"] = gdf["geometry"].length
 
-    edge_list = gdf['pair']
-    dist_list = gdf['dist']
+    edge_list = gdf["pair"]
+    dist_list = gdf["dist"]
     dist_dict = dict(zip(edge_list, dist_list))
-    geom_dict = dict(zip(edge_list, gdf['geometry'].tolist()))
+    geom_dict = dict(zip(edge_list, gdf["geometry"].tolist()))
 
     # make graph object from edge list
     A = nx.Graph()
     A.add_nodes_from(seed_points_snapped.index)
     A.add_edges_from(edge_list)
-    nx.set_edge_attributes(A, dist_dict, 'distance')
-    nx.set_edge_attributes(A, geom_dict, 'geometry')
+    nx.set_edge_attributes(A, dist_dict, "distance")
+    nx.set_edge_attributes(A, geom_dict, "geometry")
 
     ### compute edge attributes
     print("Computing edge attributes..")
-    # metric_dict = 
-    if ranking == 'betweenness_centrality' or ranking == 'all':
+    # metric_dict =
+    if ranking == "betweenness_centrality" or ranking == "all":
         # add betweenness attributes to edges
-        bc_values = nx.edge_betweenness_centrality(A, weight='distance', normalized=True)
-        nx.set_edge_attributes(A, bc_values, name='betweenness_centrality')
-    if ranking == 'closeness_centrality' or ranking == 'all':
+        bc_values = nx.edge_betweenness_centrality(
+            A, weight="distance", normalized=True
+        )
+        nx.set_edge_attributes(A, bc_values, name="betweenness_centrality")
+    if ranking == "closeness_centrality" or ranking == "all":
         # add closeness attributes to nodes and edges
-        cc_values_nodes = nx.closeness_centrality(A, distance='distance')
-        nx.set_node_attributes(A, cc_values_nodes, name='closeness_centrality')
+        cc_values_nodes = nx.closeness_centrality(A, distance="distance")
+        nx.set_node_attributes(A, cc_values_nodes, name="closeness_centrality")
         cc_values = node_to_edge_attributes(cc_values_nodes, A.edges)
-        nx.set_edge_attributes(A, cc_values, name='closeness_centrality')
+        nx.set_edge_attributes(A, cc_values, name="closeness_centrality")
 
     # export attributes to gdfs:
-    
+
     # create dataframe and add method as edge attribute
     a_edges = df_from_graph(A, ranking)
 
@@ -199,7 +205,9 @@ References
             city_string = city_name
         else:
             city_string = export_data_slug
-        export_data_filename = slugify(city_string) + "-" + ranking + "-" + seed_point_type + ".gpkg"
+        export_data_filename = (
+            slugify(city_string) + "-" + ranking + "-" + seed_point_type + ".gpkg"
+        )
 
     # save to file
     if export_data:
@@ -228,17 +236,18 @@ References
 
         # define linewidths
 
-        lws = {
-        "street": 0.75,
-        "bike": 2
-        }
+        lws = {"street": 0.75, "bike": 2}
 
-        create_plots(routed_edges_gdf,seed_points_snapped,streetcolor,edgecolor,seedcolor,lws)
+        create_plots(
+            routed_edges_gdf,
+            seed_points_snapped,
+            streetcolor,
+            edgecolor,
+            seedcolor,
+            lws,
+        )
         if export_video:
             print("Generating video..")
-            make_video(
-                img_folder_name="./results/plots/",
-                fps = 1
-            )
+            make_video(img_folder_name="./results/plots/", fps=1)
 
     return a_edges
