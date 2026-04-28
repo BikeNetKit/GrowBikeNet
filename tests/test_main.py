@@ -1,5 +1,6 @@
 import pytest
-from growbikenet.growbikenet import *
+import geopandas as gpd
+from growbikenet.growbikenet import growbikenet
 
 
 @pytest.fixture

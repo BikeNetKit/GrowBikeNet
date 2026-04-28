@@ -13,8 +13,8 @@ author = "Szell, Vybornova, Knepper"
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-import os
-import sys
+import os  # noqa
+import sys  # noqa
 
 sys.path.insert(0, os.path.abspath("../"))
 import growbikenet  # noqa
@@ -107,7 +107,7 @@ def linkcode_resolve(domain, info):
         import os
 
         fn = inspect.getsourcefile(obj)
-        fn = os.path.relpath(fn, start=os.path.dirname(GrowBikeNet.__file__))
+        fn = os.path.relpath(fn, start=os.path.dirname(growbikenet.__file__))
         source, lineno = inspect.getsourcelines(obj)
         return fn, lineno, lineno + len(source) - 1
 

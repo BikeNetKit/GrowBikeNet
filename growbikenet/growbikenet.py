@@ -1,7 +1,22 @@
+import os
+import numpy as np
+import networkx as nx
 import osmnx as ox
+import geopandas as gpd
 from slugify import slugify
-from growbikenet.functions import *
-from growbikenet.visualizations import *
+from growbikenet.functions import (
+    get_principal_bearing,
+    get_grid_seed_points,
+    snap_seed_points,
+    filter_seed_points,
+    create_delaunay_edges,
+    add_path_to_df,
+    create_gdf_with_geoms,
+    node_to_edge_attributes,
+    df_from_graph,
+    rank_df,
+)
+from growbikenet.visualizations import make_video, create_plots
 
 
 def growbikenet(
@@ -57,11 +72,11 @@ def growbikenet(
 
     """
     # check if user input is valid
-    if type(city_name) != str:
+    if type(city_name) is not str:
         raise TypeError("city_name must be a string")
-    if type(proj_crs) != str:
+    if type(proj_crs) is not str:
         raise TypeError("proj_crs must be a string")
-    if type(ranking) != str:
+    if type(ranking) is not str:
         raise TypeError("ranking must be a string")
     if ranking not in ["betweenness_centrality", "closeness_centrality", "all"]:
         raise ValueError(
@@ -69,23 +84,23 @@ def growbikenet(
         )
     if seed_point_type != "grid" and seed_point_type != "rail":
         raise ValueError("seed_point_type must be 'grid' or 'rail'")
-    if seed_point_type == "grid" and type(seed_point_grid_spacing) != int:
+    if seed_point_type == "grid" and type(seed_point_grid_spacing) is not int:
         raise TypeError("seed_point_grid_spacing must be an integer")
-    if type(seed_point_delta) != int:
+    if type(seed_point_delta) is not int:
         raise TypeError("seed_point_delta must be an integer")
-    if type(export_data) != bool:
+    if type(export_data) is not bool:
         raise TypeError("export_data must be a boolean")
-    if export_data_slug is not None and type(export_data_slug) != str:
+    if export_data_slug is not None and type(export_data_slug) is not str:
         raise TypeError("export_data_slug must be None or a string")
-    if type(export_data_slug) == str and (
+    if type(export_data_slug) is str and (
         len(export_data_slug) < 1 or len(slugify(export_data_slug)) < 1
     ):
         raise ValueError(
             "export_data_slug must contain at least one non-special character"
         )
-    if type(export_plots) != bool:
+    if type(export_plots) is not bool:
         raise TypeError("export_plots must be a boolean")
-    if type(export_video) != bool:
+    if type(export_video) is not bool:
         raise TypeError("export_video must be a boolean")
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
