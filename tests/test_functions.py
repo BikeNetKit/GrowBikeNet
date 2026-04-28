@@ -2,6 +2,7 @@ import pytest
 import osmnx as ox
 from pandas.testing import assert_frame_equal
 from growbikenet.functions import *
+from shapely.geometry import LineString
 
 
 @pytest.fixture
