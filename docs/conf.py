@@ -19,7 +19,7 @@ sys.path.insert(0, os.path.abspath("../"))
 import growbikenet  # noqa
 
 #version = growbikenet.__version__
-version = "0.5.2"
+version = "0.6.0"
 release = version
 
 # Add any Sphinx extension module names here, as strings. They can be
