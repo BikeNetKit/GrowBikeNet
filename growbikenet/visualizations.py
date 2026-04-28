@@ -12,15 +12,18 @@ def make_video(
     fps=1,  # files per second
 ):
 
-    l = glob.glob(f"{img_folder_name}/*.png")  # list of filenames
+    list_of_filenames = glob.glob(f"{img_folder_name}/*.png")  # list of filenames
 
     # assuming the files are called "000.png", "001.png", etc.;
     # to plot them in the right order:
     # remove ".png" from filenames;
     # then, convert filenames to integer
-    m = [int(re.findall(r"\d+.png", item)[0].replace(".png", "")) for item in l]
+    m = [
+        int(re.findall(r"\d+.png", item)[0].replace(".png", ""))
+        for item in list_of_filenames
+    ]
     # and finally, sort:
-    images = [l[i] for i in np.argsort(m)]
+    images = [list_of_filenames[i] for i in np.argsort(m)]
 
     # make a "video" subfolder in images folder
     os.makedirs(pathlib.Path(img_folder_name, "video"), exist_ok=True)

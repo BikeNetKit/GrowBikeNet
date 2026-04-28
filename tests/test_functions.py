@@ -1,8 +1,16 @@
 import pytest
 import osmnx as ox
+import pandas as pd
+import geopandas as gpd
 from pandas.testing import assert_frame_equal
-from growbikenet.functions import *
-from shapely.geometry import LineString
+from growbikenet.functions import (
+    get_principal_bearing,
+    get_grid_seed_points,
+    filter_seed_points,
+    rank_df,
+    intersects_properly,
+)
+from shapely.geometry import Point, LineString
 
 
 @pytest.fixture

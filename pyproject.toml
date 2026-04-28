@@ -46,6 +46,9 @@ Issues = "https://github.com/BikeNetKit/GrowBikeNet/issues"
 test = ["pytest"]
 doc = ["sphinx", "momepy"]
 
+[tool.ruff.lint.extend-per-file-ignores]
+"__init__.py" = ["F401"]  # "Imported but unused: happens with packages
+
 [tool.setuptools.packages.find]
 exclude = [
     "examples*",
