@@ -5,7 +5,6 @@ import networkx as nx
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point, LineString, MultiLineString
-from itertools import combinations
 
 
 def intersects_properly(geom1, geom2):
