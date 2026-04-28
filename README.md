@@ -6,9 +6,10 @@
 [![Docs](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml/badge.svg)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml)
 [![Test](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml)
 
-Source code for the project *GrowBikeNet*, building on [the code from the research paper](https://github.com/mszell/bikenwgrowth) *Growing Urban Bicycle Networks*.
+Source code for the project _GrowBikeNet_, building on [the code from the research paper](https://github.com/mszell/bikenwgrowth) _Growing Urban Bicycle Networks_.
 
 ## Installation
+
 To install and use the code, you need to have installed [JupyterLab](https://pypi.org/project/jupyterlab/).
 
 First clone the repository:
@@ -17,7 +18,7 @@ First clone the repository:
 git clone https://github.com/BikeNetKit/GrowBikeNet.git
 ```
 
-Go to the cloned folder and create a new virtual environment, see below. 
+Go to the cloned folder and create a new virtual environment, see below.
 
 ### Installation with pixi
 
@@ -52,6 +53,7 @@ Or create a new environment with the dependencies with `conda` or [`mamba`](http
 ```
 mamba env create -f environment.yml
 ```
+
 Then, install the virtual environment's kernel in Jupyter:
 
 ```
@@ -61,6 +63,7 @@ mamba deactivate
 ```
 
 You can now run `jupyter lab` with kernel `growbikenet` (Kernel > Change Kernel > growbikenet).
+
 </details>
 
 ## Repository structure
@@ -76,10 +79,8 @@ You can now run `jupyter lab` with kernel `growbikenet` (Kernel > Change Kernel 
 
 ## Credits
 
-<!--Please cite as: 
->AUTHOR1, AUTHOR2, and AUTHOR3, PROJECTNAME, JOURNAL (YYYY), DOIURL  
+<!--Please cite as:
+>AUTHOR1, AUTHOR2, and AUTHOR3, PROJECTNAME, JOURNAL (YYYY), DOIURL
 -->
 
 Development of GrowBikeNet was supported by the Danish Innovation Fund (Innovationsfonden).
-
-

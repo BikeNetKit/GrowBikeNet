@@ -6,7 +6,6 @@ import osmnx as ox
 from shapely.prepared import prep
 from shapely.geometry import Point, LineString, MultiLineString
 from itertools import combinations
-from slugify import slugify
 
 
 def intersects_properly(geom1, geom2):
@@ -29,7 +28,7 @@ def intersects_properly(geom1, geom2):
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
 
-def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None):
+def prepare_network(city_name, proj_crs, network_type="all", custom_filter=None):
     """Download and prepare a street network from OSM via OSMnx
 
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
@@ -41,7 +40,7 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
         Name of the city that the analysis should be performed on.
     proj_crs : str, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
-    network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”} 
+    network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”}
         What type of street network to retrieve if custom_filter is None.
     custom_filter : (str | list[str] | None)
         A custom ways filter to be used instead of the network_type presets
@@ -57,15 +56,19 @@ def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None)
     """
     # Fetch street network data from osmnx
     g = ox.graph_from_place(
-    city_name, network_type=network_type, custom_filter=custom_filter, retain_all=True
+        city_name,
+        network_type=network_type,
+        custom_filter=custom_filter,
+        retain_all=True,
     )
-    g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
+    g_undir = g.to_undirected().copy()  # convert to undirected (dropping OSMnx keys!)
 
     # Export osmnx data to gdfs
     nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
     return nodes, edges, g_undir
 
-def nx_to_nodes_edges(G, proj_crs='3857'):
+
+def nx_to_nodes_edges(G, proj_crs="3857"):
     """Get nodes and projected edges from networkX graph
 
     Parameters
@@ -83,15 +86,11 @@ def nx_to_nodes_edges(G, proj_crs='3857'):
         Extracted OSM edges, projected
     """
     nodes, edges = ox.graph_to_gdfs(
-    G,
-    nodes=True,
-    edges=True,
-    node_geometry=True,
-    fill_edge_geometry=True
+        G, nodes=True, edges=True, node_geometry=True, fill_edge_geometry=True
     )
-    
+
     # Replace after dropping edges with key = 1
-    edges = edges.loc[:,:,0].copy()
+    edges = edges.loc[:, :, 0].copy()
     # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
 
     # Project geometries of nodes, edges, seed points
@@ -101,7 +100,8 @@ def nx_to_nodes_edges(G, proj_crs='3857'):
     # Add osm ID as column to node gdf
     nodes["osmid"] = nodes.index
     return nodes, edges
-    
+
+
 def get_correct_edgetuples(edge_gdf, nodelist):
     """
     Helper function that maps a node list (output of nx.shortest_paths)
@@ -133,7 +133,7 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     """Get seed points on an existing bicycle network
 
     Start with the first (arbitrary) node from nodes_exnw. Then, for each node: Delete all other nodes closer than existing_network_spacing, proceed with the closest of the remaining nodes. Finish once all nodes are found or deleted.
-    
+
     Parameters
     ----------
     nodes_exnw: geopandas.geodataframe.GeoDataFrame
@@ -148,24 +148,36 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     """
     # Start with the first (arbitrary) node from nodes_exnw
     node_current = nodes_exnw.iloc[[0]]
-    
+
     seed_points_exnw = gpd.GeoDataFrame()
-    while len(node_current)>0 and len(nodes_exnw)>1:
+    while len(node_current) > 0 and len(nodes_exnw) > 1:
         # Find all too close nodes to the current nodes
-        nodes_too_close = nodes_exnw.loc[(nodes_exnw.geometry.distance(Point(node_current.iloc[0].geometry)) <= existing_network_spacing)]
-        nodes_too_close = nodes_too_close.iloc[:, :-1] # osmid is there twice now (once in the end), so it needs to be dropped
-        
+        nodes_too_close = nodes_exnw.loc[
+            (
+                nodes_exnw.geometry.distance(Point(node_current.iloc[0].geometry))
+                <= existing_network_spacing
+            )
+        ]
+        nodes_too_close = nodes_too_close.iloc[
+            :, :-1
+        ]  # osmid is there twice now (once in the end), so it needs to be dropped
+
         # Delete the nodes that are too close to nodes_exnw
-        nodes_exnw = nodes_exnw.overlay(nodes_too_close, how='difference')
-        
+        nodes_exnw = nodes_exnw.overlay(nodes_too_close, how="difference")
+
         # Add current node to seed_points_exnw
-        seed_points_exnw = pd.concat([seed_points_exnw, node_current], ignore_index=True)
-        
+        seed_points_exnw = pd.concat(
+            [seed_points_exnw, node_current], ignore_index=True
+        )
+
         # Find the node in nodes_exnw that is closest to the existing seed points
-        node_current = seed_points_exnw.sjoin_nearest(nodes_exnw, how="inner") 
-        node_current = nodes_exnw[nodes_exnw.osmid == node_current["osmid_right"].values[0]]
-    
+        node_current = seed_points_exnw.sjoin_nearest(nodes_exnw, how="inner")
+        node_current = nodes_exnw[
+            nodes_exnw.osmid == node_current["osmid_right"].values[0]
+        ]
+
     return seed_points_exnw
+
 
 def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing
@@ -210,13 +222,12 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     valid_points.extend(filter(prep_polygon.contains, points))
 
     # store seed points in gdf
-    seed_points = gpd.GeoDataFrame(
-        {"geometry": valid_points},
-        crs=edges.crs
-    )
+    seed_points = gpd.GeoDataFrame({"geometry": valid_points}, crs=edges.crs)
 
     # Rotate points back using the principal bearing
-    seed_points.geometry = seed_points.geometry.rotate(-1 * principal_bearing, origin=(0, 0))
+    seed_points.geometry = seed_points.geometry.rotate(
+        -1 * principal_bearing, origin=(0, 0)
+    )
 
     return seed_points
 
@@ -238,18 +249,20 @@ def get_principal_bearing(G):
         The principal bearing, precise to 5 degrees.
     """
 
-    bearingbins = 72  # number of bins to determine bearing. e.g. 72 will create 5 degrees bins
+    bearingbins = (
+        72  # number of bins to determine bearing. e.g. 72 will create 5 degrees bins
+    )
 
     bearings = {}
     # weight bearings by length (meters)
     city_bearings = []
     for u, v, k, d in G.edges(keys=True, data=True):
         try:
-            city_bearings.extend([d['bearing']] * int(d['length']))
+            city_bearings.extend([d["bearing"]] * int(d["length"]))
         except:  # Bearings cannot be calculated in rare edge cases
             pass
     b = pd.Series(city_bearings)
-    bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop='True')
+    bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop="True")
     bins = np.arange(bearingbins + 1) * 360 / bearingbins
     count = count_and_merge(bearingbins, bearings)
     principal_bearing = bins[np.where(count == max(count))][0]
@@ -327,9 +340,9 @@ def snap_seed_points(seed_points, nodes):
     seed_points.iloc[q[0], -1] = list(nodes.iloc[q[1]]["osmid"])
 
     # create a subset of OSM nodes - only those that seed points are snapped to
-    nodes_subset = nodes.loc[
-        nodes.osmid.isin(seed_points.osmid)
-    ].copy().reset_index(drop=True)
+    nodes_subset = (
+        nodes.loc[nodes.osmid.isin(seed_points.osmid)].copy().reset_index(drop=True)
+    )
 
     # merge seed points gdf (gives us the generated seed point location, "geometry_generated")
     # with nodes subset gdf (gives us all other columns)
@@ -339,7 +352,7 @@ def snap_seed_points(seed_points, nodes):
         right=nodes_subset,
         how="inner",
         on="osmid",
-        suffixes=["_generated", "_osm"]
+        suffixes=["_generated", "_osm"],
     )
     return seed_points_snapped
 
@@ -362,8 +375,12 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
     # define our boolean distance_condition filter:
     # snapped seed points must be not more than seed_point_delta away
     # from their OSM nodes
-    distance_condition = seed_points_snapped.geometry_generated.distance(
-        seed_points_snapped.geometry_osm) <= seed_point_delta
+    distance_condition = (
+        seed_points_snapped.geometry_generated.distance(
+            seed_points_snapped.geometry_osm
+        )
+        <= seed_point_delta
+    )
 
     # filter seed_points_snapped df by distance condition
     seed_points_snapped = seed_points_snapped[distance_condition].reset_index(drop=True)
@@ -372,7 +389,8 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
     ]  # drop not-needed columns
     # rename geometry column
     seed_points_snapped = seed_points_snapped.rename(
-        columns={"geometry_osm": "geometry"})
+        columns={"geometry_osm": "geometry"}
+    )
 
     # set "geometry" as geometry column
     seed_points_snapped = seed_points_snapped.set_geometry("geometry")
@@ -407,11 +425,7 @@ def create_potential_triangulation(seed_points_snapped):
         distances.append(edge.length)
 
     df = pd.DataFrame(
-        {
-            "pair": pairs,
-            "potential_edge": potential_edges,
-            "dist": distances
-        }
+        {"pair": pairs, "potential_edge": potential_edges, "dist": distances}
     )
 
     df = df.sort_values(by="dist", ascending=True).reset_index(drop=True)
@@ -440,7 +454,9 @@ def filter_triangulation(df):
         new_edge = row.potential_edge
         pair = row.pair
         if not intersects_properly(current_edges, new_edge):
-            current_edges = MultiLineString([linestring for linestring in current_edges.geoms] + [new_edge])
+            current_edges = MultiLineString(
+                [linestring for linestring in current_edges.geoms] + [new_edge]
+            )
             edge_list.append(pair)
     return edge_list
 
@@ -466,7 +482,7 @@ def df_from_graph(A, method):
             name=method,
         ),
         orient="index",
-        columns=[method]
+        columns=[method],
     )
     df["node_tuple"] = df.index
     df["source"] = [t[0] for t in df.node_tuple]
@@ -492,7 +508,9 @@ def rank_df(df, method):
     """
     df = df.sort_values(by=method, ascending=False)
     df.reset_index(drop=True, inplace=True)
-    df["ordering"] = df.index  # ranking is simply the order of appearance in the betweenness ranking
+    df["ordering"] = (
+        df.index
+    )  # ranking is simply the order of appearance in the betweenness ranking
     return df
 
 
@@ -542,7 +560,8 @@ def add_path_to_df(df, edges, g):
                 G=g,  # !! use undirected graph here
                 source=int(row.source),
                 target=int(row.target),
-                weight='length')
+                weight="length",
+            )
         )
     df["path_nodes"] = paths
     df["path_edges"] = df.path_nodes.apply(lambda x: get_correct_edgetuples(edges, x))
@@ -564,9 +583,7 @@ def create_gdf_with_geoms(df, edges):
         projected GeoDataFrame with path nodes and path edges and merged geometries
     """
     # get geometry by merging all geoms from edge gdf
-    df["geometry"] = df.path_edges.apply(
-        lambda x: edges.loc[x].geometry.union_all()
-    )
+    df["geometry"] = df.path_edges.apply(lambda x: edges.loc[x].geometry.union_all())
     # convert edges into a gdf
     gdf = gpd.GeoDataFrame(df, crs=edges.crs, geometry="geometry")
     # merge multilinestring into linestring where possible (should be possible everywhere)

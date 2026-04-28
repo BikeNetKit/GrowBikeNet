@@ -21,7 +21,7 @@ dependencies:
   - pytest
   - contextily
   - pip:
-    # not available via conda-forge:
-    - opencv-python
-    - pre-commit
-    - python-slugify
+      # not available via conda-forge:
+      - opencv-python
+      - pre-commit
+      - python-slugify
