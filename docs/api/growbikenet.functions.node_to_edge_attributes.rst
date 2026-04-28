@@ -1,4 +1,4 @@
-growbikenet.functions.node\_to\_edge\_attributes
+﻿growbikenet.functions.node\_to\_edge\_attributes
 ================================================
 
 .. currentmodule:: growbikenet.functions

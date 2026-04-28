@@ -1,4 +1,4 @@
-growbikenet.functions
+﻿growbikenet.functions
 =====================
 
 .. automodule:: growbikenet.functions

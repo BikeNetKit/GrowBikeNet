@@ -3,26 +3,26 @@ name: Test
 on:
   push:
     branches: # on all branches except `typos`
-      - "**"
-      - "!typos"
+      - '**'
+      - '!typos'
     paths-ignore:
-      - "docs/**"
-      - "examples/**"
-      - "data/**"
-      - ".git*"
-      - "README.md"
+      - 'docs/**'
+      - 'examples/**'
+      - 'data/**'
+      - '.git*'
+      - 'README.md'
   pull_request:
     branches:
-      - "**"
+      - '**'
   schedule: # Every Monday at 04:00 UTC
-    - cron: "0 4 * * 1"
+    - cron: '0 4 * * 1'
 
 jobs:
   caching:
     strategy:
       matrix:
         python-version: ["3.12"]
-        os: [ubuntu-latest]
+        os: [ ubuntu-latest ]
       fail-fast: false
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -52,9 +52,11 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.12"]
-        os: [ubuntu-latest]
+        os: [ ubuntu-latest ]
         submodule:
-          - { name: "Functions", pytest_args: "tests/test_functions.py" }
+          - {
+            name: "Functions",
+            pytest_args: "tests/test_functions.py" }
           - { name: "Main", pytest_args: "tests/test_main.py" }
       fail-fast: false
 
