@@ -1,4 +1,4 @@
-name: growbikenet
+name: gbnenv
 channels:
   - conda-forge
 dependencies:
