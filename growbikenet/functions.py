@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 import networkx as nx
+import osmnx as ox
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point
@@ -27,9 +28,77 @@ def intersects_properly(geom1, geom2):
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
 
+def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None):
+    """Download and prepare a street network from OSM via OSMnx
+    Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
+    Then, stores the undirected OSM data in gdfs and projects using proj_crs.
+    Parameters
+    ----------
+    city_name : str
+        Name of the city that the analysis should be performed on.
+    proj_crs : str, default '3857'
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+    network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”} 
+        What type of street network to retrieve if custom_filter is None.
+    custom_filter : (str | list[str] | None)
+        A custom ways filter to be used instead of the network_type presets
+    Returns
+    -------
+    nodes : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM nodes, projected
+    edges : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM edges, projected
+    g_undir : networkx.classes.multigraph.MultiGraph
+        Extracted networkX graph, undirected
+    """
+    # Fetch street network data from osmnx
+    g = ox.graph_from_place(
+    city_name, network_type=network_type, custom_filter=custom_filter, retain_all=True
+    )
+    g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
+
+    # Export osmnx data to gdfs
+    nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
+    return nodes, edges, g_undir
+
+def nx_to_nodes_edges(G, proj_crs='3857'):
+    """Get nodes and projected edges from networkX graph
+    Parameters
+    ----------
+    G : networkx.classes.multigraph.MultiGraph
+        networkX graph, undirected
+    proj_crs : str, default '3857'
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+    Returns
+    -------
+    nodes : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM nodes, projected, osmid is index
+    edges : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM edges, projected
+    """
+    nodes, edges = ox.graph_to_gdfs(
+    G,
+    nodes=True,
+    edges=True,
+    node_geometry=True,
+    fill_edge_geometry=True
+    )
+
+    # Replace after dropping edges with key = 1
+    edges = edges.loc[:,:,0].copy()
+    # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
+
+    # Project geometries of nodes, edges, seed points
+    edges = edges.to_crs(proj_crs)
+    nodes = nodes.to_crs(proj_crs)
+
+    # Add osm ID as column to node gdf
+    nodes["osmid"] = nodes.index
+    return nodes, edges
+    
 def get_correct_edgetuples(edge_gdf, nodelist):
     """
-    helper function that maps a node list (output of nx.shortest_paths)
+    Helper function that maps a node list (output of nx.shortest_paths)
     to the correct set of edge tuples that can be used for INDEXING THE EDGE GDF
 
     Parameters
@@ -54,6 +123,43 @@ def get_correct_edgetuples(edge_gdf, nodelist):
     return edgelist_final
 
 
+def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
+    """Get seed points on an existing bicycle network
+    
+    Start with the first (arbitrary) node from nodes_exnw. Then, for each node: Delete all other nodes closer than existing_network_spacing, proceed with the closest of the remaining nodes. Finish once all nodes are found or deleted.
+    
+    Parameters
+    ----------
+    nodes_exnw: geopandas.geodataframe.GeoDataFrame
+        Nodes of the existing bicycle network, in a projected coordinate reference system.
+    existing_network_spacing: int
+        Distance between seed points, in meters.
+    Returns
+    -------
+    seed_points_exnw: geopandas.geodataframe.GeoDataFrame
+        Seed points, already part of the network, in the same projected coordinate reference system as edges
+    """
+    # Start with the first (arbitrary) node from nodes_exnw
+    node_current = nodes_exnw.iloc[[0]]
+
+    seed_points_exnw = gpd.GeoDataFrame()
+    while len(node_current)>0 and len(nodes_exnw)>1:
+        # Find all too close nodes to the current nodes
+        nodes_too_close = nodes_exnw.loc[(nodes_exnw.geometry.distance(Point(node_current.iloc[0].geometry)) <= existing_network_spacing)]
+        nodes_too_close = nodes_too_close.iloc[:, :-1] # osmid is there twice now (once in the end), so it needs to be dropped
+
+        # Delete the nodes that are too close to nodes_exnw
+        nodes_exnw = nodes_exnw.overlay(nodes_too_close, how='difference')
+
+        # Add current node to seed_points_exnw
+        seed_points_exnw = pd.concat([seed_points_exnw, node_current], ignore_index=True)
+
+        # Find the node in nodes_exnw that is closest to the existing seed points
+        node_current = seed_points_exnw.sjoin_nearest(nodes_exnw, how="inner") 
+        node_current = nodes_exnw[nodes_exnw.osmid == node_current["osmid_right"].values[0]]
+
+    return seed_points_exnw
+    
 def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing
 
