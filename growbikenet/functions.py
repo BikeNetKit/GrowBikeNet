@@ -165,6 +165,64 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
 
     return seed_points_exnw
     
+def update_with_existing_bike_network(city_name, proj_crs, g_undir):
+    """Update street network with existing bike network
+
+    Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir.
+    
+    Parameters
+    ----------
+    city_name : str
+        Name of the city that the analysis should be performed on.
+    proj_crs : str
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+    g_undir : networkx.classes.multigraph.MultiGraph
+        Street network networkX graph, undirected
+
+    Returns
+    -------
+    nodes : geopandas.geodataframe.GeoDataFrame
+        Updated OSM nodes of the street network, projected
+    edges : geopandas.geodataframe.GeoDataFrame
+        Updated OSM edges of the street network, projected
+    g_undir : networkx.classes.multigraph.MultiGraph
+        Updated street networkX graph, undirected
+    nodes_exnw : geopandas.geodataframe.GeoDataFrame
+        OSM nodes of the corresponding bike network, projected
+    edges_exnw : geopandas.geodataframe.GeoDataFrame
+        OSM edges of the corresponding bike network, projected
+    """
+    cf = ['["cycleway"~"track"]',
+            '["highway"~"cycleway"]',
+          '["highway"~"path"]["bicycle"~"designated"]',
+          '["cycleway:right"~"track"]',
+          '["cycleway:left"~"track"]',
+          '["cyclestreet"]',
+          '["highway"~"living_street"]'
+        ]
+    for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cyclestreet"]:
+        if custom_tag not in ox.settings.useful_tags_way:
+            ox.settings.useful_tags_way.extend(custom_tag)
+    # Fetch protected bike network data from osmnx
+    # Due to retain_all=True, this fetches all the connected components
+    nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True)
+    g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
+
+    # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
+    # We delete those parts next:
+    # Take largest connected component lcc of the merged network
+    lcc = max(nx.connected_components(g_undir), key=len)
+    g_undir = g_undir.subgraph(lcc).copy() 
+    # Restrict nodes and edges of the existing bike net to this lcc
+    valid_node_osmids = g_undir.nodes()
+    nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
+    # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
+    edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
+    edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
+    nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
+
+    return nodes, edges, g_undir, nodes_exnw, edges_exnw
+
 def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing
 

@@ -2,7 +2,7 @@ import osmnx as ox
 from slugify import slugify
 from growbikenet.functions import *
 from growbikenet.visualizations import *
-
+import warnings
 
 def growbikenet(
     city_name,
@@ -84,6 +84,8 @@ def growbikenet(
         raise TypeError("existing_network_spacing must be None or a positive integer")
     if type(existing_network_spacing) is int and existing_network_spacing <= 0:
         raise ValueError("existing_network_spacing must be None or a positive integer")
+    if type(existing_network_spacing) is int and existing_network_spacing >= seed_point_grid_spacing:
+        warnings.warn("existing_network_spacing is recommended to be smaller than seed_point_grid_spacing to ensure that the existing bicycle network is built first.")
     if type(export_data) != bool:
         raise TypeError("export_data must be a boolean")
     if export_data_slug is not None and type(export_data_slug) != str:
@@ -109,34 +111,7 @@ def growbikenet(
     nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False)
 
     if existing_network_spacing:
-        cf = ['["cycleway"~"track"]',
-              '["highway"~"cycleway"]',
-              '["highway"~"path"]["bicycle"~"designated"]',
-              '["cycleway:right"~"track"]',
-              '["cycleway:left"~"track"]',
-              '["cyclestreet"]',
-              '["highway"~"living_street"]'
-             ]
-        for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cyclestreet"]:
-            if custom_tag not in ox.settings.useful_tags_way:
-                ox.settings.useful_tags_way.extend(custom_tag)
-        # Fetch protected bike network data from osmnx
-        # Due to retain_all=True, this fetches all the connected components
-        nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True)
-        g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
-
-        # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
-        # We delete those parts next:
-        # Take largest connected component lcc of the merged network
-        lcc = max(nx.connected_components(g_undir), key=len)
-        g_undir = g_undir.subgraph(lcc).copy() 
-        # Restrict nodes and edges of the existing bike net to this lcc
-        valid_node_osmids = g_undir.nodes()
-        nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
-        # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
-        edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
-        edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
-        _, edges = nx_to_nodes_edges(g_undir, proj_crs)
+        nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir)
 
     ### Create seed points
     print("Creating " + seed_point_type + " seed points..")
@@ -163,8 +138,6 @@ def growbikenet(
     
     if existing_network_spacing:
         # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
-        # print(nodes_exnw)
-        # sys.exit()
         seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
         seed_points_exnw.to_crs(edges.crs, inplace=True)
 
@@ -186,17 +159,13 @@ def growbikenet(
         seed_points_snapped.rename(columns={"osmid_1": "osmid"}, inplace=True)
         seed_points_snapped.set_index("osmid", drop=False, inplace=True)
         
-        # seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
-        # print(seed_points_snapped)
-        # seed_points_snapped.to_file("test.gpkg", driver="GPKG")
-        
     # Abort if only 0 or 1 seed points
     if len(seed_points_snapped) < 2:
         raise RuntimeError("Found less than 2 seed points, but more are needed.")
 
     ### Triangulate
     # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
-    print("Greedy triangulation..")
+    print("Triangulation..")
 
     # Create df with delaunay edges
     df = create_delaunay_edges(seed_points_snapped)
@@ -250,6 +219,7 @@ def growbikenet(
 
     # Generate export data filename
     if export_data or export_plots or export_video:
+        os.makedirs("./results/", exist_ok=True)
         if export_data_slug is None:
             city_string = city_name
         else:
@@ -262,41 +232,43 @@ def growbikenet(
     if export_data:
         ### save data
         print("Saving data..")
-        a_edges.to_file(export_data_filename, driver="GPKG")
+        a_edges.to_file("./results/"+export_data_filename, driver="GPKG")
 
     if export_plots or export_video:
         ### Visualize
         print("Creating visualizations..")
 
-        # Create directories
-        os.makedirs("./results/", exist_ok=True)
-        os.makedirs("./results/plots/", exist_ok=True)
-        os.makedirs("./results/plots/video/", exist_ok=True)
-
         # Read in file to plot
         routed_edges_gdf = gpd.read_file(export_data_filename)
 
         # Viz/plot settings (move to config file later)
-
         # Define color palette (from Michael's project: https://github.com/mszell/bikenwgrowth/blob/main/parameters/parameters.py)
         streetcolor = "#999999"
         edgecolor = "#0EB6D2"
         seedcolor = "#ff7338"
-
         # Define linewidths
-
         lws = {"street": 0.75, "bike": 2}
 
-        create_plots(
-            routed_edges_gdf,
-            seed_points_snapped,
-            streetcolor,
-            edgecolor,
-            seedcolor,
-            lws,
-        )
+        if ranking == "all": 
+            ranking_list = ["betweenness_centrality", "closeness_centrality", "random"]
+        else:
+            ranking_list = [ranking]
+        for ranking_this in ranking_list:
+            os.makedirs("./results/plots/ordering_"+ranking_this+"/", exist_ok=True)
+            create_plots(
+                routed_edges_gdf,
+                seed_points_snapped,
+                streetcolor,
+                edgecolor,
+                seedcolor,
+                lws,
+                ranking_this,
+            )
+
         if export_video:
-            print("Generating video..")
-            make_video(img_folder_name="./results/plots/", fps=1)
+            for ranking_this in ranking_list:
+                print("Generating video..")
+                os.makedirs("./results/plots/ordering_"+ranking_this+"/video/", exist_ok=True)
+                make_video(img_folder_name="./results/plots/ordering_"+ranking_this+"/", fps=5)
 
     return a_edges
