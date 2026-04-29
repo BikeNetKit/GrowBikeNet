@@ -223,6 +223,51 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir):
 
     return nodes, edges, g_undir, nodes_exnw, edges_exnw
 
+def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, proj_crs):
+    """Update seed points with existing bike network
+
+    Updates given snapped seed points by incorporating seed points from an existing bike network.
+    
+    Parameters
+    ----------
+    seed_points_snapped : geopandas.geodataframe.GeoDataFrame
+        Snapped seed points on the street network, constructed with seed_point_grid_spacing
+    nodes_exnw : geopandas.geodataframe.GeoDataFrame
+        Nodes of the existing bike network
+    existing_network_spacing : int
+        Positive integer denoting spacing between seed points, in meters, only on the existing bicycle network.
+    proj_crs : str
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+
+    Returns
+    -------
+    seed_points_snapped : geopandas.geodataframe.GeoDataFrame
+        Snapped seed points incorporating both street grid and existing bike network
+    """
+
+    # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
+    seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
+    seed_points_exnw.to_crs(proj_crs, inplace=True)
+
+    # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
+    buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing))
+    buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
+    buffer_seed_points_exnw.to_crs(proj_crs, inplace=True)
+
+    # Delete the seed points that are too close to seed_points_exnw via its buffer
+    seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
+
+    # Merge original snapped points with new existing network points (=already snapped)
+    seed_points_snapped = seed_points_snapped.overlay(seed_points_exnw, how='union')
+
+    # Bring back to original form (geometry and osmid columns, osmid index)
+    # This is a bit of a mess but it works. Simplify it in the future.
+    seed_points_snapped.loc[seed_points_snapped['osmid_1'].isnull(), 'osmid_1'] = seed_points_snapped['osmid_2'] # _1 comes from one side, _2 from the other. One has NaNs, the other too. https://stackoverflow.com/a/60132614
+    seed_points_snapped.drop(["y","x","street_count", "highway", "railway", "osmid_2"], axis=1, inplace=True)
+    seed_points_snapped.rename(columns={"osmid_1": "osmid"}, inplace=True)
+    seed_points_snapped.set_index("osmid", drop=False, inplace=True)
+    return seed_points_snapped
+
 def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing
 

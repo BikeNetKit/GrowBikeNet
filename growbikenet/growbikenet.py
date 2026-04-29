@@ -130,35 +130,15 @@ def growbikenet(
             city_name, {"railway": ["station", "halt"]}
         )
         seed_points = seed_points[seed_points["geometry"].type == "Point"]
-        seed_points.to_crs(edges.crs, inplace=True)
+        seed_points.to_crs(proj_crs, inplace=True)
 
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
     seed_points_snapped = filter_seed_points(seed_points_snapped, seed_point_delta)
     
     if existing_network_spacing:
-        # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
-        seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
-        seed_points_exnw.to_crs(edges.crs, inplace=True)
-
-        # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
-        buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing))
-        buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
-        buffer_seed_points_exnw.to_crs(edges.crs, inplace=True)
-
-        # Delete the seed points that are too close to seed_points_exnw via its buffer
-        seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
-
-        # Merge original snapped points with new existing network points (=already snapped)
-        seed_points_snapped = seed_points_snapped.overlay(seed_points_exnw, how='union')
-
-        # Bring back to original form (geometry and osmid columns, osmid index)
-        # This is a bit of a mess but it works. Simplify it in the future.
-        seed_points_snapped.loc[seed_points_snapped['osmid_1'].isnull(), 'osmid_1'] = seed_points_snapped['osmid_2'] # _1 comes from one side, _2 from the other. One has NaNs, the other too. https://stackoverflow.com/a/60132614
-        seed_points_snapped.drop(["y","x","street_count", "highway", "railway", "osmid_2"], axis=1, inplace=True)
-        seed_points_snapped.rename(columns={"osmid_1": "osmid"}, inplace=True)
-        seed_points_snapped.set_index("osmid", drop=False, inplace=True)
-        
+        seed_points_snapped = update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, proj_crs)
+          
     # Abort if only 0 or 1 seed points
     if len(seed_points_snapped) < 2:
         raise RuntimeError("Found less than 2 seed points, but more are needed.")
@@ -215,7 +195,7 @@ def growbikenet(
     # Rank edges by specified method
     a_edges = rank_df(a_edges, ranking)
 
-    a_edges = gpd.GeoDataFrame(a_edges, crs=edges.crs, geometry="geometry")
+    a_edges = gpd.GeoDataFrame(a_edges, crs=proj_crs, geometry="geometry")
 
     # Generate export data filename
     if export_data or export_plots or export_video:
