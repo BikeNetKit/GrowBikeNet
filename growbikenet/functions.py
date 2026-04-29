@@ -348,8 +348,8 @@ def get_principal_bearing(G):
     for u, v, k, d in G.edges(keys=True, data=True):
         try:
             city_bearings.extend([d["bearing"]] * int(d["length"]))
-        except:  # Bearings cannot be calculated in rare edge cases
-            pass
+        except:  # noqa (To do: make specific and remove noqa)
+            pass  # Bearings cannot be calculated in rare edge cases.
     b = pd.Series(city_bearings)
     bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop="True")
     bins = np.arange(bearingbins + 1) * 360 / bearingbins
