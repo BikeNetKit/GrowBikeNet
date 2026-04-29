@@ -105,6 +105,7 @@ def growbikenet(
     print("Downloading OSM data..")
 
     # Fetch street network data from osmnx
+    # Due to retain_all=False, this fetches the largest connected component
     nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False)
 
     if existing_network_spacing:
@@ -119,16 +120,22 @@ def growbikenet(
         for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cyclestreet"]:
             if custom_tag not in ox.settings.useful_tags_way:
                 ox.settings.useful_tags_way.extend(custom_tag)
+        # Fetch protected bike network data from osmnx
+        # Due to retain_all=True, this fetches all the connected components
         nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True)
         g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
-        # Take largest connected component lcc
+
+        # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
+        # We delete those parts next:
+        # Take largest connected component lcc of the merged network
         lcc = max(nx.connected_components(g_undir), key=len)
         g_undir = g_undir.subgraph(lcc).copy() 
-        # TO DO: Restrict nodes and edges of existing net to the lcc
-        # print(g_undir.nodes())
-        # print(nodes_exnw)
-        # print(edges_exnw)
-        # sys.exit()
+        # Restrict nodes and edges of the existing bike net to this lcc
+        valid_node_osmids = g_undir.nodes()
+        nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
+        # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
+        edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
+        edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
         _, edges = nx_to_nodes_edges(g_undir, proj_crs)
 
     ### Create seed points
