@@ -238,7 +238,7 @@ def growbikenet(
         )
 
     if not allow_edge_overlaps:
-        a_edges = remove_edge_overlaps(a_edges, ranking)
+        a_edges = remove_edge_overlaps(a_edges)
 
     # Save to file
     if export_data:
