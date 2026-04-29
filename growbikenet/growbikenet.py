@@ -237,10 +237,13 @@ def growbikenet(
     if export_data:
         ### save data
         print("Saving data..")
+        seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
         if export_file_format == "geojson":
             a_edges.to_file("./results/"+export_data_filename, driver="GeoJSON")
+            seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+".geojson", driver="GeoJSON")
         elif export_file_format == "gpkg":
-            a_edges.to_file("./results/"+export_data_filename, driver="GPKG")
+            a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Bike network")
+            seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
 
     if export_plots or export_video:
         ### Visualize
