@@ -16,6 +16,9 @@ from growbikenet.functions import (
     node_to_edge_attributes,
     df_from_graph,
     rank_df,
+    prepare_network,
+    update_with_existing_bike_network,
+    update_seed_points_with_existing_bike_network,
 )
 from growbikenet.visualizations import make_video, create_plots
 
