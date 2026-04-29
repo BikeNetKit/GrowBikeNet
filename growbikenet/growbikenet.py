@@ -63,7 +63,7 @@ def growbikenet(
     export_data_slug : stri, optional, default None
         If not set to None, the city_name will be slugified and used as the slug in the filename of the data export
     export_file_format : str, optional, default "geojson"
-        File format for the data export, relevant if export_data set to True. Default "geojson", also possible "gpkg".
+        File format for the data export, relevant if export_data set to True. Default "geojson", also possible "gpkg". If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
     export_plots : bool, optional, default False
         If set to True, plots will be saved to a file
     export_video : bool, optional, default False
