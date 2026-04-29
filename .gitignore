@@ -1,6 +1,6 @@
 # Folders
 data/
-plots/
+results/
 cache/
 examples/*.gpkg
 /*.gpkg
