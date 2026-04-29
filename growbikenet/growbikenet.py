@@ -19,6 +19,7 @@ from growbikenet.functions import (
     prepare_network,
     update_with_existing_bike_network,
     update_seed_points_with_existing_bike_network,
+    remove_edge_overlaps,
 )
 from growbikenet.visualizations import make_video, create_plots
 
@@ -36,6 +37,7 @@ def growbikenet(
     export_file_format="geojson",
     export_plots=False,
     export_video=False,
+    allow_edge_overlaps=False,
 ):
     """Creates a list of edges ordered by a specified ranking method.
 
@@ -68,6 +70,8 @@ def growbikenet(
         If set to True, plots will be saved to a file
     export_video : bool, optional, default False
         If set to True, video will be saved to a file (only possible if export_plots is set to True)
+    allow_edge_overlaps : bool, default False
+        If set to False, removes edge overlaps in consecutive growth stages. In this case, growth stages that do not add anything new are deleted.
 
     Returns
     -------
@@ -232,6 +236,9 @@ def growbikenet(
         export_data_filename = (
             slugify(city_string) + "-" + ranking + "-" + seed_point_type + "." + export_file_format
         )
+
+    if not allow_edge_overlaps:
+        a_edges = remove_edge_overlaps(a_edges, ranking)
 
     # Save to file
     if export_data:

@@ -5,7 +5,7 @@ import networkx as nx
 import osmnx as ox
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
-from shapely.geometry import Point
+from shapely.geometry import Point, MultiLineString
 
 
 def intersects_properly(geom1, geom2):
@@ -549,6 +549,22 @@ def create_delaunay_edges(nodes_gdf):
 
     return df
 
+
+def remove_edge_overlaps(edges_in, ranking):
+    """In the grown network, remove edge overlaps stepwise
+    """
+    print(edges_in.head())
+    edges_out = edges_in.copy()
+    grown_net = MultiLineString()
+    for row in edges_in.itertuples():
+        print(grown_net.length)
+        grown_net_new = grown_net | row.geometry
+        if grown_net_new.length > grown_net.length:
+            edges_out.loc[row.Index, ['geometry']] = grown_net_new - grown_net # Difference
+        else: # There was nothing added, so we can delete the row
+            edges_out.drop(index=row.Index, inplace=True)
+        grown_net = grown_net_new
+    return edges_out
 
 def df_from_graph(A, method):
     """Create a dataframe from an input graph
