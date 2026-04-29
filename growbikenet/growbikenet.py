@@ -80,9 +80,9 @@ def growbikenet(
         raise TypeError("seed_point_delta must be an integer")
     if type(seed_point_delta) == int and seed_point_delta <= 0:
         raise ValueError("seed_point_delta must be a positive integer")
-    if type(existing_network_spacing) != int and existing_network_spacing is not None:
+    if type(existing_network_spacing) is not int and existing_network_spacing is not None:
         raise TypeError("existing_network_spacing must be None or a positive integer")
-    if type(existing_network_spacing) == int and existing_network_spacing <= 0:
+    if type(existing_network_spacing) is int and existing_network_spacing <= 0:
         raise ValueError("existing_network_spacing must be None or a positive integer")
     if type(export_data) != bool:
         raise TypeError("export_data must be a boolean")
