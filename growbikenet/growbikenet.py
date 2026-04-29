@@ -238,12 +238,21 @@ def growbikenet(
         ### save data
         print("Saving data..")
         seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
+        city_boundary = ox.geocoder.geocode_to_gdf(city_name)
+        city_boundary.to_crs(epsg=proj_crs, inplace=True)
+        # We have meter precision, so rounding to integers is fine. Better would be to 
+        # change dtypes to int, but this does not seem possible without manual looping.
+        city_boundary.geometry = city_boundary.geometry.set_precision(grid_size=1)
+        seed_points_snapped.geometry = seed_points_snapped.geometry.set_precision(grid_size=1)
+        a_edges.geometry = a_edges.geometry.set_precision(grid_size=1)
         if export_file_format == "geojson":
             a_edges.to_file("./results/"+export_data_filename, driver="GeoJSON")
             seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+".geojson", driver="GeoJSON")
+            city_boundary.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif export_file_format == "gpkg":
             a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Bike network")
             seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
+            city_boundary.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
 
     if export_plots or export_video:
         ### Visualize
