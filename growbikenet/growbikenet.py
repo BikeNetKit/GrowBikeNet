@@ -33,6 +33,7 @@ def growbikenet(
     existing_network_spacing=None,
     export_data=True,
     export_data_slug=None,
+    export_file_format="geojson",
     export_plots=False,
     export_video=False,
 ):
@@ -59,8 +60,10 @@ def growbikenet(
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
     export_data : bool, optional, default True
         If set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name
-    export_data_slug : string, optional, default None
-        If not set to None, it will be slugified and used as the slug in the filename of the data export
+    export_data_slug : stri, optional, default None
+        If not set to None, the city_name will be slugified and used as the slug in the filename of the data export
+    export_file_format : str, optional, default "geojson"
+        File format for the data export, relevant if export_data set to True. Default "geojson", also possible "gpkg". If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
     export_plots : bool, optional, default False
         If set to True, plots will be saved to a file
     export_video : bool, optional, default False
@@ -116,6 +119,8 @@ def growbikenet(
         raise ValueError(
             "export_data_slug must contain at least one non-special character"
         )
+    if export_file_format != "geojson" and export_file_format != "gpkg":
+        raise ValueError("export_file_format must be 'geojson' or 'gpkg'")
     if type(export_plots) is not bool:
         raise TypeError("export_plots must be a boolean")
     if type(export_video) is not bool:
@@ -225,14 +230,29 @@ def growbikenet(
         else:
             city_string = export_data_slug
         export_data_filename = (
-            slugify(city_string) + "-" + ranking + "-" + seed_point_type + ".gpkg"
+            slugify(city_string) + "-" + ranking + "-" + seed_point_type + "." + export_file_format
         )
 
     # Save to file
     if export_data:
         ### save data
         print("Saving data..")
-        a_edges.to_file("./results/"+export_data_filename, driver="GPKG")
+        seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
+        city_boundary = ox.geocoder.geocode_to_gdf(city_name)
+        city_boundary.to_crs(epsg=proj_crs, inplace=True)
+        # We have meter precision, so rounding to integers is fine. Better would be to 
+        # change dtypes to int, but this does not seem possible without manual looping.
+        city_boundary.geometry = city_boundary.geometry.set_precision(grid_size=1)
+        seed_points_snapped.geometry = seed_points_snapped.geometry.set_precision(grid_size=1)
+        a_edges.geometry = a_edges.geometry.set_precision(grid_size=1)
+        if export_file_format == "geojson":
+            a_edges.to_file("./results/"+export_data_filename, driver="GeoJSON")
+            seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+".geojson", driver="GeoJSON")
+            city_boundary.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
+        elif export_file_format == "gpkg":
+            a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Bike network")
+            seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
+            city_boundary.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
 
     if export_plots or export_video:
         ### Visualize
