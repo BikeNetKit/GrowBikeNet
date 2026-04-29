@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 import networkx as nx
+import osmnx as ox
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point
@@ -9,7 +10,7 @@ from shapely.geometry import Point
 
 def intersects_properly(geom1, geom2):
     """
-    helper function to check whether newly to be added edge intersects with already added edges
+    Helper function to check whether newly to be added edge intersects with already added edges
     for 2 shapely geometries, check whether they "properly intersect" (i.e. intersect but not touch, i.e. don't share endpoints)
 
     Parameters
@@ -27,9 +28,81 @@ def intersects_properly(geom1, geom2):
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
 
+def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None, retain_all=True):
+    """Download and prepare a street network from OSM via OSMnx
+    Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
+    Then, stores the undirected OSM data in gdfs and projects using proj_crs.
+    Parameters
+    ----------
+    city_name : str
+        Name of the city that the analysis should be performed on.
+    proj_crs : str, default '3857'
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+    network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”} 
+        What type of street network to retrieve if custom_filter is None.
+    custom_filter : (str | list[str] | None)
+        A custom ways filter to be used instead of the network_type presets
+    retain_all : bool, default True
+        If True, return the entire graph even if it is not connected, useful for disconnected bicycle networks. If False, retain only the largest weakly connected component, useful for road networks.
+    Returns
+    -------
+    nodes : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM nodes, projected
+    edges : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM edges, projected
+    g_undir : networkx.classes.multigraph.MultiGraph
+        Extracted networkX graph, undirected
+    """
+    # Fetch street network data from osmnx
+    g = ox.graph_from_place(
+    city_name, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
+    )
+    g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
+
+    # Export osmnx data to gdfs
+    nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
+    return nodes, edges, g_undir
+
+def nx_to_nodes_edges(G, proj_crs='3857'):
+    """Get nodes and projected edges from networkX graph
+    
+    Parameters
+    ----------
+    G : networkx.classes.multigraph.MultiGraph
+        networkX graph, undirected
+    proj_crs : str, default '3857'
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+        
+    Returns
+    -------
+    nodes : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM nodes, projected, osmid is index
+    edges : geopandas.geodataframe.GeoDataFrame
+        Extracted OSM edges, projected
+    """
+    nodes, edges = ox.graph_to_gdfs(
+    G,
+    nodes=True,
+    edges=True,
+    node_geometry=True,
+    fill_edge_geometry=True
+    )
+
+    # Replace after dropping edges with key = 1
+    edges = edges.loc[:,:,0].copy()
+    # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
+
+    # Project geometries of nodes, edges, seed points
+    edges = edges.to_crs(proj_crs)
+    nodes = nodes.to_crs(proj_crs)
+
+    # Add osm ID as column to node gdf
+    nodes["osmid"] = nodes.index
+    return nodes, edges
+    
 def get_correct_edgetuples(edge_gdf, nodelist):
     """
-    helper function that maps a node list (output of nx.shortest_paths)
+    Helper function that maps a node list (output of nx.shortest_paths)
     to the correct set of edge tuples that can be used for INDEXING THE EDGE GDF
 
     Parameters
@@ -53,6 +126,147 @@ def get_correct_edgetuples(edge_gdf, nodelist):
             edgelist_final.append(tuple([edge_prelim[1], edge_prelim[0]]))
     return edgelist_final
 
+
+def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
+    """Get seed points on an existing bicycle network
+    
+    Start with the first (arbitrary) node from nodes_exnw. Then, for each node: Delete all other nodes closer than existing_network_spacing, proceed with the closest of the remaining nodes. Finish once all nodes are found or deleted.
+    
+    Parameters
+    ----------
+    nodes_exnw: geopandas.geodataframe.GeoDataFrame
+        Nodes of the existing bicycle network, in a projected coordinate reference system.
+    existing_network_spacing: int
+        Distance between seed points, in meters.
+    Returns
+    -------
+    seed_points_exnw: geopandas.geodataframe.GeoDataFrame
+        Seed points, already part of the network, in the same projected coordinate reference system as edges
+    """
+    # Start with the first (arbitrary) node from nodes_exnw
+    node_current = nodes_exnw.iloc[[0]]
+
+    seed_points_exnw = gpd.GeoDataFrame()
+    while len(node_current)>0 and len(nodes_exnw)>0:
+        # Find all too close nodes to the current nodes
+        nodes_too_close = nodes_exnw.loc[(nodes_exnw.geometry.distance(Point(node_current.iloc[0].geometry)) <= existing_network_spacing)]
+        nodes_too_close = nodes_too_close.iloc[:, :-1] # osmid is there twice now (once in the end), so it needs to be dropped
+
+        # Delete the nodes that are too close to nodes_exnw
+        nodes_exnw = nodes_exnw.overlay(nodes_too_close, how='difference')
+
+        # Add current node to seed_points_exnw
+        seed_points_exnw = pd.concat([seed_points_exnw, node_current], ignore_index=True)
+
+        # Find the node in nodes_exnw that is closest to the existing seed points
+        node_current = seed_points_exnw.sjoin_nearest(nodes_exnw, how="inner") 
+        if len(node_current)>0: # Current nodes could already be depleted here. Then loop will stop.
+            node_current = nodes_exnw[nodes_exnw.osmid == node_current["osmid_right"].values[0]]
+
+    return seed_points_exnw
+    
+def update_with_existing_bike_network(city_name, proj_crs, g_undir):
+    """Update street network with existing bike network
+
+    Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir.
+    
+    Parameters
+    ----------
+    city_name : str
+        Name of the city that the analysis should be performed on.
+    proj_crs : str
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+    g_undir : networkx.classes.multigraph.MultiGraph
+        Street network networkX graph, undirected
+
+    Returns
+    -------
+    nodes : geopandas.geodataframe.GeoDataFrame
+        Updated OSM nodes of the street network, projected
+    edges : geopandas.geodataframe.GeoDataFrame
+        Updated OSM edges of the street network, projected
+    g_undir : networkx.classes.multigraph.MultiGraph
+        Updated street networkX graph, undirected
+    nodes_exnw : geopandas.geodataframe.GeoDataFrame
+        OSM nodes of the corresponding bike network, projected
+    edges_exnw : geopandas.geodataframe.GeoDataFrame
+        OSM edges of the corresponding bike network, projected
+    """
+    cf = ['["cycleway"~"track"]',
+            '["highway"~"cycleway"]',
+          '["highway"~"path"]["bicycle"~"designated"]',
+          '["cycleway:right"~"track"]',
+          '["cycleway:left"~"track"]',
+          '["cyclestreet"]',
+          '["highway"~"living_street"]'
+        ]
+    for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cyclestreet"]:
+        if custom_tag not in ox.settings.useful_tags_way:
+            ox.settings.useful_tags_way.extend(custom_tag)
+    # Fetch protected bike network data from osmnx
+    # Due to retain_all=True, this fetches all the connected components
+    nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True)
+    g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
+
+    # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
+    # We delete those parts next:
+    # Take largest connected component lcc of the merged network
+    lcc = max(nx.connected_components(g_undir), key=len)
+    g_undir = g_undir.subgraph(lcc).copy() 
+    # Restrict nodes and edges of the existing bike net to this lcc
+    valid_node_osmids = g_undir.nodes()
+    nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
+    # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
+    edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
+    edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
+    nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
+
+    return nodes, edges, g_undir, nodes_exnw, edges_exnw
+
+def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, proj_crs):
+    """Update seed points with existing bike network
+
+    Updates given snapped seed points by incorporating seed points from an existing bike network.
+    
+    Parameters
+    ----------
+    seed_points_snapped : geopandas.geodataframe.GeoDataFrame
+        Snapped seed points on the street network, constructed with seed_point_grid_spacing
+    nodes_exnw : geopandas.geodataframe.GeoDataFrame
+        Nodes of the existing bike network
+    existing_network_spacing : int
+        Positive integer denoting spacing between seed points, in meters, only on the existing bicycle network.
+    proj_crs : str
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+
+    Returns
+    -------
+    seed_points_snapped : geopandas.geodataframe.GeoDataFrame
+        Snapped seed points incorporating both street grid and existing bike network
+    """
+
+    # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
+    seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
+    seed_points_exnw.to_crs(proj_crs, inplace=True)
+
+    # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
+    buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing))
+    buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
+    buffer_seed_points_exnw.to_crs(proj_crs, inplace=True)
+
+    # Delete the seed points that are too close to seed_points_exnw via its buffer
+    seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
+
+    # Merge original snapped points with new existing network points (=already snapped)
+    seed_points_snapped = seed_points_snapped.overlay(seed_points_exnw, how='union')
+
+    # Bring back to original form (geometry and osmid columns, osmid index)
+    # This is a bit of a mess but it works. Simplify it in the future.
+    seed_points_snapped.loc[seed_points_snapped['osmid_1'].isnull(), 'osmid_1'] = seed_points_snapped['osmid_2'] # _1 comes from one side, _2 from the other. One has NaNs, the other too. https://stackoverflow.com/a/60132614
+    seed_points_snapped.drop(["y","x","street_count", "highway", "railway", "osmid_2"], axis=1, inplace=True)
+    seed_points_snapped.rename(columns={"osmid_1": "osmid"}, inplace=True)
+    seed_points_snapped.set_index("osmid", drop=False, inplace=True)
+    return seed_points_snapped
 
 def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     """Get grid seed points for street network, rotated by principal bearing

@@ -61,28 +61,32 @@ def make_video(
 
 
 def create_plots(
-    routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, seedcolor, lws
+    routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, seedcolor, lws, ranking
 ):
-    for ordering in sorted(routed_edges_gdf["ordering"].unique()):
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+    if ranking == "all": 
+        ranking_list = ["betweenness_centrality", "closeness_centrality", "random"]
+    else:
+        ranking_list = [ranking]
 
-        # first, plot street network as "base line"
-        routed_edges_gdf.plot(ax=ax, color=streetcolor, lw=lws["street"], zorder=0)
+    for ranking_this in ranking_list:
+        for ordering in sorted(routed_edges_gdf["ordering_"+ranking_this].unique()):
+            fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
-        # plot all edges up to current rank
+            # first, plot street network as "base line"
+            routed_edges_gdf.plot(ax=ax, color=streetcolor, lw=lws["street"], zorder=0)
 
-        routed_edges_gdf[routed_edges_gdf["ordering"] <= ordering].plot(
-            ax=ax, color=edgecolor, lw=lws["bike"], zorder=1
-        )
+            # plot all edges up to current rank
 
-        seed_points_snapped.plot(ax=ax, color=seedcolor, zorder=2)
+            routed_edges_gdf[routed_edges_gdf["ordering_"+ranking_this] <= ordering].plot(
+                ax=ax, color=edgecolor, lw=lws["bike"], zorder=1
+            )
 
-        ax.set_axis_off()
+            seed_points_snapped.plot(ax=ax, color=seedcolor, zorder=2)
 
-        plot_id = "{:03d}".format(ordering)  # format plot ID with leading zeros
+            ax.set_axis_off()
 
-        fig.savefig(f"./results/plots/{plot_id}.png", dpi=300)
+            plot_id = "{:03d}".format(ordering)  # format plot ID with leading zeros
 
-        plt.close()
+            fig.savefig(f"./results/plots/ordering_{ranking_this}/{plot_id}.png", dpi=150, bbox_inches='tight')
 
-    return None
+            plt.close()
