@@ -139,7 +139,7 @@ def growbikenet(
     # Due to retain_all=False, this fetches the largest connected component
     nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False)
 
-    if existing_network_spacing:
+    if existing_network_spacing: # TO DO: Check for empty bike infra!
         nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir)
 
     ### Create seed points
@@ -235,6 +235,22 @@ def growbikenet(
         a_edges.sort_index(inplace=True)
         a_edges.crs = proj_crs
 
+
+    # Export matrix
+    # ----------------------------------------------------
+    # ranking | overlaps | gpkg    | geojson | Implemented
+    # single  | True     | 1 file  | 3 files | Y/Y
+    # single  | False    | 1 file  | 3 files | Y/Y
+    # all     | True     | 1 file  | 3 files | N/N 
+    # all     | False    | 3 files | 9 files | N/N
+    # ----------------------------------------------------
+
+    if not allow_edge_overlaps:
+        a_edges = remove_edge_overlaps(a_edges)
+        overlap_string = ""
+    else:
+        overlap_string = "_overlap"
+
     # Generate export data filename
     if export_data or export_plots or export_video:
         os.makedirs("./results/", exist_ok=True)
@@ -243,11 +259,8 @@ def growbikenet(
         else:
             city_string = export_data_slug
         export_data_filename = (
-            slugify(city_string) + "-" + ranking + "-" + seed_point_type + "." + export_file_format
+            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + "." + export_file_format
         )
-
-    if not allow_edge_overlaps:
-        a_edges = remove_edge_overlaps(a_edges)
 
     # Save to file
     if export_data:
