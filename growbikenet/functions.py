@@ -635,8 +635,8 @@ def rank_df(df, method):
     df: pandas.DataFrame
         Dataframe sorted by specified ranking method.
     """
-    if method == "all":
-        for m in ["betweenness_centrality", "closeness_centrality"]:
+    if method == "all": # The sorted order will be betweenness centrality
+        for m in ["closeness_centrality", "betweenness_centrality"]:
             df = df.sort_values(by=m, ascending=False)
             df.reset_index(drop=True, inplace=True)
             df["ordering_" + m] = (
