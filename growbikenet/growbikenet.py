@@ -255,10 +255,7 @@ def growbikenet(
     # Add lengths and cumulative lengths, rounded to integer meters
     a_edges['length'] = a_edges.geometry.length
     a_edges['length_cumulative'] = a_edges.geometry.length.cumsum()
-    bikenet['length'] = bikenet.geometry.length
-    bikenet['length_cumulative'] = bikenet.geometry.length.cumsum()
     a_edges = a_edges.astype({'length': int, 'length_cumulative': int})
-    bikenet = bikenet.astype({'length': int, 'length_cumulative': int})
 
     # Generate export data filename
     if export_data or export_plots or export_video:
@@ -289,7 +286,7 @@ def growbikenet(
             city_boundary.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif export_file_format == "gpkg":
             if existing_network_spacing:
-                bikenet.to_file("./results/"+export_data_filename, driver="GPKG", layer="Existing bike network")
+                a_edges.iloc[[0]].to_file("./results/"+export_data_filename, driver="GPKG", layer="Existing bike network")
                 a_edges.iloc[1:-1].to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
             else:
                 a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
