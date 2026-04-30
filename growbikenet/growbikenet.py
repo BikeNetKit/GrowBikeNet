@@ -228,7 +228,7 @@ def growbikenet(
 
     # Add existing bike network on top, https://stackoverflow.com/a/43408736
     if existing_network_spacing:
-        bikenet = gpd.GeoDataFrame({c: None for c in a_edges.columns}, index=[-1])
+        bikenet = gpd.GeoDataFrame({c: None for c in a_edges.columns}, index=[-1], crs=proj_crs)
         bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
         a_edges.loc[-1] = bikenet.loc[-1]
         a_edges.index = a_edges.index+1
@@ -266,7 +266,11 @@ def growbikenet(
             seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+".geojson", driver="GeoJSON")
             city_boundary.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif export_file_format == "gpkg":
-            a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Bike network")
+            if existing_network_spacing:
+                bikenet.to_file("./results/"+export_data_filename, driver="GPKG", layer="Existing bike network")
+                a_edges.iloc[1:-1].to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
+            else:
+                a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
             seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
             city_boundary.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
 
