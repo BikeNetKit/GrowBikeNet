@@ -19,6 +19,7 @@ from growbikenet.functions import (
     prepare_network,
     update_with_existing_bike_network,
     update_seed_points_with_existing_bike_network,
+    remove_edge_overlaps,
 )
 from growbikenet.visualizations import make_video, create_plots
 
@@ -36,6 +37,7 @@ def growbikenet(
     export_file_format="geojson",
     export_plots=False,
     export_video=False,
+    allow_edge_overlaps=False,
 ):
     """Creates a list of edges ordered by a specified ranking method.
 
@@ -48,7 +50,7 @@ def growbikenet(
     proj_crs : str, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator)
     ranking : str, default 'betweenness_centrality'
-        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'all'. If 'all', will also add a random ranking.
+        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str, optional, default 'grid'
         If set to 'grid', creates a square grid
         If set to 'rail', uses rail stations
@@ -68,6 +70,8 @@ def growbikenet(
         If set to True, plots will be saved to a file
     export_video : bool, optional, default False
         If set to True, video will be saved to a file (only possible if export_plots is set to True)
+    allow_edge_overlaps : bool, default False
+        If set to False, removes edge overlaps in consecutive growth stages. In this case, growth stages that do not add anything new are deleted.
 
     Returns
     -------
@@ -87,9 +91,9 @@ def growbikenet(
         raise TypeError("proj_crs must be a string")
     if type(ranking) is not str:
         raise TypeError("ranking must be a string")
-    if ranking not in ["betweenness_centrality", "closeness_centrality", "all"]:
+    if ranking not in ["betweenness_centrality", "closeness_centrality", "random"]:
         raise ValueError(
-            "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'all'"
+            "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
         )
     if seed_point_type != "grid" and seed_point_type != "rail":
         raise ValueError("seed_point_type must be 'grid' or 'rail'")
@@ -135,7 +139,7 @@ def growbikenet(
     # Due to retain_all=False, this fetches the largest connected component
     nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False)
 
-    if existing_network_spacing:
+    if existing_network_spacing: # TO DO: Check for empty bike infra!
         nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir)
 
     ### Create seed points
@@ -164,9 +168,9 @@ def growbikenet(
     if existing_network_spacing:
         seed_points_snapped = update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, proj_crs)
           
-    # Abort if only 0 or 1 seed points
-    if len(seed_points_snapped) < 2:
-        raise RuntimeError("Found less than 2 seed points, but more are needed.")
+    # Abort if less than 3 seed points. Delaunay needs at least 3.
+    if len(seed_points_snapped) < 3:
+        raise RuntimeError("Found less than 3 seed points, but more are needed.")
 
     ### Triangulate
     # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
@@ -199,13 +203,13 @@ def growbikenet(
 
     ### Compute edge attributes
     print("Computing edge attributes..")
-    if ranking == "betweenness_centrality" or ranking == "all":
+    if ranking == "betweenness_centrality":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
             A, weight="distance", normalized=True
         )
         nx.set_edge_attributes(A, bc_values, name="betweenness_centrality")
-    if ranking == "closeness_centrality" or ranking == "all":
+    elif ranking == "closeness_centrality":
         # Add closeness attributes to nodes and edges
         cc_values_nodes = nx.closeness_centrality(A, distance="distance")
         nx.set_node_attributes(A, cc_values_nodes, name="closeness_centrality")
@@ -222,6 +226,27 @@ def growbikenet(
 
     a_edges = gpd.GeoDataFrame(a_edges, crs=proj_crs, geometry="geometry")
 
+    # Add existing bike network on top, https://stackoverflow.com/a/43408736
+    if existing_network_spacing:
+        bikenet = gpd.GeoDataFrame({c: None for c in a_edges.columns}, index=[-1], crs=proj_crs)
+        bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
+        a_edges.loc[-1] = bikenet.loc[-1]
+        a_edges.index = a_edges.index+1
+        a_edges.sort_index(inplace=True)
+        a_edges.crs = proj_crs
+
+    # Remove edge overlaps
+    if not allow_edge_overlaps:
+        a_edges = remove_edge_overlaps(a_edges)
+        overlap_string = ""
+    else:
+        overlap_string = "_overlap"
+
+    # Add lengths and cumulative lengths, rounded to integer meters
+    a_edges['length'] = a_edges.geometry.length
+    a_edges['length_cumulative'] = a_edges.geometry.length.cumsum()
+    a_edges = a_edges.astype({'length': int, 'length_cumulative': int})
+
     # Generate export data filename
     if export_data or export_plots or export_video:
         os.makedirs("./results/", exist_ok=True)
@@ -229,8 +254,12 @@ def growbikenet(
             city_string = city_name
         else:
             city_string = export_data_slug
+        if existing_network_spacing:
+            exnw_string = "_with-bikenw"
+        else:
+            exnw_string = ""
         export_data_filename = (
-            slugify(city_string) + "-" + ranking + "-" + seed_point_type + "." + export_file_format
+            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + export_file_format
         )
 
     # Save to file
@@ -250,7 +279,11 @@ def growbikenet(
             seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+".geojson", driver="GeoJSON")
             city_boundary.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif export_file_format == "gpkg":
-            a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Bike network")
+            if existing_network_spacing:
+                a_edges.iloc[[0]].to_file("./results/"+export_data_filename, driver="GPKG", layer="Existing bike network")
+                a_edges.iloc[1:-1].to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
+            else:
+                a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
             seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
             city_boundary.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
 
@@ -269,26 +302,20 @@ def growbikenet(
         # Define linewidths
         lws = {"street": 0.75, "bike": 2}
 
-        if ranking == "all": 
-            ranking_list = ["betweenness_centrality", "closeness_centrality", "random"]
-        else:
-            ranking_list = [ranking]
-        for ranking_this in ranking_list:
-            os.makedirs("./results/plots/ordering_"+ranking_this+"/", exist_ok=True)
-            create_plots(
-                routed_edges_gdf,
-                seed_points_snapped,
-                streetcolor,
-                edgecolor,
-                seedcolor,
-                lws,
-                ranking_this,
-            )
+        os.makedirs("./results/plots/ordering_"+ranking+"/", exist_ok=True)
+        create_plots(
+            routed_edges_gdf,
+            seed_points_snapped,
+            streetcolor,
+            edgecolor,
+            seedcolor,
+            lws,
+            ranking,
+        )
 
         if export_video:
-            for ranking_this in ranking_list:
-                print("Generating video..")
-                os.makedirs("./results/plots/ordering_"+ranking_this+"/video/", exist_ok=True)
-                make_video(img_folder_name="./results/plots/ordering_"+ranking_this+"/", fps=5)
+            print("Generating video..")
+            os.makedirs("./results/plots/ordering_"+ranking+"/video/", exist_ok=True)
+            make_video(img_folder_name="./results/plots/ordering_"+ranking+"/", fps=5)
 
     return a_edges

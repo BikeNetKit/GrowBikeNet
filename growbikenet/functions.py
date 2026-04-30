@@ -5,7 +5,7 @@ import networkx as nx
 import osmnx as ox
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
-from shapely.geometry import Point
+from shapely.geometry import Point, MultiLineString
 
 
 def intersects_properly(geom1, geom2):
@@ -28,7 +28,7 @@ def intersects_properly(geom1, geom2):
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
 
-def prepare_network(city_name, proj_crs, network_type='all', custom_filter=None, retain_all=True):
+def prepare_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True):
     """Download and prepare a street network from OSM via OSMnx
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
     Then, stores the undirected OSM data in gdfs and projects using proj_crs.
@@ -550,6 +550,30 @@ def create_delaunay_edges(nodes_gdf):
     return df
 
 
+def remove_edge_overlaps(edges_in):
+    """In the grown network, remove edge overlaps stepwise
+
+    Parameters
+    ----------
+    edges_in: geopandas.geodataframe.GeoDataFrame
+        The grown bike network, in a projected coordinate reference system
+
+    Returns
+    -------
+    edges_out: geopandas.geodataframe.GeoDataFrame
+        The grown bike network without edge overlaps, in a projected coordinate reference system
+    """
+    edges_out = edges_in.copy()
+    grown_net = MultiLineString()
+    for row in edges_in.itertuples():
+        grown_net_new = grown_net | row.geometry # Union
+        if grown_net_new.length > grown_net.length:
+            edges_out.loc[row.Index, ['geometry']] = grown_net_new - grown_net # Difference
+        else: # There was nothing added, so we delete the row
+            edges_out.drop(index=row.Index, inplace=True)
+        grown_net = grown_net_new
+    return edges_out
+
 def df_from_graph(A, method):
     """Create a dataframe from an input graph
 
@@ -558,7 +582,7 @@ def df_from_graph(A, method):
     A: networkx.graph
         Graph created from triangulation edge list
     method: str
-        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'all'. If 'all', will also add a random ranking.
+        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
 
     Returns
     -------
@@ -566,21 +590,7 @@ def df_from_graph(A, method):
         Dataframe with source and target information for each edge, as well as edge attributes as columns
     """
 
-    if method == "all":
-        attrs = {
-            edge: {
-                "betweenness_centrality": data.get("betweenness_centrality"),
-                "closeness_centrality": data.get("closeness_centrality"),
-                "geometry": data.get("geometry"),
-            }
-            for edge, data in A.edges.items()
-        }
-        df = pd.DataFrame.from_dict(
-            attrs,
-            orient="index",
-            columns=["betweenness_centrality", "closeness_centrality", "geometry"],
-        )
-    else:
+    if method != "random":
         attrs = {
             edge: {
                 method: data.get(method),
@@ -589,6 +599,14 @@ def df_from_graph(A, method):
             for edge, data in A.edges.items()
         }
         df = pd.DataFrame.from_dict(attrs, orient="index", columns=[method, "geometry"])
+    else:
+        attrs = {
+            edge: {
+                "geometry": data.get("geometry"),
+            }
+            for edge, data in A.edges.items()
+        }
+        df = pd.DataFrame.from_dict(attrs, orient="index", columns=["geometry"])
     df["node_tuple"] = df.index
     df["source"] = [t[0] for t in df.node_tuple]
     df["target"] = [t[1] for t in df.node_tuple]
@@ -604,27 +622,26 @@ def rank_df(df, method):
     df: pandas.DataFrame
         Dataframe with source and target information for each edge, as well as edge attributes as columns
     method: str
-        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'all'. If 'all', will also add a random ranking.
+        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
 
     Results
     -------
     df: pandas.DataFrame
         Dataframe sorted by specified ranking method.
     """
-    if method == "all":
-        for m in ["betweenness_centrality", "closeness_centrality"]:
-            df = df.sort_values(by=m, ascending=False)
-            df.reset_index(drop=True, inplace=True)
-            df["ordering_" + m] = (
-                df.index
-            )  # ranking is the order of appearance in the method's ranking
+    if method == "random": # ranking is random
         df["ordering_random"] = np.random.permutation(np.arange(df.shape[0]))
-    else:
+        df = df.sort_values(by="ordering_random", ascending=False)
+        df.reset_index(drop=True, inplace=True)
+        df["ordering_" + method] = (
+            df.index
+        )  
+    else: # ranking is the order of appearance in the method's ranking
         df = df.sort_values(by=method, ascending=False)
         df.reset_index(drop=True, inplace=True)
         df["ordering_" + method] = (
             df.index
-        )  # ranking is the order of appearance in the method's ranking
+        )  
     return df
 
 
