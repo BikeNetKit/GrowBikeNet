@@ -50,7 +50,7 @@ def growbikenet(
     proj_crs : str, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator)
     ranking : str, default 'betweenness_centrality'
-        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'all'. If 'all', will also add a random ranking.
+        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str, optional, default 'grid'
         If set to 'grid', creates a square grid
         If set to 'rail', uses rail stations
@@ -91,9 +91,9 @@ def growbikenet(
         raise TypeError("proj_crs must be a string")
     if type(ranking) is not str:
         raise TypeError("ranking must be a string")
-    if ranking not in ["betweenness_centrality", "closeness_centrality", "all"]:
+    if ranking not in ["betweenness_centrality", "closeness_centrality", "random"]:
         raise ValueError(
-            "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'all'"
+            "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
         )
     if seed_point_type != "grid" and seed_point_type != "rail":
         raise ValueError("seed_point_type must be 'grid' or 'rail'")
@@ -168,9 +168,9 @@ def growbikenet(
     if existing_network_spacing:
         seed_points_snapped = update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, proj_crs)
           
-    # Abort if only 0 or 1 seed points
-    if len(seed_points_snapped) < 2:
-        raise RuntimeError("Found less than 2 seed points, but more are needed.")
+    # Abort if less than 3 seed points. Delaunay needs at least 3.
+    if len(seed_points_snapped) < 3:
+        raise RuntimeError("Found less than 3 seed points, but more are needed.")
 
     ### Triangulate
     # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
@@ -203,13 +203,13 @@ def growbikenet(
 
     ### Compute edge attributes
     print("Computing edge attributes..")
-    if ranking == "betweenness_centrality" or ranking == "all":
+    if ranking == "betweenness_centrality":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
             A, weight="distance", normalized=True
         )
         nx.set_edge_attributes(A, bc_values, name="betweenness_centrality")
-    if ranking == "closeness_centrality" or ranking == "all":
+    elif ranking == "closeness_centrality":
         # Add closeness attributes to nodes and edges
         cc_values_nodes = nx.closeness_centrality(A, distance="distance")
         nx.set_node_attributes(A, cc_values_nodes, name="closeness_centrality")
@@ -235,16 +235,6 @@ def growbikenet(
         a_edges.sort_index(inplace=True)
         a_edges.crs = proj_crs
 
-
-    # Export matrix, for 1 seed_point_type
-    # ------------------------------------------------------
-    # ranking | overlaps | gpkg    | geojson   | Implemented
-    # single  | True     | 1 file  | 2+1 files | Y/Y
-    # single  | False    | 1 file  | 2+1 files | Y/Y
-    # all     | True     | 1 file  | 2+1 files | N/N 
-    # all     | False    | 3 files | 2+3 files | N/N
-    # ------------------------------------------------------
-
     # Remove edge overlaps
     if not allow_edge_overlaps:
         a_edges = remove_edge_overlaps(a_edges)
@@ -264,8 +254,12 @@ def growbikenet(
             city_string = city_name
         else:
             city_string = export_data_slug
+        if existing_network_spacing:
+            exnw_string = "_with-bikenw"
+        else:
+            exnw_string = ""
         export_data_filename = (
-            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + "." + export_file_format
+            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + export_file_format
         )
 
     # Save to file
@@ -308,26 +302,20 @@ def growbikenet(
         # Define linewidths
         lws = {"street": 0.75, "bike": 2}
 
-        if ranking == "all": 
-            ranking_list = ["betweenness_centrality", "closeness_centrality", "random"]
-        else:
-            ranking_list = [ranking]
-        for ranking_this in ranking_list:
-            os.makedirs("./results/plots/ordering_"+ranking_this+"/", exist_ok=True)
-            create_plots(
-                routed_edges_gdf,
-                seed_points_snapped,
-                streetcolor,
-                edgecolor,
-                seedcolor,
-                lws,
-                ranking_this,
-            )
+        os.makedirs("./results/plots/ordering_"+ranking+"/", exist_ok=True)
+        create_plots(
+            routed_edges_gdf,
+            seed_points_snapped,
+            streetcolor,
+            edgecolor,
+            seedcolor,
+            lws,
+            ranking,
+        )
 
         if export_video:
-            for ranking_this in ranking_list:
-                print("Generating video..")
-                os.makedirs("./results/plots/ordering_"+ranking_this+"/video/", exist_ok=True)
-                make_video(img_folder_name="./results/plots/ordering_"+ranking_this+"/", fps=5)
+            print("Generating video..")
+            os.makedirs("./results/plots/ordering_"+ranking+"/video/", exist_ok=True)
+            make_video(img_folder_name="./results/plots/ordering_"+ranking+"/", fps=5)
 
     return a_edges
