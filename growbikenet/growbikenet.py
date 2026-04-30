@@ -226,6 +226,15 @@ def growbikenet(
 
     a_edges = gpd.GeoDataFrame(a_edges, crs=proj_crs, geometry="geometry")
 
+    # Add existing bike network on top, https://stackoverflow.com/a/43408736
+    if existing_network_spacing:
+        bikenet = gpd.GeoDataFrame({c: None for c in a_edges.columns}, index=[-1])
+        bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
+        a_edges.loc[-1] = bikenet.loc[-1]
+        a_edges.index = a_edges.index+1
+        a_edges.sort_index(inplace=True)
+        a_edges.crs = proj_crs
+
     # Generate export data filename
     if export_data or export_plots or export_video:
         os.makedirs("./results/", exist_ok=True)
