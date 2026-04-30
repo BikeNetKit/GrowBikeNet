@@ -236,20 +236,29 @@ def growbikenet(
         a_edges.crs = proj_crs
 
 
-    # Export matrix
-    # ----------------------------------------------------
-    # ranking | overlaps | gpkg    | geojson | Implemented
-    # single  | True     | 1 file  | 3 files | Y/Y
-    # single  | False    | 1 file  | 3 files | Y/Y
-    # all     | True     | 1 file  | 3 files | N/N 
-    # all     | False    | 3 files | 9 files | N/N
-    # ----------------------------------------------------
+    # Export matrix, for 1 seed_point_type
+    # ------------------------------------------------------
+    # ranking | overlaps | gpkg    | geojson   | Implemented
+    # single  | True     | 1 file  | 2+1 files | Y/Y
+    # single  | False    | 1 file  | 2+1 files | Y/Y
+    # all     | True     | 1 file  | 2+1 files | N/N 
+    # all     | False    | 3 files | 2+3 files | N/N
+    # ------------------------------------------------------
 
+    # Remove edge overlaps
     if not allow_edge_overlaps:
         a_edges = remove_edge_overlaps(a_edges)
         overlap_string = ""
     else:
         overlap_string = "_overlap"
+
+    # Add lengths and cumulative lengths, rounded to integer meters
+    a_edges['length'] = a_edges.geometry.length
+    a_edges['length_cumulative'] = a_edges.geometry.length.cumsum()
+    bikenet['length'] = bikenet.geometry.length
+    bikenet['length_cumulative'] = bikenet.geometry.length.cumsum()
+    a_edges = a_edges.astype({'length': int, 'length_cumulative': int})
+    bikenet = bikenet.astype({'length': int, 'length_cumulative': int})
 
     # Generate export data filename
     if export_data or export_plots or export_video:
