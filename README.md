@@ -55,6 +55,7 @@ pixi init --import environment.yml
 Alternatively to Pixi, use [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) or [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html).
 
 <details><summary>Instructions</summary>
+
 > [!IMPORTANT]  
 > As of 2026-05-04, the conda-forge installation is not yet working. We will remove this note once it works.
 
@@ -78,6 +79,7 @@ pip install growbikenet
 After having set up the environment above, if you wish to run growbikenet via [JupyterLab](https://pypi.org/project/jupyterlab/), follow the
 
 <details><summary>Instructions</summary>
+
 #### With Pixi
 Running growbikenet in Jupter lab with [`Pixi`](https://pixi.prefix.dev/latest/) is straightforward:
 
