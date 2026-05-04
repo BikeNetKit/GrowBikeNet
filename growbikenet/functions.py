@@ -36,8 +36,8 @@ def prepare_network(city_name, proj_crs, network_type='all_public', custom_filte
     ----------
     city_name : str
         Name of the city that the analysis should be performed on.
-    proj_crs : str, default '3857'
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+    proj_crs : str
+        Coordinate reference system that is used to project osm data.
     network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”} 
         What type of street network to retrieve if custom_filter is None.
     custom_filter : (str | list[str] | None)
@@ -63,15 +63,15 @@ def prepare_network(city_name, proj_crs, network_type='all_public', custom_filte
     nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
     return nodes, edges, g_undir
 
-def nx_to_nodes_edges(G, proj_crs='3857'):
+def nx_to_nodes_edges(G, proj_crs):
     """Get nodes and projected edges from networkX graph
     
     Parameters
     ----------
     G : networkx.classes.multigraph.MultiGraph
         networkX graph, undirected
-    proj_crs : str, default '3857'
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+    proj_crs : str
+        Coordinate reference system that is used to project osm data.
         
     Returns
     -------
@@ -175,7 +175,7 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir):
     city_name : str
         Name of the city that the analysis should be performed on.
     proj_crs : str
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+        Coordinate reference system that is used to project osm data.
     g_undir : networkx.classes.multigraph.MultiGraph
         Street network networkX graph, undirected
 
@@ -237,7 +237,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     existing_network_spacing : int
         Positive integer denoting spacing between seed points, in meters, only on the existing bicycle network.
     proj_crs : str
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+        Coordinate reference system that is used to project osm data.
 
     Returns
     -------

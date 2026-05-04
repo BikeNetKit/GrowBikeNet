@@ -48,7 +48,7 @@ def growbikenet(
     city_name : str
         Name of the city that the analysis should be performed on
     proj_crs : str, default '3857'
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator)
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then '3035' (LAEA) is better for Europe, and '54035' (Equal Earth) is better worldwide.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str, optional, default 'grid'
