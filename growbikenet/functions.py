@@ -28,14 +28,14 @@ def intersects_properly(geom1, geom2):
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
 
-def prepare_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True):
+def prepare_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True, city_boundary_file):
     """Download and prepare a street network from OSM via OSMnx
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
     Then, stores the undirected OSM data in gdfs and projects using proj_crs.
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on.
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file is set.
     proj_crs : str
         Coordinate reference system that is used to project osm data.
     network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”} 
@@ -44,6 +44,9 @@ def prepare_network(city_name, proj_crs, network_type='all_public', custom_filte
         A custom ways filter to be used instead of the network_type presets
     retain_all : bool, default True
         If True, return the entire graph even if it is not connected, useful for disconnected bicycle networks. If False, retain only the largest weakly connected component, useful for road networks.
+    city_boundary_file : (str | None)
+        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file. For example, "copenhagen.shp".
+
     Returns
     -------
     nodes : geopandas.geodataframe.GeoDataFrame
@@ -165,7 +168,7 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
 
     return seed_points_exnw
     
-def update_with_existing_bike_network(city_name, proj_crs, g_undir):
+def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_file):
     """Update street network with existing bike network
 
     Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir.
@@ -173,11 +176,13 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir):
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on.
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file is set.
     proj_crs : str
         Coordinate reference system that is used to project osm data.
     g_undir : networkx.classes.multigraph.MultiGraph
         Street network networkX graph, undirected
+    city_boundary_file : (str | None)
+        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file. For example, "copenhagen.shp".
 
     Returns
     -------

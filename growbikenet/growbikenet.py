@@ -38,6 +38,7 @@ def growbikenet(
     export_plots=False,
     export_video=False,
     allow_edge_overlaps=False,
+    city_boundary_file=None,
 ):
     """Creates a list of edges ordered by a specified ranking method.
 
@@ -46,7 +47,7 @@ def growbikenet(
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file is set.
     proj_crs : str, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then '3035' (LAEA) is better for Europe, and '54035' (Equal Earth) is better worldwide.
     ranking : str, default 'betweenness_centrality'
@@ -62,7 +63,7 @@ def growbikenet(
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
     export_data : bool, optional, default True
         If set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name
-    export_data_slug : stri, optional, default None
+    export_data_slug : str, optional, default None
         If not set to None, the city_name will be slugified and used as the slug in the filename of the data export
     export_file_format : str, optional, default "geojson"
         File format for the data export, relevant if export_data set to True. Default "geojson", also possible "gpkg". If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
@@ -72,6 +73,8 @@ def growbikenet(
         If set to True, video will be saved to a file (only possible if export_plots is set to True)
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages. In this case, growth stages that do not add anything new are deleted.
+    city_boundary_file : str, optional, default None
+        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file. For example, "copenhagen.shp".
 
     Returns
     -------
@@ -129,6 +132,8 @@ def growbikenet(
         raise TypeError("export_plots must be a boolean")
     if type(export_video) is not bool:
         raise TypeError("export_video must be a boolean")
+    if city_boundary_file is not None and type(city_boundary_file) is not str:
+        raise TypeError("city_boundary_file must be None or a string")
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
@@ -137,10 +142,10 @@ def growbikenet(
 
     # Fetch street network data from osmnx
     # Due to retain_all=False, this fetches the largest connected component
-    nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False)
+    nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_file=city_boundary_file)
 
     if existing_network_spacing: # TO DO: Check for empty bike infra!
-        nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir)
+        nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_file=city_boundary_file)
 
     ### Create seed points
     print("Creating " + seed_point_type + " seed points..")
