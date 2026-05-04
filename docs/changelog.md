@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.7.1 (2026-05-04)
+
+- 🧹 Make edge overlap removal ~5x faster
+
 ## Version 0.7.0 (2026-05-04)
 
 - 🆕 Added option to grow from existing bicycle network
