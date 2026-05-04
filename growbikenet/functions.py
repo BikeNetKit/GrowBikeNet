@@ -28,22 +28,25 @@ def intersects_properly(geom1, geom2):
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
 
-def prepare_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True):
+def prepare_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True, city_boundary_file=None):
     """Download and prepare a street network from OSM via OSMnx
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
     Then, stores the undirected OSM data in gdfs and projects using proj_crs.
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on.
-    proj_crs : str, default '3857'
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file is set.
+    proj_crs : str
+        Coordinate reference system that is used to project osm data.
     network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”} 
         What type of street network to retrieve if custom_filter is None.
     custom_filter : (str | list[str] | None)
         A custom ways filter to be used instead of the network_type presets
     retain_all : bool, default True
         If True, return the entire graph even if it is not connected, useful for disconnected bicycle networks. If False, retain only the largest weakly connected component, useful for road networks.
+    city_boundary_file : (str | None), default None
+        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file. For example, "copenhagen.shp".
+
     Returns
     -------
     nodes : geopandas.geodataframe.GeoDataFrame
@@ -53,25 +56,34 @@ def prepare_network(city_name, proj_crs, network_type='all_public', custom_filte
     g_undir : networkx.classes.multigraph.MultiGraph
         Extracted networkX graph, undirected
     """
+
     # Fetch street network data from osmnx
-    g = ox.graph_from_place(
-    city_name, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
-    )
+    if city_boundary_file is None:
+        g = ox.graph_from_place(
+        city_name, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
+        )
+    else:
+        shp = gpd.read_file(city_boundary_file)
+        city_boundary_polygon = shp.iloc[0].geometry
+        g = ox.graph_from_polygon(
+        city_boundary_polygon, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
+        )
+
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     # Export osmnx data to gdfs
     nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
     return nodes, edges, g_undir
 
-def nx_to_nodes_edges(G, proj_crs='3857'):
+def nx_to_nodes_edges(G, proj_crs):
     """Get nodes and projected edges from networkX graph
     
     Parameters
     ----------
     G : networkx.classes.multigraph.MultiGraph
         networkX graph, undirected
-    proj_crs : str, default '3857'
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+    proj_crs : str
+        Coordinate reference system that is used to project osm data.
         
     Returns
     -------
@@ -165,7 +177,7 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
 
     return seed_points_exnw
     
-def update_with_existing_bike_network(city_name, proj_crs, g_undir):
+def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_file=None):
     """Update street network with existing bike network
 
     Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir.
@@ -173,11 +185,13 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir):
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on.
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file is set.
     proj_crs : str
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+        Coordinate reference system that is used to project osm data.
     g_undir : networkx.classes.multigraph.MultiGraph
         Street network networkX graph, undirected
+    city_boundary_file : (str | None), default None
+        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file. For example, "copenhagen.shp".
 
     Returns
     -------
@@ -205,7 +219,7 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir):
             ox.settings.useful_tags_way.extend(custom_tag)
     # Fetch protected bike network data from osmnx
     # Due to retain_all=True, this fetches all the connected components
-    nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True)
+    nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True, city_boundary_file=city_boundary_file)
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
 
     # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
@@ -237,7 +251,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     existing_network_spacing : int
         Positive integer denoting spacing between seed points, in meters, only on the existing bicycle network.
     proj_crs : str
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator).
+        Coordinate reference system that is used to project osm data.
 
     Returns
     -------
