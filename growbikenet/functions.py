@@ -28,7 +28,7 @@ def intersects_properly(geom1, geom2):
     return geom1.intersects(geom2) and not geom1.touches(geom2)
 
 
-def prepare_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True, city_boundary_file):
+def prepare_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True, city_boundary_file=None):
     """Download and prepare a street network from OSM via OSMnx
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
     Then, stores the undirected OSM data in gdfs and projects using proj_crs.
@@ -44,7 +44,7 @@ def prepare_network(city_name, proj_crs, network_type='all_public', custom_filte
         A custom ways filter to be used instead of the network_type presets
     retain_all : bool, default True
         If True, return the entire graph even if it is not connected, useful for disconnected bicycle networks. If False, retain only the largest weakly connected component, useful for road networks.
-    city_boundary_file : (str | None)
+    city_boundary_file : (str | None), default None
         If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file. For example, "copenhagen.shp".
 
     Returns
@@ -56,10 +56,19 @@ def prepare_network(city_name, proj_crs, network_type='all_public', custom_filte
     g_undir : networkx.classes.multigraph.MultiGraph
         Extracted networkX graph, undirected
     """
+
     # Fetch street network data from osmnx
-    g = ox.graph_from_place(
-    city_name, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
-    )
+    if city_boundary_file is None:
+        g = ox.graph_from_place(
+        city_name, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
+        )
+    else:
+        shp = gpd.read_file(city_boundary_file)
+        city_boundary_polygon = shp.iloc[0].geometry
+        g = ox.graph_from_polygon(
+        city_boundary_polygon, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
+        )
+
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     # Export osmnx data to gdfs
@@ -168,7 +177,7 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
 
     return seed_points_exnw
     
-def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_file):
+def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_file=None):
     """Update street network with existing bike network
 
     Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir.
@@ -181,7 +190,7 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundar
         Coordinate reference system that is used to project osm data.
     g_undir : networkx.classes.multigraph.MultiGraph
         Street network networkX graph, undirected
-    city_boundary_file : (str | None)
+    city_boundary_file : (str | None), default None
         If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file. For example, "copenhagen.shp".
 
     Returns
@@ -210,7 +219,7 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundar
             ox.settings.useful_tags_way.extend(custom_tag)
     # Fetch protected bike network data from osmnx
     # Due to retain_all=True, this fetches all the connected components
-    nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True)
+    nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True, city_boundary_file=city_boundary_file)
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
 
     # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.

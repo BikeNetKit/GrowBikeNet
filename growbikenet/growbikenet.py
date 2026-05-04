@@ -49,7 +49,7 @@ def growbikenet(
     city_name : str
         Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file is set.
     proj_crs : str, default '3857'
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then '3035' (LAEA) is better for Europe, and '54035' (Equal Earth) is better worldwide.
+        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str, optional, default 'grid'
@@ -73,8 +73,8 @@ def growbikenet(
         If set to True, video will be saved to a file (only possible if export_plots is set to True)
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages. In this case, growth stages that do not add anything new are deleted.
-    city_boundary_file : str, optional, default None
-        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file. For example, "copenhagen.shp".
+    city_boundary_file : (str | None), default None
+        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp".
 
     Returns
     -------
@@ -275,7 +275,11 @@ def growbikenet(
         ### save data
         print("Saving data..")
         seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
-        city_boundary = ox.geocoder.geocode_to_gdf(city_name)
+        if city_boundary_file:
+            shp = gpd.read_file(city_boundary_file)
+            city_boundary = shp.iloc[[0]] # This needs to stay a gdf
+        else:
+            city_boundary = ox.geocoder.geocode_to_gdf(city_name)
         city_boundary.to_crs(epsg=proj_crs, inplace=True)
         # We have meter precision, so rounding to integers is fine. Better would be to 
         # change dtypes to int, but this does not seem possible without manual looping.
