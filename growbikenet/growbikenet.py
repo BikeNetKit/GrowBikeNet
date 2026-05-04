@@ -87,7 +87,8 @@ def growbikenet(
     .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
 
     """
-    # check if user input is valid
+    
+    # Check if user input is valid
     if type(city_name) is not str:
         raise TypeError("city_name must be a string")
     if type(proj_crs) is not str:
@@ -134,11 +135,17 @@ def growbikenet(
         raise TypeError("export_video must be a boolean")
     if city_boundary_file is not None and type(city_boundary_file) is not str:
         raise TypeError("city_boundary_file must be None or a string")
+    if type(city_boundary_file) is str and not os.path.isfile(city_boundary_file):
+        raise FileNotFoundError("city_boundary_file not found")
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
     ### Download and preprocess data from OSM
-    print("Downloading OSM data..")
+    if city_boundary_file:
+        import_string = " from city boundary provided in "+city_boundary_file
+    else:
+        import_string = ""
+    print("Downloading OSM data"+import_string+"..")
 
     # Fetch street network data from osmnx
     # Due to retain_all=False, this fetches the largest connected component
