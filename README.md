@@ -6,15 +6,27 @@
 [![Docs](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml/badge.svg)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml)
 [![Test](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml)
 
-Source code for the project _GrowBikeNet_, building on [the code from the research paper](https://github.com/mszell/bikenwgrowth) _Growing Urban Bicycle Networks_.
+The Python package `growbikenet` provides a command-line interface to download and pre-process data from OpenStreetMap, prepare points of interest, run simulations, save the results, create plots and videos. The source code builds on [the code from the research paper](https://github.com/mszell/bikenwgrowth) _Growing Urban Bicycle Networks_.
 
 ## Installation
 
-### Set up environment
+### The easy way
+
+> [!IMPORTANT]  
+> As of 2026-05-04, the conda-forge installation is not yet working. We will remove this note once it works.
+
+The best way to install GrowBikeNet is using [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html) and the `conda-forge` channel:
+
+```
+conda install -c conda-forge growbikenet
+```
+
+### Advanced installations
+#### Set up environment
 
 The main step is to set up a virtual environment `gbnenv` in which to install the package, and then to use or run the environment.
 
-#### With Pixi
+##### With Pixi
 
 Installation with [`Pixi`](https://pixi.prefix.dev/latest/) is fastest and most stable:
 
@@ -38,11 +50,13 @@ _Alternatively_, or if you run into issues, [clone this repository](https://gith
 pixi init --import environment.yml
 ```
 
-#### With mamba/conda/pip
+##### With mamba/conda/pip
 
 Alternatively to Pixi, use [`mamba`](https://mamba.readthedocs.io/en/latest/index.html) or [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html).
 
 <details><summary>Instructions</summary>
+> [!IMPORTANT]  
+> As of 2026-05-04, the conda-forge installation is not yet working. We will remove this note once it works.
 
 ```
 mamba create -n gbnenv -c conda-forge growbikenet
