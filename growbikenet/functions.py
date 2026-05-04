@@ -567,10 +567,11 @@ def remove_edge_overlaps(edges_in):
     grown_net = MultiLineString()
     for row in edges_in.itertuples():
         grown_net_new = grown_net | row.geometry # Union
-        if grown_net_new.length > grown_net.length:
-            edges_out.loc[row.Index, ['geometry']] = grown_net_new - grown_net # Difference
-        else: # There was nothing added, so we delete the row
+        grown_net_diff = grown_net_new - grown_net
+        if grown_net_diff.is_empty: # There was nothing added, so we delete the row
             edges_out.drop(index=row.Index, inplace=True)
+        else: 
+            edges_out.loc[row.Index, ['geometry']] = grown_net_diff # Difference
         grown_net = grown_net_new
     return edges_out
 
