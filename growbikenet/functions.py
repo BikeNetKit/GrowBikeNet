@@ -577,16 +577,23 @@ def remove_edge_overlaps(edges_in):
     edges_out: geopandas.geodataframe.GeoDataFrame
         The grown bike network without edge overlaps, in a projected coordinate reference system
     """
+    # import time
+    # start = time.time()
+
     edges_out = edges_in.copy()
     grown_net = MultiLineString()
     for row in edges_in.itertuples():
-        grown_net_new = grown_net | row.geometry # Union
-        grown_net_diff = grown_net_new - grown_net
-        if grown_net_diff.is_empty: # There was nothing added, so we delete the row
-            edges_out.drop(index=row.Index, inplace=True)
-        else: 
-            edges_out.loc[row.Index, ['geometry']] = grown_net_diff # Difference
-        grown_net = grown_net_new
+        grown_net_new = grown_net | row.geometry # Calculate union
+        if grown_net_new.length > grown_net.length: # Something was potentially added
+            grown_net_diff = row.geometry - grown_net # Calculate difference
+            if grown_net_diff.is_empty: # There was nothing added, so we delete the row
+                edges_out.drop(index=row.Index, inplace=True)
+            else: # Something was added
+                edges_out.loc[row.Index, ['geometry']] = grown_net_diff # Add difference
+                grown_net = grown_net_new # Only update if something was added
+
+    # end = time.time()
+    # print(end - start)
     return edges_out
 
 def df_from_graph(A, method):
