@@ -203,6 +203,7 @@ def growbikenet(
 
     ### Compute edge attributes
     print("Computing edge attributes..")
+    # The ranking=="random" case has no edge attributes and is handled in rank_df
     if ranking == "betweenness_centrality":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
@@ -215,6 +216,7 @@ def growbikenet(
         nx.set_node_attributes(A, cc_values_nodes, name="closeness_centrality")
         cc_values = node_to_edge_attributes(cc_values_nodes, A.edges)
         nx.set_edge_attributes(A, cc_values, name="closeness_centrality")
+
 
     ### Export attributes to gdfs:
 
@@ -237,10 +239,11 @@ def growbikenet(
 
     # Remove edge overlaps
     if not allow_edge_overlaps:
-        a_edges = remove_edge_overlaps(a_edges)
+        print("Removing edge overlaps..")
+        a_edges = remove_edge_overlaps(a_edges) # Can take a while, could be sped up.
         overlap_string = ""
     else:
-        overlap_string = "_overlap"
+        overlap_string = "_with-overlaps"
 
     # Add lengths and cumulative lengths, rounded to integer meters
     a_edges['length'] = a_edges.geometry.length
