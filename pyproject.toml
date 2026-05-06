@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "growbikenet"
-version = "0.7.1"
+dynamic = ["version"]
 authors = [
   { name = "Manuel Knepper" },
   { name = "Anastassia Vybornova" },
@@ -36,6 +36,7 @@ dependencies = [
     "pip",
     "momepy",
     "opencv-python",
+    "python-slugify",
 ]
 
 [project.urls]
