@@ -129,7 +129,7 @@ If you want to develop the project, [clone this repository](https://github.com/B
 pixi init --import environment-dev.yml
 ```
 
-The developemt environment is called `gbnenvdev`. Make sure to also read [our contribution guidelines](CONTRIBUTING.md).
+The developemt environment is called `gbnenvdev`. Make sure to also read [our contribution guidelines](https://github.com/BikeNetKit/FixBikeNet?tab=contributing-ov-file).
 
 ## Usage
 
