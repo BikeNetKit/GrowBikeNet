@@ -6,7 +6,12 @@
 [![Docs](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml/badge.svg)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml)
 [![Test](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml)
 
-The Python package `growbikenet` provides a command-line interface to download and pre-process data from OpenStreetMap, prepare points of interest, run simulations, save the results, create plots and videos. The source code builds on [the code from the research paper](https://github.com/mszell/bikenwgrowth) _Growing Urban Bicycle Networks_.
+The Python package `growbikenet` grows an urban bicycle network from scratch or from an existing bicycle network. 
+
+The software downloads and pre-processes data from OpenStreetMap, prepares seed points to connect, runs simulations, saves the results, create plots and videos. The source code builds on [the code from the research paper](https://github.com/mszell/bikenwgrowth) _Growing Urban Bicycle Networks_ and on [the code from the research paper](https://github.com/pietrofolco/Data-driven_bicycle_network_planning_for_demand_and_safety) _Data-driven micromobility network planning for demand and safety_.
+
+**Publication** (primary): [https://doi.org/10.1038/s41598-022-10783-y](https://doi.org/10.1038/s41598-022-10783-y)  
+**Publication** (secondary): [https://doi.org/10.1177/23998083221135611](https://doi.org/10.1177/23998083221135611)
 
 ## Installation
 
