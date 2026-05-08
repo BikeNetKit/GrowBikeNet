@@ -47,7 +47,7 @@ def growbikenet(
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file is set.
+        Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled (for data fetching) if city_boundary_file is set.
     proj_crs : str, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
