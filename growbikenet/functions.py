@@ -584,13 +584,15 @@ def remove_edge_overlaps(edges_in):
     grown_net = MultiLineString()
     for row in edges_in.itertuples():
         grown_net_new = grown_net | row.geometry # Calculate union
-        if grown_net_new.length > grown_net.length: # Something was potentially added
+        if grown_net_new.length > grown_net.length: # Something was added
             grown_net_diff = row.geometry - grown_net # Calculate difference
-            if grown_net_diff.is_empty: # There was nothing added, so we delete the row
-                edges_out.drop(index=row.Index, inplace=True)
-            else: # Something was added
-                edges_out.loc[row.Index, ['geometry']] = grown_net_diff # Add difference
-                grown_net = grown_net_new # Only update if something was added
+            # print(row.geometry, grown_net, grown_net_diff)
+            edges_out.loc[row.Index, ['geometry']] = grown_net_diff # Add difference
+            grown_net = grown_net_new # Only update if something was added
+        else: # There was nothing added, so we delete the row
+            edges_out.drop(index=row.Index, inplace=True)
+    edges_out.drop_duplicates(inplace=True) # How can duplicates happen??
+    edges_out.reset_index(drop=True, inplace=True)
 
     # end = time.time()
     # print(end - start)
