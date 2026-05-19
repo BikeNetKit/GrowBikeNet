@@ -591,6 +591,7 @@ def remove_edge_overlaps(edges_in):
             grown_net = grown_net_new # Only update if something was added
         else: # There was nothing added, so we delete the row
             edges_out.drop(index=row.Index, inplace=True)
+    edges_out.drop_duplicates(inplace=True) # How can duplicates happen??
     edges_out.reset_index(drop=True, inplace=True)
 
     # end = time.time()
