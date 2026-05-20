@@ -142,18 +142,21 @@ def growbikenet(
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
     ### Download and preprocess data from OSM
-    if city_boundary_file:
-        import_string = " from city boundary provided in "+city_boundary_file
-    else:
-        import_string = ""
-    print("Downloading OSM data"+import_string+"..")
+    pbar = tqdm(
+        desc="Downloading OSM data",
+        total=1+int(bool(existing_network_spacing)),
+        unit="network",
+        )
 
     # Fetch street network data from osmnx
     # Due to retain_all=False, this fetches the largest connected component
     nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_file=city_boundary_file)
+    pbar.update(1)
 
     if existing_network_spacing: # TO DO: Check for empty bike infra!
         nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_file=city_boundary_file)
+        pbar.update(1)
+    pbar.close()
 
     ### Create seed points
     print("Creating " + seed_point_type + " seed points..")
