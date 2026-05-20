@@ -32,3 +32,4 @@ dependencies:
       - sphinx-copybutton
       - sphinx-gallery
       - python-slugify
+      - coverage

@@ -84,4 +84,6 @@ jobs:
 
       - name: "Run tests ${{ matrix.submodule.name }}"
         run: |
-          pytest ${{ matrix.submodule.pytest_args }}
+          coverage run --data-file tests/.coverage -m pytest ${{ matrix.submodule.pytest_args }}
+          coverage json --data-file tests/.coverage -o buf/tests/coverage.json
+          coverage report --data-file tests/.coverage
