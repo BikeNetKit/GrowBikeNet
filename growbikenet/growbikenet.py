@@ -5,6 +5,7 @@ import osmnx as ox
 import geopandas as gpd
 from slugify import slugify
 import warnings
+from tqdm import tqdm
 from growbikenet.functions import (
     get_principal_bearing,
     get_grid_seed_points,
@@ -251,7 +252,6 @@ def growbikenet(
 
     # Remove edge overlaps
     if not allow_edge_overlaps:
-        print("Removing edge overlaps..")
         a_edges = remove_edge_overlaps(a_edges) # Can take a while, could be sped up.
         overlap_string = ""
     else:

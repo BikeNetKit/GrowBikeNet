@@ -6,6 +6,7 @@ import osmnx as ox
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point, MultiLineString
+from tqdm import tqdm
 
 
 def intersects_properly(geom1, geom2):
@@ -582,7 +583,13 @@ def remove_edge_overlaps(edges_in):
 
     edges_out = edges_in.copy()
     grown_net = MultiLineString()
-    for row in edges_in.itertuples():
+    for row in tqdm(
+        edges_in.itertuples(),
+        desc="Removing edge overlaps",
+        leave=True,
+        unit="edge",
+        total=len(list(edges_in.itertuples())),
+        ):
         grown_net_new = grown_net | row.geometry # Calculate union
         if grown_net_new.length > grown_net.length: # Something was added
             grown_net_diff = row.geometry - grown_net # Calculate difference
