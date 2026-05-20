@@ -6,6 +6,8 @@ import geopandas as gpd
 from slugify import slugify
 import warnings
 from tqdm import tqdm
+import time
+import datetime
 from growbikenet.functions import (
     get_principal_bearing,
     get_grid_seed_points,
@@ -88,6 +90,7 @@ def growbikenet(
     .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
 
     """
+    starttime = time.time()
     
     # Check if user input is valid
     if type(city_name) is not str:
@@ -143,9 +146,10 @@ def growbikenet(
 
     ### Download and preprocess data from OSM
     pbar = tqdm(
-        desc="Downloading OSM data",
+        desc="{:<25}".format("Downloading OSM data"),
         total=1+int(bool(existing_network_spacing)),
         unit="network",
+        bar_format='{l_bar}{bar:20}{r_bar}',
         )
 
     # Fetch street network data from osmnx
@@ -160,9 +164,10 @@ def growbikenet(
 
     ### Create seed points
     pbar = tqdm(
-        desc="Creating " + seed_point_type + " seed points",
+        desc="{:<25}".format("Creating " + seed_point_type + " seed points"),
         total=3+int(bool(existing_network_spacing)),
         unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
         )
 
     if seed_point_type == "grid":
@@ -200,9 +205,10 @@ def growbikenet(
     ### Triangulate
     # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
     pbar = tqdm(
-        desc="Triangulation",
+        desc="{:<25}".format("Triangulation"),
         total=2,
         unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
         )
 
     # Create df with delaunay edges
@@ -216,9 +222,10 @@ def growbikenet(
 
     # Get "routed" geometry (LineString) for each abstract edge (row)
     pbar = tqdm(
-        desc="Routing",
+        desc="{:<25}".format("Routing"),
         total=2,
         unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
         )
 
     gdf = create_gdf_with_geoms(df, edges)
@@ -243,9 +250,10 @@ def growbikenet(
 
     ### Compute edge attributes
     pbar = tqdm(
-        desc="Computing edge attributes",
+        desc="{:<25}".format("Computing edge attributes"),
         total=2,
         unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
         )
 
     # The ranking=="random" case has no edge attributes and is handled in rank_df
@@ -315,9 +323,10 @@ def growbikenet(
     if export_data:
         ### save data
         pbar = tqdm(
-        desc="Saving data",
+        desc="{:<25}".format("Saving data"),
         total=1,
         unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
         )
         seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
         if city_boundary_file:
@@ -345,13 +354,12 @@ def growbikenet(
             city_boundary.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
         pbar.update(1)
         pbar.close()
-        
+
     if export_plots or export_video:
         ### Visualize
-        print("Creating visualizations..")
 
         # Read in file to plot
-        routed_edges_gdf = gpd.read_file(export_data_filename)
+        routed_edges_gdf = gpd.read_file("./results/"+export_data_filename, layer="Grown bike network")
 
         # Viz/plot settings (move to config file later)
         # Define color palette (from Michael's project: https://github.com/mszell/bikenwgrowth/blob/main/parameters/parameters.py)
@@ -373,8 +381,10 @@ def growbikenet(
         )
 
         if export_video:
-            print("Generating video..")
             os.makedirs("./results/plots/ordering_"+ranking+"/video/", exist_ok=True)
             make_video(img_folder_name="./results/plots/ordering_"+ranking+"/", fps=5)
+
+    endtime = time.time()
+    print("Finished in " + str(datetime.timedelta(seconds = round(endtime - starttime))))
 
     return a_edges

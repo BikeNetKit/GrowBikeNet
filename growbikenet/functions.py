@@ -585,10 +585,11 @@ def remove_edge_overlaps(edges_in):
     grown_net = MultiLineString()
     for row in tqdm(
         edges_in.itertuples(),
-        desc="Removing edge overlaps",
+        desc="{:<25}".format("Removing edge overlaps"),
         leave=True,
         unit="edge",
         total=len(list(edges_in.itertuples())),
+        bar_format='{l_bar}{bar:20}{r_bar}',
         ):
         grown_net_new = grown_net | row.geometry # Calculate union
         if grown_net_new.length > grown_net.length: # Something was added
