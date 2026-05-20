@@ -6,6 +6,7 @@ import osmnx as ox
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point, MultiLineString
+from tqdm import tqdm
 
 
 def intersects_properly(geom1, geom2):
@@ -507,7 +508,7 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
 def create_delaunay_edges(nodes_gdf):
     """Create df with edges that are part of Delaunay triangulation
 
-    Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
+    Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
 
     Parameters
     ----------
@@ -582,7 +583,14 @@ def remove_edge_overlaps(edges_in):
 
     edges_out = edges_in.copy()
     grown_net = MultiLineString()
-    for row in edges_in.itertuples():
+    for row in tqdm(
+        edges_in.itertuples(),
+        desc="{:<25}".format("Removing edge overlaps"),
+        leave=True,
+        unit="edge",
+        total=len(list(edges_in.itertuples())),
+        bar_format='{l_bar}{bar:20}{r_bar}',
+        ):
         grown_net_new = grown_net | row.geometry # Calculate union
         if grown_net_new.length > grown_net.length: # Something was added
             grown_net_diff = row.geometry - grown_net # Calculate difference

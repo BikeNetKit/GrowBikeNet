@@ -5,6 +5,7 @@ import re
 import pathlib
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
 def make_video(
@@ -34,7 +35,6 @@ def make_video(
     # if there was already such a file - remove it
     if os.path.exists(video_name):
         os.remove(video_name)
-        print("\t previous video removed")
 
     # generate frame in cv2
     frame = cv2.imread(images[0])
@@ -48,7 +48,14 @@ def make_video(
     )
 
     # add images as separate frames
-    for image in images:
+    for image in tqdm(
+        images,
+        desc="{:<25}".format("Generating video"),
+        leave=True,
+        unit="frame",
+        bar_format='{l_bar}{bar:20}{r_bar}',
+        ):
+
         video.write(
             cv2.resize(cv2.imread(image), (width, height)),
         )
@@ -64,7 +71,14 @@ def create_plots(
     routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, seedcolor, lws, ranking
 ):
 
-    for ordering in sorted(routed_edges_gdf["ordering_"+ranking].unique()):
+    for ordering in tqdm(
+        sorted(routed_edges_gdf["ordering_"+ranking].unique()),
+        desc="{:<25}".format("Generating plots"),
+        leave=True,
+        unit="plot",
+        bar_format='{l_bar}{bar:20}{r_bar}',
+        ):
+
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
         # first, plot street network as "base line"
@@ -80,7 +94,7 @@ def create_plots(
 
         ax.set_axis_off()
 
-        plot_id = "{:03d}".format(ordering)  # format plot ID with leading zeros
+        plot_id = "{:03d}".format(int(ordering))  # format plot ID with leading zeros
 
         fig.savefig(f"./results/plots/ordering_{ranking}/{plot_id}.png", dpi=150, bbox_inches='tight')
 

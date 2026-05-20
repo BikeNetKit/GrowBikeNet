@@ -5,6 +5,9 @@ import osmnx as ox
 import geopandas as gpd
 from slugify import slugify
 import warnings
+from tqdm import tqdm
+import time
+import datetime
 from growbikenet.functions import (
     get_principal_bearing,
     get_grid_seed_points,
@@ -42,7 +45,7 @@ def growbikenet(
 ):
     """Creates a list of edges ordered by a specified ranking method.
 
-    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point[2]_. Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
+    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point[2]_. Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
 
     Parameters
     ----------
@@ -62,15 +65,15 @@ def growbikenet(
     existing_network_spacing : int, optional, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
     export_data : bool, optional, default True
-        If set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name
+        If set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name.
     export_data_slug : str, optional, default None
         If not set to None, the city_name will be slugified and used as the slug in the filename of the data export
     export_file_format : str, optional, default "geojson"
         File format for the data export, relevant if export_data set to True. Default "geojson", also possible "gpkg". If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
     export_plots : bool, optional, default False
-        If set to True, plots will be saved to a file
+        If set to True, plots will be saved to files. Will overwrite previous files.
     export_video : bool, optional, default False
-        If set to True, video will be saved to a file (only possible if export_plots is set to True)
+        If set to True, video will be saved to a file (only possible if export_plots is set to True). Will overwrite previous files.
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages. In this case, growth stages that do not add anything new are deleted.
     city_boundary_file : (str | None), default None
@@ -87,6 +90,7 @@ def growbikenet(
     .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
 
     """
+    starttime = time.time()
     
     # Check if user input is valid
     if type(city_name) is not str:
@@ -141,21 +145,30 @@ def growbikenet(
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
     ### Download and preprocess data from OSM
-    if city_boundary_file:
-        import_string = " from city boundary provided in "+city_boundary_file
-    else:
-        import_string = ""
-    print("Downloading OSM data"+import_string+"..")
+    pbar = tqdm(
+        desc="{:<25}".format("Downloading OSM data"),
+        total=1+int(bool(existing_network_spacing)),
+        unit="network",
+        bar_format='{l_bar}{bar:20}{r_bar}',
+        )
 
     # Fetch street network data from osmnx
     # Due to retain_all=False, this fetches the largest connected component
     nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_file=city_boundary_file)
+    pbar.update(1)
 
     if existing_network_spacing: # TO DO: Check for empty bike infra!
         nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_file=city_boundary_file)
+        pbar.update(1)
+    pbar.close()
 
     ### Create seed points
-    print("Creating " + seed_point_type + " seed points..")
+    pbar = tqdm(
+        desc="{:<25}".format("Creating " + seed_point_type + " seed points"),
+        total=3+int(bool(existing_network_spacing)),
+        unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
+        )
 
     if seed_point_type == "grid":
         # Bearings work on unprojected graph
@@ -172,31 +185,51 @@ def growbikenet(
         )
         seed_points = seed_points[seed_points["geometry"].type == "Point"]
         seed_points.to_crs(proj_crs, inplace=True)
+    pbar.update(1)
 
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
+    pbar.update(1)
     seed_points_snapped = filter_seed_points(seed_points_snapped, seed_point_delta)
+    pbar.update(1)
     
     if existing_network_spacing:
         seed_points_snapped = update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, proj_crs)
-          
+        pbar.update(1)
+    pbar.close()
+
     # Abort if less than 3 seed points. Delaunay needs at least 3.
     if len(seed_points_snapped) < 3:
         raise RuntimeError("Found less than 3 seed points, but more are needed.")
 
     ### Triangulate
-    # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
-    print("Triangulation..")
+    # Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
+    pbar = tqdm(
+        desc="{:<25}".format("Triangulation"),
+        total=2,
+        unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
+        )
 
     # Create df with delaunay edges
     df = create_delaunay_edges(seed_points_snapped)
+    pbar.update(1)
 
     # Map each abstract edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
     df = add_path_to_df(df, edges, g_undir)
+    pbar.update(1)
+    pbar.close()
 
     # Get "routed" geometry (LineString) for each abstract edge (row)
-    print("Routing..")
+    pbar = tqdm(
+        desc="{:<25}".format("Routing"),
+        total=2,
+        unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
+        )
+
     gdf = create_gdf_with_geoms(df, edges)
+    pbar.update(1)
 
     # Add distances between source and target from geometry
     gdf["dist"] = gdf["geometry"].length
@@ -212,9 +245,17 @@ def growbikenet(
     A.add_edges_from(edge_list)
     nx.set_edge_attributes(A, dist_dict, "distance")
     nx.set_edge_attributes(A, geom_dict, "geometry")
+    pbar.update(1)
+    pbar.close()
 
     ### Compute edge attributes
-    print("Computing edge attributes..")
+    pbar = tqdm(
+        desc="{:<25}".format("Computing edge attributes"),
+        total=2,
+        unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
+        )
+
     # The ranking=="random" case has no edge attributes and is handled in rank_df
     if ranking == "betweenness_centrality":
         # Add betweenness attributes to edges
@@ -228,7 +269,7 @@ def growbikenet(
         nx.set_node_attributes(A, cc_values_nodes, name="closeness_centrality")
         cc_values = node_to_edge_attributes(cc_values_nodes, A.edges)
         nx.set_edge_attributes(A, cc_values, name="closeness_centrality")
-
+    pbar.update(1)
 
     ### Export attributes to gdfs:
 
@@ -248,10 +289,11 @@ def growbikenet(
         a_edges.index = a_edges.index+1
         a_edges.sort_index(inplace=True)
         a_edges.crs = proj_crs
+    pbar.update(1)
+    pbar.close()
 
     # Remove edge overlaps
     if not allow_edge_overlaps:
-        print("Removing edge overlaps..")
         a_edges = remove_edge_overlaps(a_edges) # Can take a while, could be sped up.
         overlap_string = ""
     else:
@@ -280,7 +322,12 @@ def growbikenet(
     # Save to file
     if export_data:
         ### save data
-        print("Saving data..")
+        pbar = tqdm(
+        desc="{:<25}".format("Saving data"),
+        total=1,
+        unit="step",
+        bar_format='{l_bar}{bar:20}{r_bar}',
+        )
         seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
         if city_boundary_file:
             shp = gpd.read_file(city_boundary_file)
@@ -305,13 +352,14 @@ def growbikenet(
                 a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
             seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
             city_boundary.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
+        pbar.update(1)
+        pbar.close()
 
     if export_plots or export_video:
         ### Visualize
-        print("Creating visualizations..")
 
         # Read in file to plot
-        routed_edges_gdf = gpd.read_file(export_data_filename)
+        routed_edges_gdf = gpd.read_file("./results/"+export_data_filename, layer="Grown bike network")
 
         # Viz/plot settings (move to config file later)
         # Define color palette (from Michael's project: https://github.com/mszell/bikenwgrowth/blob/main/parameters/parameters.py)
@@ -333,8 +381,10 @@ def growbikenet(
         )
 
         if export_video:
-            print("Generating video..")
             os.makedirs("./results/plots/ordering_"+ranking+"/video/", exist_ok=True)
             make_video(img_folder_name="./results/plots/ordering_"+ranking+"/", fps=5)
+
+    endtime = time.time()
+    print("Finished in " + str(datetime.timedelta(seconds = round(endtime - starttime))))
 
     return a_edges
