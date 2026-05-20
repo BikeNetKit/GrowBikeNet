@@ -45,7 +45,7 @@ def growbikenet(
 ):
     """Creates a list of edges ordered by a specified ranking method.
 
-    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point[2]_. Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
+    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point[2]_. Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
 
     Parameters
     ----------
@@ -65,15 +65,15 @@ def growbikenet(
     existing_network_spacing : int, optional, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
     export_data : bool, optional, default True
-        If set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name
+        If set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name.
     export_data_slug : str, optional, default None
         If not set to None, the city_name will be slugified and used as the slug in the filename of the data export
     export_file_format : str, optional, default "geojson"
         File format for the data export, relevant if export_data set to True. Default "geojson", also possible "gpkg". If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
     export_plots : bool, optional, default False
-        If set to True, plots will be saved to a file
+        If set to True, plots will be saved to files. Will overwrite previous files.
     export_video : bool, optional, default False
-        If set to True, video will be saved to a file (only possible if export_plots is set to True)
+        If set to True, video will be saved to a file (only possible if export_plots is set to True). Will overwrite previous files.
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages. In this case, growth stages that do not add anything new are deleted.
     city_boundary_file : (str | None), default None
@@ -203,7 +203,7 @@ def growbikenet(
         raise RuntimeError("Found less than 3 seed points, but more are needed.")
 
     ### Triangulate
-    # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
+    # Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
     pbar = tqdm(
         desc="{:<25}".format("Triangulation"),
         total=2,
