@@ -159,7 +159,11 @@ def growbikenet(
     pbar.close()
 
     ### Create seed points
-    print("Creating " + seed_point_type + " seed points..")
+    pbar = tqdm(
+        desc="Creating " + seed_point_type + " seed points",
+        total=3+int(bool(existing_network_spacing)),
+        unit="step",
+        )
 
     if seed_point_type == "grid":
         # Bearings work on unprojected graph
@@ -176,31 +180,49 @@ def growbikenet(
         )
         seed_points = seed_points[seed_points["geometry"].type == "Point"]
         seed_points.to_crs(proj_crs, inplace=True)
+    pbar.update(1)
 
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
+    pbar.update(1)
     seed_points_snapped = filter_seed_points(seed_points_snapped, seed_point_delta)
+    pbar.update(1)
     
     if existing_network_spacing:
         seed_points_snapped = update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, proj_crs)
-          
+        pbar.update(1)
+    pbar.close()
+
     # Abort if less than 3 seed points. Delaunay needs at least 3.
     if len(seed_points_snapped) < 3:
         raise RuntimeError("Found less than 3 seed points, but more are needed.")
 
     ### Triangulate
     # Triangulation is calculated for the abstract network, but metrics (betweenness, closeness) are calculated for the routed network accounting for lengths.
-    print("Triangulation..")
+    pbar = tqdm(
+        desc="Triangulation",
+        total=2,
+        unit="step",
+        )
 
     # Create df with delaunay edges
     df = create_delaunay_edges(seed_points_snapped)
+    pbar.update(1)
 
     # Map each abstract edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
     df = add_path_to_df(df, edges, g_undir)
+    pbar.update(1)
+    pbar.close()
 
     # Get "routed" geometry (LineString) for each abstract edge (row)
-    print("Routing..")
+    pbar = tqdm(
+        desc="Routing",
+        total=2,
+        unit="step",
+        )
+
     gdf = create_gdf_with_geoms(df, edges)
+    pbar.update(1)
 
     # Add distances between source and target from geometry
     gdf["dist"] = gdf["geometry"].length
@@ -216,9 +238,16 @@ def growbikenet(
     A.add_edges_from(edge_list)
     nx.set_edge_attributes(A, dist_dict, "distance")
     nx.set_edge_attributes(A, geom_dict, "geometry")
+    pbar.update(1)
+    pbar.close()
 
     ### Compute edge attributes
-    print("Computing edge attributes..")
+    pbar = tqdm(
+        desc="Computing edge attributes",
+        total=2,
+        unit="step",
+        )
+
     # The ranking=="random" case has no edge attributes and is handled in rank_df
     if ranking == "betweenness_centrality":
         # Add betweenness attributes to edges
@@ -232,7 +261,7 @@ def growbikenet(
         nx.set_node_attributes(A, cc_values_nodes, name="closeness_centrality")
         cc_values = node_to_edge_attributes(cc_values_nodes, A.edges)
         nx.set_edge_attributes(A, cc_values, name="closeness_centrality")
-
+    pbar.update(1)
 
     ### Export attributes to gdfs:
 
@@ -252,6 +281,8 @@ def growbikenet(
         a_edges.index = a_edges.index+1
         a_edges.sort_index(inplace=True)
         a_edges.crs = proj_crs
+    pbar.update(1)
+    pbar.close()
 
     # Remove edge overlaps
     if not allow_edge_overlaps:
@@ -283,7 +314,11 @@ def growbikenet(
     # Save to file
     if export_data:
         ### save data
-        print("Saving data..")
+        pbar = tqdm(
+        desc="Saving data",
+        total=1,
+        unit="step",
+        )
         seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
         if city_boundary_file:
             shp = gpd.read_file(city_boundary_file)
@@ -308,7 +343,9 @@ def growbikenet(
                 a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
             seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
             city_boundary.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
-
+        pbar.update(1)
+        pbar.close()
+        
     if export_plots or export_video:
         ### Visualize
         print("Creating visualizations..")
