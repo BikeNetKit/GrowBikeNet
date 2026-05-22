@@ -15,7 +15,7 @@ growbikenet.functions
       filter_seed_points
       filter_triangulation
       get_correct_edgetuples
-      get_seed_points
+      get_grid_seed_points
       intersects_properly
       node_to_edge_attributes
       prep
