@@ -13,7 +13,7 @@ authors = [
 maintainers = [{ name = "Manuel Knepper", email = "manuel.knepper@gmx.net" }]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
-description = "Python package to grow urban bicycle networks from scratch, spin-off from the paper 'Growing urban bicycle networks'"
+description = "BikeNetKit Python package to grow urban bicycle networks"
 keywords = ["Bicycle network planning", "Networks", "OpenStreetMap", "Urban Planning", "Urban Mobility"]
 classifiers = [
     "Development Status :: 4 - Beta",
