@@ -11,6 +11,7 @@ import datetime
 from growbikenet.functions import (
     get_principal_bearing,
     get_grid_seed_points,
+    get_rail_seed_points,
     snap_seed_points,
     filter_seed_points,
     create_delaunay_edges,
@@ -157,13 +158,21 @@ def growbikenet(
         bar_format='{l_bar}{bar:20}{r_bar}',
         )
 
+    # Get city boundary 
+    if city_boundary_file:
+        shp = gpd.read_file(city_boundary_file)
+        city_boundary_gdf = shp.iloc[[0]]    
+    else:
+        city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_name)
+    city_boundary_geometry = city_boundary_gdf.geometry[0]
+
     # Fetch street network data from osmnx
     # Due to retain_all=False, this fetches the largest connected component
-    nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_file=city_boundary_file)
+    nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_geometry=city_boundary_geometry)
     pbar.update(1)
 
     if existing_network_spacing: # TO DO: Check for empty bike infra!
-        nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_file=city_boundary_file)
+        nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_geometry=city_boundary_geometry)
         pbar.update(1)
     pbar.close()
 
@@ -185,11 +194,7 @@ def growbikenet(
             edges, seed_point_grid_spacing, principal_bearing
         )
     elif seed_point_type == "rail":
-        seed_points = ox.features_from_place(
-            city_name, {"railway": ["station", "halt"]}
-        )
-        seed_points = seed_points[seed_points["geometry"].type == "Point"]
-        seed_points.to_crs(proj_crs, inplace=True)
+        seed_points = get_rail_seed_points(city_name, proj_crs=proj_crs, city_boundary_geometry=city_boundary_geometry)
     pbar.update(1)
 
     # Snap seed points to OSM nodes
@@ -334,21 +339,16 @@ def growbikenet(
         bar_format='{l_bar}{bar:20}{r_bar}',
         )
         seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
-        if city_boundary_file:
-            shp = gpd.read_file(city_boundary_file)
-            city_boundary = shp.iloc[[0]] # This needs to stay a gdf
-        else:
-            city_boundary = ox.geocoder.geocode_to_gdf(city_name)
-        city_boundary.to_crs(epsg=proj_crs, inplace=True)
         # We have meter precision, so rounding to integers is fine. Better would be to 
         # change dtypes to int, but this does not seem possible without manual looping.
-        city_boundary.geometry = city_boundary.geometry.set_precision(grid_size=1)
+        city_boundary_gdf.to_crs(epsg=proj_crs, inplace=True)
+        city_boundary_gdf.geometry = city_boundary_gdf.geometry.set_precision(grid_size=1) 
         seed_points_snapped.geometry = seed_points_snapped.geometry.set_precision(grid_size=1)
         a_edges.geometry = a_edges.geometry.set_precision(grid_size=1)
         if export_file_format == "geojson":
             a_edges.to_file("./results/"+export_data_filename, driver="GeoJSON")
-            seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+".geojson", driver="GeoJSON")
-            city_boundary.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
+            seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
+            city_boundary_gdf.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif export_file_format == "gpkg":
             if existing_network_spacing:
                 a_edges.iloc[[0]].to_file("./results/"+export_data_filename, driver="GPKG", layer="Existing bike network")
@@ -356,7 +356,7 @@ def growbikenet(
             else:
                 a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
             seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
-            city_boundary.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
+            city_boundary_gdf.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
         pbar.update(1)
         pbar.close()
 
