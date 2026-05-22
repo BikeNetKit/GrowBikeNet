@@ -16,6 +16,7 @@ readme = "README.md"
 description = "Python package to grow urban bicycle networks from scratch, spin-off from the paper 'Growing urban bicycle networks'"
 keywords = ["Bicycle network planning", "Networks", "OpenStreetMap", "Urban Planning", "Urban Mobility"]
 classifiers = [
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
     "Operating System :: OS Independent",
