@@ -19,6 +19,6 @@ growbikenet does these things with these functions.
    :toctree: api/
 
    functions.intersects_properly
-   functions.get_seed_points
+   functions.get_grid_seed_points
    functions.node_to_edge_attributes
    functions
