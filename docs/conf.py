@@ -16,7 +16,7 @@ author = "Szell, Vybornova, Knepper"
 import os  # noqa
 import sys  # noqa
 
-sys.path.insert(0, os.path.abspath("../"))
+sys.path.insert(0, os.path.abspath(".."))
 import growbikenet  # noqa
 
 # version = growbikenet.__version__
