@@ -347,7 +347,7 @@ def growbikenet(
         a_edges.geometry = a_edges.geometry.set_precision(grid_size=1)
         if export_file_format == "geojson":
             a_edges.to_file("./results/"+export_data_filename, driver="GeoJSON")
-            seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+".geojson", driver="GeoJSON")
+            seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
             city_boundary_gdf.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif export_file_format == "gpkg":
             if existing_network_spacing:
