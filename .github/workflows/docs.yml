@@ -63,6 +63,9 @@ jobs:
           cache-environment: true
           cache-environment-key: W${{ env.WEEK }}
 
+      - name: Install growbikenet
+        run: python -m pip install growbikenet    
+
       - name: Install Sphinx theme Furo
         run: python -m pip install furo
 
