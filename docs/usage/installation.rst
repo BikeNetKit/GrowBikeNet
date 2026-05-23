@@ -34,7 +34,7 @@ install the package, and then to use or run the environment.
 With Pixi
 '''''''''
 
-Installation with ```Pixi`` <https://pixi.prefix.dev/latest/>`__ is
+Installation with `Pixi <https://pixi.prefix.dev/latest/>`__ is
 fastest and most stable:
 
 ::
@@ -51,7 +51,7 @@ such:
 
 ..
 
-   | [!NOTE]
+   | [NOTE]
    | The first time you run code with Pixi, it might take a minute
      longer, as Pixi resolves the environment’s dependencies only at
      this point.
@@ -59,7 +59,7 @@ such:
 *Alternatively*, or if you run into issues, `clone this
 repository <https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip>`__
 and create the environment via the
-```environment.yml`` <environment.yml>`__ file:
+``environment.yml`` file:
 
 ::
 
@@ -69,26 +69,13 @@ With mamba/conda/pip
 ''''''''''''''''''''
 
 Alternatively to Pixi, use
-```mamba`` <https://mamba.readthedocs.io/en/latest/index.html>`__ or
-```conda`` <https://docs.conda.io/projects/conda/en/latest/index.html>`__.
+`mamba <https://mamba.readthedocs.io/en/latest/index.html>`__ or
+`conda <https://docs.conda.io/projects/conda/en/latest/index.html>`__.
 
-.. raw:: html
-
-   <details>
-
-.. raw:: html
-
-   <summary>
-
-Instructions
-
-.. raw:: html
-
-   </summary>
 
 ..
 
-   | [!IMPORTANT]
+   | [IMPORTANT]
    | As of 2026-05-04, the conda-forge installation is not yet working.
      We will remove this note once it works.
 
@@ -97,10 +84,10 @@ Instructions
    mamba create -n gbnenv -c conda-forge growbikenet
    mamba activate gbnenv
 
-*Alternatively*, or if you run into issues, `clone this
+*Alternatively*, or if you run into issues, `clone the
 repository <https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip>`__
 and create the environment via the
-```environment.yml`` <environment.yml>`__ file:
+``environment.yml`` file:
 
 ::
 
@@ -108,38 +95,19 @@ and create the environment via the
    mamba activate gbnenv
    pip install growbikenet
 
-.. raw:: html
-
-   </details>
 
 Run growbikenet in Jupyter lab
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After having set up the environment above, if you wish to run
 growbikenet via `JupyterLab <https://pypi.org/project/jupyterlab/>`__,
-follow the
-
-.. raw:: html
-
-   <details>
-
-.. raw:: html
-
-   <summary>
-
-Instructions
-
-.. raw:: html
-
-   </summary>
-
-.. _with-pixi-1:
+follow the instructions below.
 
 With Pixi
 ^^^^^^^^^
 
 Running growbikenet in Jupter lab with
-```Pixi`` <https://pixi.prefix.dev/latest/>`__ is straightforward:
+`Pixi <https://pixi.prefix.dev/latest/>`__ is straightforward:
 
 ::
 
@@ -177,9 +145,6 @@ Using pip, run:
 Once Jupyter lab opens, switch the kernel (Kernel > Change Kernel >
 gbnenv)
 
-.. raw:: html
-
-   </details>
 
 Development installation
 ------------------------
@@ -187,7 +152,7 @@ Development installation
 If you want to develop the project, `clone this
 repository <https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip>`__
 and create the environment via the
-```environment-dev.yml`` <environment-dev.yml>`__ file:
+``environment-dev.yml`` file:
 
 ::
 
@@ -195,4 +160,4 @@ and create the environment via the
 
 The developemt environment is called ``gbnenvdev``. Make sure to also
 read `our contribution
-guidelines <https://github.com/BikeNetKit/FixBikeNet?tab=contributing-ov-file>`__.
+guidelines <https://github.com/BikeNetKit/GrowBikeNet?tab=contributing-ov-file>`__.
