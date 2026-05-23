@@ -7,7 +7,7 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "GrowBikeNet"
-copyright = "2026, Szell, Vybornova, Knepper"
+copyright = "2026, GrowBikeNet developers"
 author = "Szell, Vybornova, Knepper"
 
 # -- General configuration ---------------------------------------------------
