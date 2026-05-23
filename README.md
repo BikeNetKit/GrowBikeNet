@@ -32,8 +32,10 @@ The best way to install GrowBikeNet is using [`conda`](https://docs.conda.io/pro
 conda install -c conda-forge growbikenet
 ``` -->
 
+If this does not work, consult our [installation docs](https://bikenetkit.github.io/GrowBikeNet/usage/installation/).
+
 ### Advanced and development installations
- See our docs for details: https://bikenetkit.github.io/GrowBikeNet/
+ See our [installation docs](https://bikenetkit.github.io/GrowBikeNet/usage/installation/) for details.
 
 ## Usage
 
@@ -43,7 +45,7 @@ We provide a minimum working example in two formats:
 - Jupyter notebook ([examples/mwe.ipynb](examples/mwe.ipynb))
 
 ## Docs
-Find more details in our docs: https://bikenetkit.github.io/GrowBikeNet/
+Find more information in our docs: https://bikenetkit.github.io/GrowBikeNet/
 
 ## Repository structure
 
