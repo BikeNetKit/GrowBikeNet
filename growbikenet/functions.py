@@ -1,3 +1,6 @@
+"""Utility functions for growbikenet
+"""
+
 import numpy as np
 import pandas as pd
 import geopandas as gpd
