@@ -150,4 +150,4 @@ and create the environment via the
 
 The developemt environment is called ``gbnenvdev``. Make sure to also
 read `our contribution
-guidelines <https://github.com/BikeNetKit/GrowBikeNet?tab=contributing-ov-file>`__.
+guidelines <https://github.com/BikeNetKit/GrowBikeNet?tab=contributing-ov-file#contributing-to-bikenetkit>`__.

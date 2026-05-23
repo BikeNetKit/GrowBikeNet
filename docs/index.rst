@@ -6,9 +6,43 @@
 GrowBikeNet documentation
 =========================
 
-Here we can add content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
+The Python package `growbikenet` grows an urban bicycle network from scratch or from an existing bicycle network. 
+
+The software downloads and pre-processes data from OpenStreetMap,
+prepares seed points to connect, runs simulations, saves the results,
+create plots and videos. The source code builds on `the code from the
+research paper <https://github.com/mszell/bikenwgrowth>`__ *Growing
+Urban Bicycle Networks* and on `the code from the research
+paper <https://github.com/pietrofolco/Data-driven_bicycle_network_planning_for_demand_and_safety>`__
+*Data-driven micromobility network planning for demand and safety*.
+
+
+Setup and use
+=============
+
+To set up GrowBikeNet, see the `Installation <usage/installation>`__ page.
+To use GrowBikeNet, the `Quickstart <usage/quickstart>`__ page
+is a good place to start.
+More on the details of the inner workings can be found on
+the `Reference pages <references>`__.
+Furthermore, you can also find the `API documentation <api>`__.
+
+.. Statement of need
+.. =================
+
+.. TBA
+
+How to cite
+===========
+If you use `growbikenet` in your research, please cite the paper `doi:10.1038/s41598-022-10783-y <https://doi.org/10.1038/s41598-022-10783-y>`__:
+
+    M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra. Growing urban bicycle networks. Scientific Reports 12, 6765 (2022)https://doi.org/10.1038/s41598-022-10783-y
+
+Contributing
+============
+If you want to contribute to the development of GrowBikeNet, please read the
+`CONTRIBUTING.md <https://github.com/BikeNetKit/GrowBikeNet?tab=contributing-ov-file#contributing-to-bikenetkit>`__
+file.
 
 
 Documentation contents
@@ -20,5 +54,4 @@ Documentation contents
    usage/installation
    usage/quickstart
    API reference <api>
-   Contributing <contributing>
    references
