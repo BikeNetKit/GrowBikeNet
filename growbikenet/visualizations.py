@@ -50,10 +50,10 @@ def make_video(
     # add images as separate frames
     for image in tqdm(
         images,
-        desc="{:<26}".format("Generating video"),
+        desc="{:<23}".format("Generating video"),
         leave=True,
         unit="frame",
-        bar_format='{l_bar}{bar:20}{r_bar}',
+        bar_format='{l_bar}{bar:16}{r_bar}',
         ):
 
         video.write(
@@ -73,10 +73,10 @@ def create_plots(
 
     for ordering in tqdm(
         sorted(routed_edges_gdf["ordering_"+ranking].unique()),
-        desc="{:<26}".format("Generating plots"),
+        desc="{:<23}".format("Generating plots"),
         leave=True,
         unit="plot",
-        bar_format='{l_bar}{bar:20}{r_bar}',
+        bar_format='{l_bar}{bar:16}{r_bar}',
         ):
 
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))

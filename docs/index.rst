@@ -3,9 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-=========================
-GrowBikeNet documentation
-=========================
+===================================
+GrowBikeNet |version| documentation
+===================================
 
 The Python package `growbikenet` grows an urban bicycle network from scratch or from an existing bicycle network. It is part of `BikeNetKit <https://bikenetkit.org>`__.
 

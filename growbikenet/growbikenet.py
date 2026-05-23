@@ -145,17 +145,17 @@ def growbikenet(
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
-    print("=====================================================")
+    print("==============================================")
     print("RUNNING GROWBIKENET FOR CITY: " + city_name)
     print(ranking + " | " + seed_point_type + " | " + ("with existing bike network " if existing_network_spacing else "from scratch"))
-    print("-----------------------------------------------------╮")
+    print("----------------------------------------------╮")
 
     ### Download and preprocess data from OSM
     pbar = tqdm(
-        desc="{:<26}".format("Downloading OSM data"),
+        desc="{:<23}".format("Downloading OSM data"),
         total=1+int(bool(existing_network_spacing)),
         unit="network",
-        bar_format='{l_bar}{bar:20}{r_bar}',
+        bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
     # Get city boundary 
@@ -178,10 +178,10 @@ def growbikenet(
 
     ### Create seed points
     pbar = tqdm(
-        desc="{:<26}".format("Creating " + seed_point_type + " seed points"),
+        desc="{:<23}".format("Creating seed points"),
         total=3+int(bool(existing_network_spacing)),
         unit="step",
-        bar_format='{l_bar}{bar:20}{r_bar}',
+        bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
     if seed_point_type == "grid":
@@ -215,10 +215,10 @@ def growbikenet(
     ### Triangulate
     # Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
     pbar = tqdm(
-        desc="{:<26}".format("Triangulation"),
+        desc="{:<23}".format("Triangulation"),
         total=2,
         unit="step",
-        bar_format='{l_bar}{bar:20}{r_bar}',
+        bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
     # Create df with delaunay edges
@@ -232,10 +232,10 @@ def growbikenet(
 
     # Get "routed" geometry (LineString) for each abstract edge (row)
     pbar = tqdm(
-        desc="{:<26}".format("Routing"),
+        desc="{:<23}".format("Routing"),
         total=2,
         unit="step",
-        bar_format='{l_bar}{bar:20}{r_bar}',
+        bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
     gdf = create_gdf_with_geoms(df, edges)
@@ -260,10 +260,10 @@ def growbikenet(
 
     ### Compute edge attributes
     pbar = tqdm(
-        desc="{:<26}".format("Computing edge attributes"),
+        desc="{:<23}".format("Computing edge metrics"),
         total=2,
         unit="step",
-        bar_format='{l_bar}{bar:20}{r_bar}',
+        bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
     # The ranking=="random" case has no edge attributes and is handled in rank_df
@@ -333,10 +333,10 @@ def growbikenet(
     if export_data:
         ### save data
         pbar = tqdm(
-        desc="{:<26}".format("Saving data"),
+        desc="{:<23}".format("Saving data"),
         total=1,
         unit="step",
-        bar_format='{l_bar}{bar:20}{r_bar}',
+        bar_format='{l_bar}{bar:16}{r_bar}',
         )
         seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
         # We have meter precision, so rounding to integers is fine. Better would be to 
@@ -391,8 +391,8 @@ def growbikenet(
 
     endtime = time.time()
 
-    print("-----------------------------------------------------╯")
+    print("----------------------------------------------╯")
     print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
-    print("=====================================================")
+    print("==============================================")
 
     return a_edges

@@ -2,17 +2,23 @@
 Quickstart
 ==========
 
-Explain here
+GrowBikeNet takes one mandatory parameter, the city name, which it passes via `OSMnx <https://osmnx.readthedocs.io/>`__ to `Nominatim <https://nominatim.openstreetmap.org/>`__, to download a city's street network. GrowBikeNet then runs the following operations:
 
-* the data structure used,
-* the algorithm used,
-* etc.
+* Optional, also download the city's existing bicycle network.
+* Create seed points following :cite:t:`szell2022gub`. By default this is a grid, but it can also be set to the city's rail stations. If the city's existing bicycle network is used, the seed points are first selected on the bicycle network following :cite:t:`folco2023dmn`.
+* The seed points are triangulated, by default via Delaunay triangulation (different to the original minimum weight triangulation of :cite:t:`szell2022gub`, but results are in practice identical). The triangulation is calculated for the abstract network with seed point nodes for which egde lengths are taken from the routed network.
+* The triangulated edges are routed on the street network.
+* A metric is computed for all edges. By default this is betweenness centrality. 
+* The edges are ranked by this metric, denoting the importance and order of links to build.
+* By default, overlaps between successive edges are removed, including overlaps with the existing bicycle network, if it was used. This operation ensures that added length of new edges, and cumulative lengths, are correct.
+* Data is exported to a resuts folder, by default to geojson files. Exported files are the city boundary, the seed points, and the grown edges (and the existing bicycle network, if used).
+* Optional, plots are generated in the results folder for each edge.
+* Optional, a video is generated in the results folder, using the plots as frames.
 
-Some more text here.
 
 Quickstart contents
-----------------------
+-------------------
 .. toctree::
    :maxdepth: 1
 
-   Minimum working example <GrowBikeMVP>
+   Minimum working example <mwe>
