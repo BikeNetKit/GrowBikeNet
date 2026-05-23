@@ -3,6 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+=========================
 GrowBikeNet documentation
 =========================
 
@@ -36,7 +37,7 @@ How to cite
 ===========
 If you use `growbikenet` in your research, please cite the paper `doi:10.1038/s41598-022-10783-y <https://doi.org/10.1038/s41598-022-10783-y>`__:
 
-    M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra. Growing urban bicycle networks. Scientific Reports 12, 6765 (2022)https://doi.org/10.1038/s41598-022-10783-y
+    M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra. Growing urban bicycle networks. Scientific Reports 12, 6765 (2022). https://doi.org/10.1038/s41598-022-10783-y
 
 Contributing
 ============
@@ -46,7 +47,7 @@ file.
 
 
 Documentation contents
-----------------------
+======================
 .. toctree::
    :maxdepth: 1
 
