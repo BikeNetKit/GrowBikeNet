@@ -11,16 +11,6 @@ The currently best way to install GrowBikeNet is using pip:
 
    pip install growbikenet
 
-.. raw:: html
-
-   <!-- > [!IMPORTANT]  
-   > As of 2026-05-04, the conda-forge installation is not yet working. We will remove this note once it works.
-
-   The best way to install GrowBikeNet is using [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html) and the `conda-forge` channel:
-
-   ```
-   conda install -c conda-forge growbikenet
-   ``` -->
 
 Advanced installations
 ~~~~~~~~~~~~~~~~~~~~~~
