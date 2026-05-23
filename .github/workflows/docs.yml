@@ -63,6 +63,9 @@ jobs:
           cache-environment: true
           cache-environment-key: W${{ env.WEEK }}
 
+      - name: Install Sphinx theme Furo
+        run: python -m pip install furo
+
       - name: Add Notebook Kernel
         run: python -m ipykernel install --user --name growbikenet --display-name "Python (growbikenet)"
 

@@ -56,7 +56,7 @@ html_static_path = ["_static"]
 
 ### select html theme
 # html_theme = 'alabaster'
-html_theme = "pydata_sphinx_theme"
+html_theme = "furo"
 
 html_theme_options = {
     "github_url": "https://github.com/BikeNetKit/GrowBikeNet",
