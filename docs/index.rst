@@ -53,11 +53,11 @@ and the EU HORIZON grant JUST STREETS.
 
 |Innovation Fund Denmark| |European Union| |JUST STREETS|
 
-.. |Innovation Fund Denmark| image:: https://github.com/BikeNetKit/GrowBikeNet/tree/main/docs/_static/logo_innovationfund.png
+.. |Innovation Fund Denmark| image:: _static/logo_innovationfund.png
    :target: https://innovationsfonden.dk/en
-.. |European Union| image:: https://github.com/BikeNetKit/GrowBikeNet/tree/main/docs/_static/logo_eu.png
+.. |European Union| image:: _static/logo_eu.png
    :target: https://commission.europa.eu/index_en
-.. |JUST STREETS| image:: https://github.com/BikeNetKit/GrowBikeNet/tree/main/docs/_static/logo_juststreets.png
+.. |JUST STREETS| image:: _static/logo_juststreets.png
    :target: https://www.just-streets.eu/
 
 
