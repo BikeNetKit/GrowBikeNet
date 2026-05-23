@@ -22,12 +22,3 @@ growbikenet.functions
       rank_df
       snap_seed_points
    
-   .. rubric:: Classes
-
-   .. autosummary::
-   
-      LineString
-      MultiLineString
-      Point
-      combinations
-   
