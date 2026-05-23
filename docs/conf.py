@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "growbikenet"
+project = "GrowBikeNet"
 copyright = "2026, GrowBikeNet developers"
 author = "Szell, Vybornova, Knepper"
 
@@ -114,7 +114,7 @@ def linkcode_resolve(domain, info):
     if domain != "py" or not info["module"]:
         return None
     try:
-        filename = "GrowBikeNet/%s#L%d-L%d" % find_source()  # noqa: UP031
+        filename = "growbikenet/%s#L%d-L%d" % find_source()  # noqa: UP031
     except Exception:
         filename = info["module"].replace(".", "/") + ".py"
     tag = "main" if "+" in release else ("v" + release)
