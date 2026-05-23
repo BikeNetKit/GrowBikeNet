@@ -38,7 +38,6 @@ If this does not work, consult our [installation docs](https://bikenetkit.github
  See our [installation docs](https://bikenetkit.github.io/GrowBikeNet/usage/installation/) for details.
 
 ## Usage
-
 We provide a minimum working example in two formats:
 
 - Python script ([examples/mwe.py](examples/mwe.py))
@@ -48,7 +47,6 @@ We provide a minimum working example in two formats:
 Find more information in our docs: https://bikenetkit.github.io/GrowBikeNet/
 
 ## Repository structure
-
 ```
 ├── growbikenet             <- Packaged functions and visualizations
 ├── tests                   <- Tests to execute to ensure functionality
@@ -58,10 +56,9 @@ Find more information in our docs: https://bikenetkit.github.io/GrowBikeNet/
 ├── environment.yml         <- Environment file to set up the environment using conda/mamba/pixi
 ```
 
-## Credits
+## Supported by
+Development of GrowBikeNet was supported by the Innovation Fund Denmark and the EU HORIZON grant JUST STREETS.
 
-<!--Please cite as:
->AUTHOR1, AUTHOR2, and AUTHOR3, PROJECTNAME, JOURNAL (YYYY), DOIURL
--->
+[![Innovation Fund Denmark](https://github.com/BikeNetKit/GrowBikeNet/tree/main/docs/_static/logo_innovationfund.png)](https://innovationsfonden.dk/en) [![European Union](https://github.com/BikeNetKit/GrowBikeNet/tree/main/docs/_static/logo_eu.png)](https://commission.europa.eu/index_en) [![JUST STREETS](https://github.com/BikeNetKit/GrowBikeNet/tree/main/docs/_static/logo_juststreets.png)](https://www.just-streets.eu/) 
 
-Development of GrowBikeNet was supported by the Danish Innovation Fund (Innovationsfonden).
+

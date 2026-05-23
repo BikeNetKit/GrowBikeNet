@@ -45,6 +45,21 @@ If you want to contribute to the development of GrowBikeNet, please read the
 `CONTRIBUTING.md <https://github.com/BikeNetKit/GrowBikeNet?tab=contributing-ov-file#contributing-to-bikenetkit>`__
 file.
 
+Supported by
+============
+
+Development of GrowBikeNet was supported by the Innovation Fund Denmark
+and the EU HORIZON grant JUST STREETS.
+
+|Innovation Fund Denmark| |European Union| |JUST STREETS|
+
+.. |Innovation Fund Denmark| image:: https://github.com/BikeNetKit/GrowBikeNet/tree/main/docs/_static/logo_innovationfund.png
+   :target: https://innovationsfonden.dk/en
+.. |European Union| image:: https://github.com/BikeNetKit/GrowBikeNet/tree/main/docs/_static/logo_eu.png
+   :target: https://commission.europa.eu/index_en
+.. |JUST STREETS| image:: https://github.com/BikeNetKit/GrowBikeNet/tree/main/docs/_static/logo_juststreets.png
+   :target: https://www.just-streets.eu/
+
 
 Documentation contents
 ======================
