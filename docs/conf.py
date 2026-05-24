@@ -60,6 +60,7 @@ html_theme = "furo"
 
 html_theme_options = {
     "github_url": "https://github.com/BikeNetKit/GrowBikeNet",
+    "source_repository": "https://github.com/BikeNetKit/GrowBikeNet",
     "twitter_url": "notwitter.com",
     "pygment_light_style": "tango",
     "logo": {
@@ -71,9 +72,9 @@ html_theme_options = {
 # Generate the API documentation when building
 autosummary_generate = True
 autosummary_imported_members = True
-numpydoc_show_class_members = True
-class_members_toctree = True
-numpydoc_show_inherited_class_members = True
+numpydoc_show_class_members = False
+class_members_toctree = False
+numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 numpydoc_use_plots = True
 autodoc_typehints = "none"
