@@ -15,13 +15,16 @@ author = "Szell, Vybornova, Knepper"
 
 import os  # noqa
 import sys  # noqa
+from pathlib import Path  # noqa
+from tomllib import load as toml_load  # noqa
 
 sys.path.insert(0, os.path.abspath(".."))
 import growbikenet  # noqa
 
-# version = growbikenet.__version__
-version = "0.8.0"
-release = version
+# dynamically load version
+with Path("../../pyproject.toml").open("rb") as f:
+    pyproject = toml_load(f)
+version = release = pyproject["project"]["version"]
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -55,7 +58,6 @@ bibtex_reference_style = "author_year"
 html_static_path = ["_static"]
 
 ### select html theme
-# html_theme = 'alabaster'
 html_theme = "furo"
 
 html_theme_options = {
