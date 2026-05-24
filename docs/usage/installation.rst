@@ -137,7 +137,7 @@ gbnenv)
 
 
 Development installation
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to develop the project, `clone this
 repository <https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip>`__
