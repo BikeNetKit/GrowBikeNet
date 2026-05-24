@@ -69,6 +69,14 @@ html_theme_options = {
         "image_light": "logo.png",
         "image_dark": "logo.png",
     },
+    "light_css_variables": {
+        "color-brand-primary": "#096a51",
+        "color-brand-content": "#096a51",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#3cd71d",
+        "color-brand-content": "#3cd71d",
+    },
 }
 
 # Generate the API documentation when building
