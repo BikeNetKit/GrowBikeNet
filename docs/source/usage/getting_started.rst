@@ -34,7 +34,7 @@ GrowBikeNet is built on top of `OSMnx`_/`NetworkX`_ and `GeoPandas`_. It takes o
 * Optional, a video is generated in the results folder, using the plots as frames.
 
 
-Run the:
+To try it out, run the:
 
 .. toctree::
    :maxdepth: 1
