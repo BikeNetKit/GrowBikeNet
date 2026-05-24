@@ -69,10 +69,12 @@ html_theme_options = {
     "light_css_variables": {
         "color-brand-primary": "#096a51",
         "color-brand-content": "#096a51",
+        "color-brand-visited": "#5b8b75",
     },
     "dark_css_variables": {
         "color-brand-primary": "#3cd71d",
         "color-brand-content": "#3cd71d",
+        "color-brand-visited": "#5b8b75",
     },
     "footer_icons": [
         {
