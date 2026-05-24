@@ -47,13 +47,6 @@ jobs:
       - name: Get week number
         run: echo "WEEK=$(date +'%V')" >> $GITHUB_ENV
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          cache-dependency-glob: pyproject.toml
-          enable-cache: true
-          python-version: ${{ matrix.python-version }}
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: mamba-org/setup-micromamba@v2
         with:
@@ -63,12 +56,12 @@ jobs:
           cache-environment-key: W${{ env.WEEK }}
 
       - name: Add Notebook Kernel
-        run: uv python -m ipykernel install --user --name growbikenet --display-name "Python (growbikenet)"
+        run: python -m ipykernel install --user --name growbikenet --display-name "Python (growbikenet)"
 
       # - name: Generating .rst files
-      #   run: uv run sphinx-apidoc -o docs/api/ growbikenet/
+      #   run: sphinx-apidoc -o docs/api/ growbikenet/
       - name: Generating html
-        run: uv run sphinx-build docs/source/ public -b dirhtml
+        run: sphinx-build docs/source/ public -b dirhtml
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
