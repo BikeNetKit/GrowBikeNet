@@ -2,7 +2,7 @@
 
 [![Docs](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml/badge.svg)](https://bikenetkit.github.io/GrowBikeNet/)
 [![Test](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml)
-[![PyPI Version](https://badge.fury.io/py/growbikenet.svg)](https://pypi.org/project/growbikenet/)
+[![PyPI - Version](https://img.shields.io/pypi/v/growbikenet)](https://pypi.org/project/growbikenet/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 The Python package `growbikenet` grows an urban bicycle network from scratch or from an existing bicycle network. 
