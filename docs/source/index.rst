@@ -18,7 +18,7 @@ paper <https://github.com/pietrofolco/Data-driven_bicycle_network_planning_for_d
 
 
 Setup and use
-=============
+-------------
 
 To set up GrowBikeNet, see the :doc:`installation` page.
 To use GrowBikeNet, the :doc:`getting_started` page
@@ -30,19 +30,21 @@ is a good place to start, which also explains how the package works in detail. F
 .. TBA
 
 How to cite
-===========
+-----------
+
 If you use `growbikenet` in your research, please cite the paper `doi:10.1038/s41598-022-10783-y <https://doi.org/10.1038/s41598-022-10783-y>`__:
 
     M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra. Growing urban bicycle networks. Scientific Reports 12, 6765 (2022). https://doi.org/10.1038/s41598-022-10783-y
 
 Contributing
-============
+------------
+
 If you want to contribute to the development of GrowBikeNet, please read the
 `CONTRIBUTING.md <https://github.com/BikeNetKit/GrowBikeNet?tab=contributing-ov-file#contributing-to-bikenetkit>`__
 file.
 
 Supported by
-============
+------------
 
 Development of BikeNetKit/GrowBikeNet was supported by the Innovation Fund Denmark
 and the EU HORIZON grant JUST STREETS.
@@ -58,9 +60,10 @@ and the EU HORIZON grant JUST STREETS.
 
 
 Documentation contents
-======================
+----------------------
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    Home <self>
    installation
