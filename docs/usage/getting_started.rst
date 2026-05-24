@@ -11,16 +11,16 @@ Get Started in 4 Steps
 
 3. Run the :doc:`mwe`.
 
-4. Consult the :doc:`reference_user` for complete details on using the package.
+4. Consult the :doc:`./reference_user` for complete details on using the package.
 
-Finally, if you're not already familiar with `NetworkX`_ and `GeoPandas`_, make sure you read their user guides as OSMnx uses their data structures.
+Finally, if you're not already familiar with `NetworkX`_ and `GeoPandas`_, make sure you read their user guides as GrowBikeNet uses their data structures.
 
 .. _introducing-growbikenet:
 
-Explaining GrowBikeNet
-----------------------
+Introducing GrowBikeNet
+-----------------------
 
-GrowBikeNet is built on top of OSMnx/NetworkX and GeoPandas. It takes one mandatory parameter, the city name, which it passes via `OSMnx <https://osmnx.readthedocs.io/>`__ to `Nominatim <https://nominatim.openstreetmap.org/>`__, to download a city's street network. GrowBikeNet then runs the following operations:
+GrowBikeNet is built on top of `OSMnx`_/`NetworkX`_ and `GeoPandas`_. It takes one mandatory parameter, the city name, which it passes via `Nominatim`_ to `OSMnx`_, to download a city's street network. GrowBikeNet then runs the following operations:
 
 * Optional, also download the city's existing bicycle network.
 * Create seed points following :cite:t:`szell2022gub`. By default this is a grid, but it can also be set to the city's rail stations. If the city's existing bicycle network is used, the seed points are first selected on the bicycle network following :cite:t:`folco2023dmn`.
@@ -35,7 +35,14 @@ GrowBikeNet is built on top of OSMnx/NetworkX and GeoPandas. It takes one mandat
 
 
 Run the:
+
 .. toctree::
    :maxdepth: 1
 
    Minimum working example <mwe>
+
+
+.. _GeoPandas: https://geopandas.org
+.. _NetworkX: https://networkx.org
+.. _OSMnx: https://osmnx.readthedocs.io
+.. _Nominatim: https://nominatim.openstreetmap.org
