@@ -60,7 +60,7 @@ and the EU HORIZON grant JUST STREETS.
 Documentation contents
 ======================
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    Home <self>
    installation
