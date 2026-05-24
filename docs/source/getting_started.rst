@@ -1,4 +1,3 @@
-===============
 Getting started
 ===============
 
@@ -11,7 +10,7 @@ Get Started in 4 Steps
 
 3. Run the :doc:`mwe`.
 
-4. Consult the :doc:`./reference_user` for complete details on using the package.
+4. Consult the :doc:`reference_user` for complete details on using the package.
 
 Finally, if you're not already familiar with `NetworkX`_ and `GeoPandas`_, make sure you read their user guides as GrowBikeNet uses their data structures.
 

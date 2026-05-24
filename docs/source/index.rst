@@ -3,7 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-===================================
 GrowBikeNet |version| documentation
 ===================================
 
@@ -21,9 +20,9 @@ paper <https://github.com/pietrofolco/Data-driven_bicycle_network_planning_for_d
 Setup and use
 =============
 
-To set up GrowBikeNet, see the `Installation <usage/installation>`__ page.
-To use GrowBikeNet, the `Getting started <usage/getting_started>`__ page
-is a good place to start, which also explains how the package works in detail. For technical documentation, consult the `User reference <reference_user>`__.
+To set up GrowBikeNet, see the :doc:`installation` page.
+To use GrowBikeNet, the :doc:`getting_started` page
+is a good place to start, which also explains how the package works in detail. For technical documentation, consult the :doc:`reference_user`.
 
 .. Statement of need
 .. =================
@@ -64,8 +63,8 @@ Documentation contents
    :maxdepth: 1
 
    Home <self>
-   usage/installation
-   usage/getting_started
-   User reference <reference_user>
-   Developer reference <reference_developer>
+   installation
+   getting_started
+   reference_user
+   reference_developer
    references
