@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 0.8.0 (2026-05-24)
+
+- 📝 Big docs update: Added content to all pages, with furo style
+- 📝 Cleaned up readme: Moved install info to docs, removed bloat, added funders
+- 🐛 Fixed edge overlap removal
+- 💄 Added polished tqdm progress bars
+- 🐛 Fixed and refactored data retrieval via polygon
+- 🐛 Fixed failing docs
+- ➖ Removed unneeded dependencies from env files
+
 ## Version 0.7.1 (2026-05-04)
 
 - 🧹 Make edge overlap removal ~5x faster
