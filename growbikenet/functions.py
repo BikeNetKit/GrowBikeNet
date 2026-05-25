@@ -1,5 +1,4 @@
-"""Utility functions for growbikenet
-"""
+"""Utility functions for growbikenet."""
 
 import numpy as np
 import pandas as pd
@@ -695,16 +694,16 @@ def rank_df(df, method):
         Dataframe sorted by specified ranking method.
     """
     if method == "random": # ranking is random
-        df["ordering_random"] = np.random.permutation(np.arange(df.shape[0]))
-        df = df.sort_values(by="ordering_random", ascending=False)
+        df["rank"] = np.random.permutation(np.arange(df.shape[0]))
+        df = df.sort_values(by="rank", ascending=False)
         df.reset_index(drop=True, inplace=True)
-        df["ordering_" + method] = (
+        df["rank"] = (
             df.index
         )  
     else: # ranking is the order of appearance in the method's ranking
         df = df.sort_values(by=method, ascending=False)
         df.reset_index(drop=True, inplace=True)
-        df["ordering_" + method] = (
+        df["rank"] = (
             df.index
         )  
     return df

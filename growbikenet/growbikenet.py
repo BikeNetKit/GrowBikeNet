@@ -44,39 +44,39 @@ def growbikenet(
     allow_edge_overlaps=False,
     city_boundary_file=None,
 ):
-    """Creates a list of edges ordered by a specified ranking method.
+    """Creates a list of urban street network edges ordered by a ranking method.
 
-    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point[2]_. Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
+    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point[2]_. The original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is implemented much faster and in practice gives identical results. Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
 
     Parameters
     ----------
     city_name : str
         Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled (for data fetching) if city_boundary_file is set.
-    proj_crs : str, default '3857'
+    proj_crs : str, optional, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
-    ranking : str, default 'betweenness_centrality'
+    ranking : str, optional, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str, optional, default 'grid'
-        If set to 'grid', creates a square grid
-        If set to 'rail', uses rail stations
+        If set to 'grid', creates a square grid.
+        If set to 'rail', uses rail stations.
     seed_point_grid_spacing : int, optional, default 1707
-        If seed_point_type is set to 'grid', this is the spacing between seed points, in meters
+        If seed_point_type is set to 'grid', this is the spacing between seed points, in meters.
     seed_point_delta : int, optional, default 500
-        Maximum distance between generated seed points and osm nodes for snapping
+        Maximum distance between generated seed points and osm nodes for snapping, in meters.
     existing_network_spacing : int, optional, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
     export_data : bool, optional, default True
-        If set to True, data will be saved to a file. The filename is [slug]-[ranking]-[seed_point_type].gpkg, where slug is a string id made out of city_name.
+        If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
     export_data_slug : str, optional, default None
-        If not set to None, the city_name will be slugified and used as the slug in the filename of the data export
+        If not set to None, the city_name will be slugified and used as the slug in the filename of the data export.
     export_file_format : str, optional, default "geojson"
         File format for the data export, relevant if export_data set to True. Default "geojson", also possible "gpkg". If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
     export_plots : bool, optional, default False
-        If set to True, plots will be saved to files. Will overwrite previous files.
+        If set to True, plots are saved to files, overwriting existing ones.
     export_video : bool, optional, default False
-        If set to True, video will be saved to a file (only possible if export_plots is set to True). Will overwrite previous files.
+        If set to True, video is saved to file (only possible if export_plots is set to True), overwriting existing ones.
     allow_edge_overlaps : bool, default False
-        If set to False, removes edge overlaps in consecutive growth stages. In this case, growth stages that do not add anything new are deleted.
+        If set to False, removes edge overlaps in consecutive growth stages and deketed growth stages that do not add anything new.
     city_boundary_file : (str | None), default None
         If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp".
 
@@ -333,7 +333,7 @@ def growbikenet(
     if export_data:
         ### save data
         pbar = tqdm(
-        desc="{:<23}".format("Saving data"),
+        desc="{:<23}".format("Exporting data"),
         total=1,
         unit="step",
         bar_format='{l_bar}{bar:16}{r_bar}',
@@ -389,9 +389,17 @@ def growbikenet(
             os.makedirs("./results/plots/ordering_"+ranking+"/video/", exist_ok=True)
             make_video(img_folder_name="./results/plots/ordering_"+ranking+"/", fps=5)
 
-    endtime = time.time()
-
     print("----------------------------------------------╯")
+    if export_data:
+        print("Data exported to results/")
+    if export_plots:
+        print("Plots exported to results/plots/")
+    if export_video:
+        print("Video exported to results/plots/")
+    if export_data or export_plots or export_video:
+        print("-----------------------------------------------")
+
+    endtime = time.time()
     print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
     print("==============================================")
 

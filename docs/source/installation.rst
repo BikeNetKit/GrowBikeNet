@@ -137,7 +137,7 @@ gbnenv)
 
 
 Development installation
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to develop the project, `clone this
 repository <https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip>`__
@@ -148,6 +148,6 @@ and create the environment via the
 
    pixi init --import environment-dev.yml
 
-The developemt environment is called ``gbnenvdev``. Make sure to also
+The development environment is called ``gbnenvdev``. Make sure to also
 read `our contribution
 guidelines <https://github.com/BikeNetKit/GrowBikeNet?tab=contributing-ov-file#contributing-to-bikenetkit>`__.

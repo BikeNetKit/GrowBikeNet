@@ -15,13 +15,16 @@ author = "Szell, Vybornova, Knepper"
 
 import os  # noqa
 import sys  # noqa
+from pathlib import Path  # noqa
+from tomllib import load as toml_load  # noqa
 
 sys.path.insert(0, os.path.abspath(".."))
 import growbikenet  # noqa
 
-# version = growbikenet.__version__
-version = "0.8.0"
-release = version
+# dynamically load version
+with Path("../../pyproject.toml").open("rb") as f:
+    pyproject = toml_load(f)
+version = release = pyproject["project"]["version"]
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -55,25 +58,54 @@ bibtex_reference_style = "author_year"
 html_static_path = ["_static"]
 
 ### select html theme
-# html_theme = 'alabaster'
 html_theme = "furo"
 
 html_theme_options = {
-    "github_url": "https://github.com/BikeNetKit/GrowBikeNet",
-    "twitter_url": "notwitter.com",
     "pygment_light_style": "tango",
     "logo": {
         "image_light": "logo.png",
         "image_dark": "logo.png",
     },
+    "light_css_variables": {
+        "color-brand-primary": "#096a51",
+        "color-brand-content": "#096a51",
+        "color-brand-visited": "#5b8b75",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#3cd71d",
+        "color-brand-content": "#3cd71d",
+        "color-brand-visited": "#5b8b75",
+    },
+    "footer_icons": [
+        {
+            "name": "Bluesky",
+            "url": "https://bsky.app/profile/bikenetkit.bsky.social",
+            "html": """
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 18 16">
+                    <path fill-rule="evenodd" transform="scale(0.03018)" d="m135.72 44.03c66.496 49.921 138.02 151.14 164.28 205.46 26.262-54.316 97.782-155.54 164.28-205.46 47.98-36.021 125.72-63.892 125.72 24.795 0 17.712-10.155 148.79-16.111 170.07-20.703 73.984-96.144 92.854-163.25 81.433 117.3 19.964 147.14 86.092 82.697 152.22-122.39 125.59-175.91-31.511-189.63-71.766-2.514-7.3797-3.6904-10.832-3.7077-7.8964-0.0174-2.9357-1.1937 0.51669-3.7077 7.8964-13.714 40.255-67.233 197.36-189.63 71.766-64.444-66.128-34.605-132.26 82.697-152.22-67.108 11.421-142.55-7.4491-163.25-81.433-5.9562-21.282-16.111-152.36-16.111-170.07 0-88.687 77.742-60.816 125.72-24.795z"></path>
+                </svg>
+            """,
+            "class": "",
+        },
+        {
+            "name": "GitHub",
+            "url": "https://github.com/BikeNetKit/GrowBikeNet",
+            "html": """
+                <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            """,
+            "class": "",
+        },
+    ],
 }
 
 # Generate the API documentation when building
 autosummary_generate = True
 autosummary_imported_members = True
-numpydoc_show_class_members = True
-class_members_toctree = True
-numpydoc_show_inherited_class_members = True
+numpydoc_show_class_members = False
+class_members_toctree = False
+numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
 numpydoc_use_plots = True
 autodoc_typehints = "none"
@@ -90,9 +122,8 @@ nbsphinx_prolog = r"""
     .. note::
 
         | This page was generated from `{{ docname }}`__.
-        | Interactive online version: :raw-html:`<a href="https://mybinder.org/GrowBikeNet/master?urlpath=lab/tree/docs/{{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
 
-        __ https://github.com/BikeNetKit/GrowBikeNet/blob/master/docs/{{ docname }}
+        __ https://github.com/BikeNetKit/GrowBikeNet/blob/main/docs/source/{{ docname }}
 """  # noqa: E501
 
 

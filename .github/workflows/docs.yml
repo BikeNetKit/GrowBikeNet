@@ -41,14 +41,6 @@ jobs:
       run:
         shell: bash -el {0}
     steps:
-      - name: Check if GHSL site is under maintenance
-        run: |
-          content=$(curl -s https://jeodpp.jrc.ec.europa.eu/ftp/jrc-opendata/GHSL/)
-          if echo "$content" | grep -q "Under Maintenance"; then
-            echo "GHSL site is under maintenance. Exiting."
-            exit 1
-          fi
-
       - name: Check out Git repository
         uses: actions/checkout@v6
 
@@ -66,10 +58,10 @@ jobs:
       - name: Add Notebook Kernel
         run: python -m ipykernel install --user --name growbikenet --display-name "Python (growbikenet)"
 
-      - name: Generating .rst files
-        run: sphinx-apidoc -o docs/api/ growbikenet/
+      # - name: Generating .rst files
+      #   run: sphinx-apidoc -o docs/api/ growbikenet/
       - name: Generating html
-        run: sphinx-build docs public -b dirhtml
+        run: sphinx-build docs/source/ public -b dirhtml
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
