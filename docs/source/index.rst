@@ -10,7 +10,7 @@ The Python package ``growbikenet`` grows an urban bicycle network from scratch o
 
 The software downloads and pre-processes data from OpenStreetMap,
 prepares seed points to connect, runs simulations, saves the results,
-create plots and videos. The source code builds on `the code from the
+creates plots and videos. The source code builds on `the code from the
 research paper <https://github.com/mszell/bikenwgrowth>`__ *Growing
 Urban Bicycle Networks* and on `the code from the research
 paper <https://github.com/pietrofolco/Data-driven_bicycle_network_planning_for_demand_and_safety>`__
@@ -49,7 +49,7 @@ Supported by
 Development of BikeNetKit/GrowBikeNet was supported by the Innovation Fund Denmark
 and the EU HORIZON grant JUST STREETS.
 
-|Innovation Fund Denmark|   |European Union|  |JUST STREETS|
+|Innovation Fund Denmark|    |European Union|   |JUST STREETS|
 
 .. |Innovation Fund Denmark| image:: _static/logo_innovationfund.png
    :target: https://innovationsfonden.dk/en
