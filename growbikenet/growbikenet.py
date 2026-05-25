@@ -333,7 +333,7 @@ def growbikenet(
     if export_data:
         ### save data
         pbar = tqdm(
-        desc="{:<23}".format("Saving data"),
+        desc="{:<23}".format("Exporting data"),
         total=1,
         unit="step",
         bar_format='{l_bar}{bar:16}{r_bar}',
@@ -389,9 +389,17 @@ def growbikenet(
             os.makedirs("./results/plots/ordering_"+ranking+"/video/", exist_ok=True)
             make_video(img_folder_name="./results/plots/ordering_"+ranking+"/", fps=5)
 
-    endtime = time.time()
-
     print("----------------------------------------------╯")
+    if export_data:
+        print("Data exported to results/")
+    if export_plots:
+        print("Plots exported to results/plots/")
+    if export_video:
+        print("Video exported to results/plots/")
+    if export_data or export_plots or export_video:
+        print("-----------------------------------------------")
+
+    endtime = time.time()
     print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
     print("==============================================")
 
