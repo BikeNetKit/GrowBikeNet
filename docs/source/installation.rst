@@ -16,14 +16,11 @@ If this does not work, follow the instructions below.
 Advanced installations
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Set up environment
-^^^^^^^^^^^^^^^^^^
-
 The main step is to set up a virtual environment ``gbnenv`` in which to
 install the package, and then to use or run the environment.
 
 With conda/pip
-''''''''''''''
+^^^^^^^^^^^^^^
 
 Installation with `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`__ (or the faster `mamba <https://mamba.readthedocs.io/en/latest/index.html>`__).
 
@@ -40,7 +37,7 @@ and create the environment via the
 
 
 With Pixi
-'''''''''
+^^^^^^^^^
 
 Installation with `Pixi <https://pixi.prefix.dev/latest/>`__.
 
