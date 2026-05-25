@@ -31,10 +31,10 @@ The best way to install GrowBikeNet is using [`conda`](https://docs.conda.io/pro
 conda install -c conda-forge growbikenet
 ``` -->
 
-If this does not work, consult our [installation docs](https://bikenetkit.github.io/GrowBikeNet/usage/installation/).
+If this does not work, consult our [installation docs](https://bikenetkit.github.io/GrowBikeNet/installation/).
 
 ### Advanced and development installations
- See our [installation docs](https://bikenetkit.github.io/GrowBikeNet/usage/installation/) for details.
+ See our [installation docs](https://bikenetkit.github.io/GrowBikeNet/installation/) for details.
 
 ## Usage
 We provide a minimum working example in two formats:
