@@ -49,6 +49,6 @@ Find more information in our docs: [https://bikenetkit.github.io/GrowBikeNet/](h
 ## Supported by
 Development of BikeNetKit/GrowBikeNet was supported by the Innovation Fund Denmark and the EU HORIZON grant JUST STREETS.
 
-[![Innovation Fund Denmark](https://raw.githubusercontent.com/BikeNetKit/GrowBikeNet/refs/heads/main/docs/_static/logo_innovationfund.png)](https://innovationsfonden.dk/en) &emsp;&emsp; [![European Union](https://raw.githubusercontent.com/BikeNetKit/GrowBikeNet/refs/heads/main/docs/_static/logo_eu.png)](https://commission.europa.eu/index_en) &ensp; [![JUST STREETS](https://raw.githubusercontent.com/BikeNetKit/GrowBikeNet/refs/heads/main/docs/_static/logo_juststreets.png)](https://www.just-streets.eu/) 
+[![Innovation Fund Denmark](https://raw.githubusercontent.com/BikeNetKit/GrowBikeNet/refs/heads/main/docs/source/_static/logo_innovationfund.png)](https://innovationsfonden.dk/en) &emsp;&emsp; [![European Union](https://raw.githubusercontent.com/BikeNetKit/GrowBikeNet/refs/heads/main/docs/source/_static/logo_eu.png)](https://commission.europa.eu/index_en) &ensp; [![JUST STREETS](https://raw.githubusercontent.com/BikeNetKit/GrowBikeNet/refs/heads/main/docs/source/_static/logo_juststreets.png)](https://www.just-streets.eu/) 
 
 

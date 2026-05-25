@@ -32,7 +32,7 @@ is a good place to start, which also explains how the package works in detail. F
 How to cite
 -----------
 
-If you use `growbikenet` in your research, please cite the paper `doi:10.1038/s41598-022-10783-y <https://doi.org/10.1038/s41598-022-10783-y>`__:
+If you use `growbikenet` in your research, please cite `the paper <https://doi.org/10.1038/s41598-022-10783-y>`__:
 
     M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra. Growing urban bicycle networks. Scientific Reports 12, 6765 (2022). https://doi.org/10.1038/s41598-022-10783-y
 
