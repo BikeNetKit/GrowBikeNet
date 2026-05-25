@@ -17,7 +17,7 @@ Advanced installations
 ~~~~~~~~~~~~~~~~~~~~~~
 
 The main step is to set up a virtual environment ``gbnenv`` in which to
-install the package, and then to use or run the environment.
+install the package, and then to use or run the environment. Use either of the methods below.
 
 With conda/pip
 ^^^^^^^^^^^^^^
@@ -69,7 +69,7 @@ Run growbikenet in Jupyter lab
 
 After having set up the environment above, if you wish to run
 growbikenet via `JupyterLab <https://pypi.org/project/jupyterlab/>`__,
-follow the instructions below.
+follow the corresponding instructions below.
 
 With conda
 ^^^^^^^^^^
