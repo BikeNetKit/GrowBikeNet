@@ -112,9 +112,8 @@ nbsphinx_prolog = r"""
     .. note::
 
         | This page was generated from `{{ docname }}`__.
-        | Interactive online version: :raw-html:`<a href="https://mybinder.org/GrowBikeNet/master?urlpath=lab/tree/docs/{{ docname }}"><img alt="Binder badge" src="https://mybinder.org/badge_logo.svg" style="vertical-align:text-bottom"></a>`
 
-        __ https://github.com/BikeNetKit/GrowBikeNet/blob/master/docs/{{ docname }}
+        __ https://github.com/BikeNetKit/GrowBikeNet/blob/main/docs/source/{{ docname }}
 """  # noqa: E501
 
 
