@@ -52,6 +52,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # path to bib file with references
 bibtex_bibfiles = ["_static/references.bib"]
 bibtex_reference_style = "author_year"
+bibtex_default_style = 'plain'
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
