@@ -49,7 +49,7 @@ Supported by
 Development of BikeNetKit/GrowBikeNet was supported by the Innovation Fund Denmark
 and the EU HORIZON grant JUST STREETS.
 
-|Innovation Fund Denmark|  |European Union| |JUST STREETS|
+|Innovation Fund Denmark|    |European Union|   |JUST STREETS|
 
 .. |Innovation Fund Denmark| image:: _static/logo_innovationfund.png
    :target: https://innovationsfonden.dk/en
