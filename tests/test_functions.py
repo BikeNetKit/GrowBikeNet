@@ -39,7 +39,7 @@ def test_data_rank(method):
 @pytest.fixture
 def validation_data_rank(method):
     ranked_df = pd.DataFrame(
-        ([6, 0], [4, 1], [2, 2]), columns=[method, "ordering_betweenness_centrality"]
+        ([6, 0], [4, 1], [2, 2]), columns=[method, "rank"]
     )
     return ranked_df
 
