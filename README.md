@@ -16,7 +16,7 @@ The software downloads and pre-processes data from OpenStreetMap, prepares seed 
 
 ### The easy way
 
-The currently best way to install GrowBikeNet is using pip:
+The currently default way to install GrowBikeNet is using pip:
 
 ```
 pip install growbikenet

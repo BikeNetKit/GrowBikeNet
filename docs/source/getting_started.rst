@@ -8,7 +8,7 @@ Get Started in 4 Steps
 
 2. Read the :ref:`introducing-growbikenet` section below.
 
-3. Run the :doc:`mwe`.
+3. To check that the installation worked, run ``python examples/mwe.py`` or the Jupyter :doc:`mwe`.
 
 4. Consult the :doc:`reference_user` for complete details on using the package.
 

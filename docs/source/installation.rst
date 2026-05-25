@@ -5,12 +5,13 @@ Installation
 The easy way
 ~~~~~~~~~~~~
 
-The currently best way to install GrowBikeNet is using pip:
+The currently default way to install GrowBikeNet is using pip:
 
 ::
 
    pip install growbikenet
 
+If this does not work, follow the instructions below.
 
 Advanced installations
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -26,9 +27,7 @@ With conda/pip
 
 Installation with `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`__ (or the faster `mamba <https://mamba.readthedocs.io/en/latest/index.html>`__).
 
-The conda-forge installation is not yet working.
-
-Therefore, you need to `clone the
+The conda-forge installation is not yet working. Therefore, you need to `clone the
 repository <https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip>`__
 and create the environment via the
 ``environment.yml`` file:
