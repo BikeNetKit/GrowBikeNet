@@ -98,10 +98,13 @@ jobs:
         run: |
           anybadge --value=${{ env.total }} --file=coverage.svg coverage
           anybadge --label=coverage --value=${{ env.total }} --suffix='%%' --file=coverage.svg 50=red 60=orange 80=yellow 100=green
-          echo coverage.svg > tests/coverage.svg
+
+      - name: "Upload badge"
+        run: mkdir -p tests/uploads
+        run: echo coverage.svg > tests/uploads/coverage.svg
         uses: actions/upload-artifact@v7
         with:
-          path: tests/coverage.svg
+          path: tests/uploads/coverage.svg
           archive: false
 
     
