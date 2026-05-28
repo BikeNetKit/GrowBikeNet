@@ -100,8 +100,8 @@ jobs:
           anybadge --label=coverage --value=${{ env.total }} --suffix='%%' --file=coverage.svg 50=red 60=orange 80=yellow 100=green
           echo coverage.svg > tests/coverage.svg
         uses: actions/upload-artifact@v7
-          with:
-            path: tests/coverage.svg
-            archive: false
+        with:
+          path: tests/coverage.svg
+          archive: false
 
     
