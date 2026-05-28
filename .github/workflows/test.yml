@@ -107,4 +107,3 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: coverage.svg
-          path: tests
