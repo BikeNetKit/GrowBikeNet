@@ -94,13 +94,17 @@ jobs:
           echo "total=$TOTAL" >> $GITHUB_ENV
           echo "### Total coverage: ${TOTAL}%" >> $GITHUB_STEP_SUMMARY
 
-      - name: "Make badge"
-        run: anybadge --label=coverage --value=${{ env.total }} --suffix='%%' --file=coverage.svg 50=red 60=orange 80=yellow 100=green
+      - name: "Make badge" # https://github.com/jongracecox/anybadge#examples-1
+        run: anybadge --label=coverage --value=${{ env.total }} --suffix='%' --file=coverage.svg 50=red 60=orange 80=yellow 100=green
 
-      - name: "Upload badge"
+      - name: "Upload badge" # https://github.com/actions/upload-artifact
         uses: actions/upload-artifact@v7
         with:
           path: coverage.svg
           archive: false
 
-    
+      - name: "Download badge" # https://github.com/actions/download-artifact#download-single-artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage.svg
+          path: tests
