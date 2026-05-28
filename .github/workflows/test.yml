@@ -94,15 +94,14 @@ jobs:
           echo "total=$TOTAL" >> $GITHUB_ENV
           echo "### Total coverage: ${TOTAL}%" >> $GITHUB_STEP_SUMMARY
 
-      - name: "Make badge" # https://nedbatchelder.com/blog/202209/making_a_coverage_badge
-        uses: schneegans/dynamic-badges-action@v1.8.0
-        with:
-          # GIST_TOKEN is a GitHub personal access token with scope "gist".
-          auth: ${{ secrets.GIST_TOKEN }}
-          gistID: fa90e1bc9a90719944b41f6af03ced49    # replace with your real Gist id.
-          filename: covbadge.json
-          label: Coverage
-          message: ${{ env.total }}%
-          minColorRange: 50
-          maxColorRange: 90
-          valColorRange: ${{ env.total }}
+      - name: "Make badge"
+        run: |
+          anybadge --value=${{ env.total }} --file=coverage.svg coverage
+          anybadge --label=coverage --value=${{ env.total }} --suffix='%%' --file=coverage.svg 50=red 60=orange 80=yellow 100=green
+          echo coverage.svg > tests/coverage.svg
+        uses: actions/upload-artifact@v7
+          with:
+            path: tests/coverage.svg
+            archive: false
+
+    

@@ -33,3 +33,4 @@ dependencies:
       - sphinx-gallery
       - python-slugify
       - coverage
+      - anybadge
