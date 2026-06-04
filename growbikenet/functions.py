@@ -208,14 +208,18 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundar
         OSM edges of the corresponding bike network, projected
     """
     cf = ['["cycleway"~"track"]',
-            '["highway"~"cycleway"]',
+          '["highway"~"cycleway"]',
           '["highway"~"path"]["bicycle"~"designated"]',
           '["cycleway:right"~"track"]',
           '["cycleway:left"~"track"]',
+          '["cycleway:both"~"track"]',
+          '["cycleway:right"~"opposite_track"]', # deprecated, but could still exist
+          '["cycleway:left"~"opposite_track"]', # deprecated, but could still exist
+          '["cycleway:both"~"opposite_track"]', # deprecated, but could still exist
           '["cyclestreet"]',
           '["highway"~"living_street"]'
         ]
-    for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cyclestreet"]:
+    for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cycleway:both", "cyclestreet"]:
         if custom_tag not in ox.settings.useful_tags_way:
             ox.settings.useful_tags_way.extend(custom_tag)
     # Fetch protected bike network data from osmnx
