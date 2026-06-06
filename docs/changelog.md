@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.8.1 (2026-06-06)
+- 🐛 Fixed custom filter
+- 📝 Polished docs and user feedback
+- ➖ Removed unneeded dependencies from env files
+
 ## Version 0.8.0 (2026-05-24)
 
 - 📝 Big docs update: Added content to all pages, with furo style
