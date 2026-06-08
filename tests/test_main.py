@@ -3,6 +3,7 @@ import geopandas as gpd
 import osmnx as ox
 from growbikenet.growbikenet import growbikenet
 
+ox.settings.requests_timeout=30 # Speed up failing tests from default 180
 
 @pytest.fixture
 def create_validation_gdf():
