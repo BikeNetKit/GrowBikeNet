@@ -46,8 +46,7 @@ file.
 Supported by
 ------------
 
-Development of BikeNetKit/GrowBikeNet was supported by the Innovation Fund Denmark
-and the EU HORIZON grant JUST STREETS.
+Development of BikeNetKit/GrowBikeNet was supported by the Innovation Fund Denmark, the EU HORIZON grant JUST STREETS, and the Data Science Section of IT University of Copenhagen.
 
 |Innovation Fund Denmark|    |European Union|   |JUST STREETS|
 
