@@ -89,6 +89,20 @@ def growbikenet(
     a_edges : geopandas.geodataframe.GeoDataFrame
         ordered geodataframe of all edges in street network
 
+    Examples
+    --------
+    Minimum working example.
+
+    >>> edges_ranked = growbikenet("Lyon")
+
+    Query from study area polygon.
+
+    >>> edges_ranked = growbikenet("Copenhagen", city_boundary_file="./tests/test_data/copenhagen.shp") 
+
+    Import street network.
+
+    >>> edges_ranked = growbikenet("Oelde", import_network_file="./tests/test_data/oelde_streets.gpkg")
+
     References
     ----------
     .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
@@ -194,7 +208,7 @@ def growbikenet(
         # Due to retain_all=False, this fetches the largest connected component
         nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_geometry=city_boundary_geometry)
         pbar.update(1)
-        ox.io.save_graph_geopackage(g_undir, filepath="streettestblabla.gpkg") # for debugging
+        # ox.io.save_graph_geopackage(g_undir, filepath="streettest.gpkg") # for debugging
 
         if existing_network_spacing is not None: # update g_undir: add the existing bike network
             nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_geometry=city_boundary_geometry)

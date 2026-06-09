@@ -3,8 +3,6 @@ import geopandas as gpd
 import osmnx as ox
 from growbikenet.growbikenet import growbikenet
 
-ox.settings.requests_timeout=30 # Speed up failing tests from default 180
-
 @pytest.fixture
 def create_validation_gdf():
     gdf = gpd.read_file("./tests/test_data/oelde_growbikenet.gpkg", layer='Grown bike network')
@@ -22,7 +20,17 @@ def test_growbikenet_case_success(create_validation_gdf):
         )
     )
 
-def test_growbikenet_case_fail_rail():
+def test_growbikenet_case_fail_rail1():
+    """Verify that when there are too few rail stations (Oelde), a 
+    RunTimeError is thrown.
+    """
+    with pytest.raises(Exception):
+        growbikenet(
+            "Oelde",
+            seed_point_type='rail',
+        )
+
+def test_growbikenet_case_fail_rail2():
     """Verify that in the absence of rail stations (Andorra), an 
     osmnx._errors.InsufficientResponseError is thrown.
     """
