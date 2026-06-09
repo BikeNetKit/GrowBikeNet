@@ -1,9 +1,19 @@
 # Changelog
 
+## Version 0.9.0 (2026-06-09)
+
+- ✨ Added import from file for street network and seed points
+- ✨ Added custom and preset tags: rail, school, park
+- 📝 Polished docstrings
+- ✅ Add test cases and examples
+
+
 ## Version 0.8.1 (2026-06-06)
+
 - 🐛 Fixed custom filter
 - 📝 Polished docs and user feedback
 - ➖ Removed unneeded dependencies from env files
+
 
 ## Version 0.8.0 (2026-05-24)
 
@@ -15,9 +25,11 @@
 - 🐛 Fixed failing docs
 - ➖ Removed unneeded dependencies from env files
 
+
 ## Version 0.7.1 (2026-05-04)
 
 - 🧹 Make edge overlap removal ~5x faster
+
 
 ## Version 0.7.0 (2026-05-04)
 
@@ -30,11 +42,13 @@
 - 💾 Round exported coordinates for smaller file sizes
 - 🧹 Removed "all" ranking option
 
+
 ## Version 0.6.0 (2026-04-28)
 
 - 🔧 Bug fix for metric calculation
 - ⬆️ Implemented delaunay triangulation for performance improvements
 - ⬆️ Improved readme to distuingish between use/development
+
 
 ## Version 0.5.2 (2026-04-10)
 
