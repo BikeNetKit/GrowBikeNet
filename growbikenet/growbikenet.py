@@ -61,10 +61,11 @@ def growbikenet(
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
-    seed_point_type : str ('grid' | 'rail' | 'school' | 'file' | 'tags'), default 'grid'
+    seed_point_type : str ('grid' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'grid'
         If set to 'grid', creates a square grid.
         If set to 'rail', uses railway stations and halts.
         If set to 'school', uses kindergartens, schools, colleges, and universities.
+        If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
         If set to 'file', imports seed_points_file.
         If set to 'tags', uses geocodable seed_point_tags, see [3]_. 
     seed_point_grid_spacing : int, default 1707
@@ -125,6 +126,12 @@ def growbikenet(
 
     """
     starttime = time.time()
+
+    PRESET_TAGS = {
+                "rail": {"railway": ["station", "halt"]},
+                "school": {"amenity": ["kindergarten", "school", "college", "university"]},
+                "park": {"leisure": ["park", "garden", "nature_reserve", "bathing_place"]},
+                }
     
     # Check if user input is valid
     if type(city_name) is not str:
@@ -137,8 +144,8 @@ def growbikenet(
         raise ValueError(
             "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
         )
-    if seed_point_type not in ['grid', 'rail', 'file', 'tags', 'school']:
-        raise ValueError("seed_point_type must be 'grid' or 'rail' or 'file' or 'tags' or 'school'")
+    if seed_point_type not in ['grid', 'rail', 'school', 'park', 'file', 'tags']:
+        raise ValueError("seed_point_type must be 'grid' or 'rail'or 'school' or 'park' or 'file' or 'tags'")
     if seed_point_type == 'grid' and type(seed_point_grid_spacing) is not int:
         raise TypeError("seed_point_grid_spacing must be an integer")
     if seed_point_type == 'grid' and type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:  
@@ -185,17 +192,17 @@ def growbikenet(
         raise FileNotFoundError("street_network_file not found")
     if type(seed_points_file) is str and not os.path.isfile(seed_points_file):
         raise FileNotFoundError("seed_points_file not found")
-    if type(street_network_file) is str and seed_point_type in ['rail', 'school']:
-        raise FileNotFoundError("When street_network_file is set, seed_point_type must not be 'rail' or 'school' ")
+    if type(street_network_file) is str and seed_point_type in PRESET_TAGS:
+        raise FileNotFoundError("When street_network_file is set, seed_point_type must not be 'rail' or 'school' or 'park'")
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
     print("==============================================")
     print("RUNNING GROWBIKENET FOR CITY: " + city_name)
-    print(ranking + " | " + seed_point_type + " | " + ("with existing bike network " if existing_network_spacing else "from scratch"))
+    print(ranking + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
     print("----------------------------------------------╮")
 
-
+    
     
     if street_network_file is not None:
         ### Import and preprocess data from file
@@ -252,16 +259,13 @@ def growbikenet(
         seed_points = get_grid_seed_points(
             edges, seed_point_grid_spacing, principal_bearing
         )
-    elif seed_point_type == "rail": # Treat rail like a preset tags
-        seed_point_tags = {"railway": ["station", "halt"]}
-    elif seed_point_type == "school": # Treat school like a preset tags
-        seed_point_tags = {"amenity": ["kindergarten", "school", "college", "university"]}
+    elif seed_point_type in PRESET_TAGS:
+        seed_point_tags = PRESET_TAGS[seed_point_type]
     elif seed_point_type == "file":
         seed_points = gpd.read_file(seed_points_file)
         seed_points = prepare_seed_points(seed_points, proj_crs)
 
-    # Preset tags or tags
-    if seed_point_type in ["rail", "school", "tags"]:
+    if seed_point_type == "tags" or seed_point_type in PRESET_TAGS:
         seed_points = get_tags_seed_points(city_name, proj_crs=proj_crs, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
     pbar.update(1)
 
@@ -466,7 +470,7 @@ def growbikenet(
     if export_video:
         print("Video exported to results/plots/")
     if export_data or export_plots or export_video:
-        print("-----------------------------------------------")
+        print("----------------------------------------------")
 
     endtime = time.time()
     print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))

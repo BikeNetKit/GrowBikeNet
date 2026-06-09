@@ -315,7 +315,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     seed_points_exnw.to_crs(proj_crs, inplace=True)
 
     # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
-    buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing))
+    buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing/2)) # To do: Think more about this factor
     buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
     buffer_seed_points_exnw.to_crs(proj_crs, inplace=True)
 
