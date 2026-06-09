@@ -5,9 +5,9 @@ Parameters
 ----------
 city_name : str
     Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled (for data fetching) if city_boundary_file is set.
-export_data_slug : str, optional, default None
+export_data_slug : str, default None
     If not set to None, the city_name will be slugified and used as the slug in the filename of the data export
-export_file_format : str, optional, default "geojson"
+export_file_format : str, default "geojson"
     File format for the data export. Default "geojson", also possible "gpkg". If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
 city_boundary_file : (str | None), default None
     If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp".
