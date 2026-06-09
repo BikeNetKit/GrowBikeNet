@@ -12,7 +12,7 @@ from growbikenet.functions import (
     get_principal_bearing,
     prepare_seed_points,
     get_grid_seed_points,
-    get_rail_seed_points,
+    get_tags_seed_points,
     snap_seed_points,
     filter_seed_points,
     create_delaunay_edges,
@@ -39,14 +39,15 @@ def growbikenet(
     seed_point_delta=500,
     existing_network_spacing=None,
     export_data=True,
-    export_data_slug=None,
     export_file_format='geojson',
+    export_data_slug=None,
     export_plots=False,
     export_video=False,
     allow_edge_overlaps=False,
     city_boundary_file=None,
     street_network_file=None,
     seed_points_file=None,
+    seed_point_tags=None,
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
 
@@ -60,34 +61,38 @@ def growbikenet(
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
-    seed_point_type : str ('grid' | 'rail' | 'custom_offline'), default 'grid'
+    seed_point_type : str ('grid' | 'rail' | 'school' | 'file' | 'tags'), default 'grid'
         If set to 'grid', creates a square grid.
-        If set to 'rail', uses rail stations.
-        If set to 'custom_offline', imports seed_points_file.
+        If set to 'rail', uses railway stations and halts.
+        If set to 'school', uses kindergartens, schools, colleges, and universities.
+        If set to 'file', imports seed_points_file.
+        If set to 'tags', uses geocodable seed_point_tags, see [3]_. 
     seed_point_grid_spacing : int, default 1707
         If seed_point_type is set to 'grid', this is the spacing between seed points, in meters.
     seed_point_delta : int, default 500
-        Maximum distance between generated seed points and osm nodes for snapping, in meters.
+        Maximum distance between raw seed points and osm nodes for snapping, in meters.
     existing_network_spacing : int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
     export_data : bool, default True
         If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
-    export_data_slug : (str | None), default None
-        If not set to None, the city_name will be slugified and used as the slug in the filename of the data export.
     export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
         File format for the data export, relevant if export_data set to True. Default 'geojson', also possible 'gpkg'. If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
+    export_data_slug : str | None, default None
+        If not set to None, the city_name will be slugified and used as the slug in the filename of the data export.
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
     export_video : bool, default False
         If set to True, video is saved to file (only possible if export_plots is set to True), overwriting existing ones.
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages and deletes growth stages that do not add anything new.
-    city_boundary_file : (str | None), default None
+    city_boundary_file : str | None, default None
         If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary_file and street_network_file cannot both be set.
-    street_network_file : (str | None), default None
+    street_network_file : str | None, default None
         If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage(). For example, "./tests/test_data/oelde_streets.shp". This does not work with seed_point_type="rail". city_boundary_file and street_network_file cannot both be set.
-    seed_points_file : (str | None), default None
-        If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'custom_offline'.
+    seed_points_file : str | None, default None
+        If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
+    seed_point_tags : None | dict[str, bool | str | list[str]], default None
+        If not None, must be a geocodable seed_point_tags, see [3]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
 
     Returns
     -------
@@ -96,22 +101,27 @@ def growbikenet(
 
     Examples
     --------
-    Minimum working example.
+    Minimum working example: Grow a bicycle network from scratch in Lyon.
 
     >>> edges_ranked = growbikenet("Lyon")
 
-    Query from study area polygon.
+    Grow a bicycle network from scratch in Copenhagen, providing a study area polygon to include also Frederiksberg and Amager.
 
     >>> edges_ranked = growbikenet("Copenhagen", city_boundary_file="./tests/test_data/copenhagen.shp") 
 
-    Import offline street network and custom seed points.
+    Expand the existing bicycle network of Lyon, connecting all educational institutions.
 
-    >>> edges_ranked = growbikenet("Oelde", street_network_file="./tests/test_data/oelde_streets.gpkg", seed_point_type='custom_offline', seed_points_file="./tests/test_data/oelde_seed_points.gpkg")
+    >>> edges_ranked = growbikenet("Lyon", seed_point_type='school', existing_network_spacing=500) 
+
+    Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
+
+    >>> edges_ranked = growbikenet("Oelde", street_network_file="./tests/test_data/oelde_streets.gpkg", seed_point_type='file', seed_points_file="./tests/test_data/oelde_seed_points.gpkg")
 
     References
     ----------
     .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
     .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
+    .. [3] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
 
     """
     starttime = time.time()
@@ -127,14 +137,16 @@ def growbikenet(
         raise ValueError(
             "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
         )
-    if seed_point_type != 'grid' and seed_point_type != 'rail' and seed_point_type != 'custom_offline':
-        raise ValueError("seed_point_type must be 'grid' or 'rail' or 'custom_offline'")
+    if seed_point_type not in ['grid', 'rail', 'file', 'tags', 'school']:
+        raise ValueError("seed_point_type must be 'grid' or 'rail' or 'file' or 'tags' or 'school'")
     if seed_point_type == 'grid' and type(seed_point_grid_spacing) is not int:
         raise TypeError("seed_point_grid_spacing must be an integer")
     if seed_point_type == 'grid' and type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:  
         raise ValueError("seed_point_grid_spacing must be a positive integer")
-    if seed_point_type == 'custom_offline' and type(seed_points_file) is None:
-        raise ValueError("With seed_point_type 'custom_offline', seed_points_file must be provided")
+    if seed_point_type == 'file' and type(seed_points_file) is None:
+        raise ValueError("With seed_point_type 'file', a seed_points_file must be provided")
+    if seed_point_type == 'tags' and type(seed_points_file) is None:
+        raise ValueError("With seed_point_type 'tags', a seed_point_tags must be provided")
     if type(seed_point_delta) is not int:
         raise TypeError("seed_point_delta must be an integer")
     if type(seed_point_delta) is int and seed_point_delta <= 0:
@@ -173,8 +185,8 @@ def growbikenet(
         raise FileNotFoundError("street_network_file not found")
     if type(seed_points_file) is str and not os.path.isfile(seed_points_file):
         raise FileNotFoundError("seed_points_file not found")
-    if type(street_network_file) is str and seed_point_type == 'rail':
-        raise FileNotFoundError("seed_point_type must not be rail when street_network_file is set")
+    if type(street_network_file) is str and seed_point_type in ['rail', 'school']:
+        raise FileNotFoundError("When street_network_file is set, seed_point_type must not be 'rail' or 'school' ")
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
@@ -240,11 +252,17 @@ def growbikenet(
         seed_points = get_grid_seed_points(
             edges, seed_point_grid_spacing, principal_bearing
         )
-    elif seed_point_type == "rail":
-        seed_points = get_rail_seed_points(city_name, proj_crs=proj_crs, city_boundary_geometry=city_boundary_geometry)
-    elif seed_point_type == "custom_offline":
+    elif seed_point_type == "rail": # Treat rail like a preset tags
+        seed_point_tags = {"railway": ["station", "halt"]}
+    elif seed_point_type == "school": # Treat school like a preset tags
+        seed_point_tags = {"amenity": ["kindergarten", "school", "college", "university"]}
+    elif seed_point_type == "file":
         seed_points = gpd.read_file(seed_points_file)
         seed_points = prepare_seed_points(seed_points, proj_crs)
+
+    # Preset tags or tags
+    if seed_point_type in ["rail", "school", "tags"]:
+        seed_points = get_tags_seed_points(city_name, proj_crs=proj_crs, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
     pbar.update(1)
 
     # Snap seed points to OSM nodes

@@ -403,14 +403,13 @@ def prepare_seed_points(seed_points, proj_crs):
         Projected and prepared seed points.
     """
     seed_points = seed_points[seed_points["geometry"].type == "Point"]
-    seed_points = seed_points[["geometry"]]
     seed_points.to_crs(proj_crs, inplace=True)
     # To do optional: merge closeby seed points
     return seed_points
 
 
-def get_rail_seed_points(city_name, proj_crs, city_boundary_geometry=None):
-    """Get rail seed points for a city
+def get_tags_seed_points(city_name, proj_crs, tags, city_boundary_geometry=None):
+    """Get tags seed points for a city
 
     Parameters
     ----------
@@ -418,6 +417,8 @@ def get_rail_seed_points(city_name, proj_crs, city_boundary_geometry=None):
         Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled (for data fetching) if city_boundary_geometry is set.
     proj_crs : str
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
+    tags : None | dict[str, bool | str | list[str]], default None
+        Geocodable tags, see [3]_. For example, tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
     city_boundary_geometry : (shapely Polygon | shapely MultiPolygon | None), default None
         If not set to None, the study area will be selected from this geometry.
 
@@ -425,15 +426,19 @@ def get_rail_seed_points(city_name, proj_crs, city_boundary_geometry=None):
     -------
     seed_points: geopandas.geodataframe.GeoDataFrame
         Seed points, rotated by principal bearing, to be snapped to the street network, in the same projected coordinate reference system as edges
+
+    References
+    ----------
+    .. [3] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place    
     """
 
     if city_boundary_geometry:
         seed_points = ox.features_from_polygon(
-            city_boundary_geometry, {"railway": ["station", "halt"]}
+            city_boundary_geometry, tags
         )
     else:
         seed_points = ox.features_from_place(
-            city_name, {"railway": ["station", "halt"]}
+            city_name, tags
         )
     seed_points = prepare_seed_points(seed_points, proj_crs)
     return seed_points
