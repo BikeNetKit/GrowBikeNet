@@ -8,15 +8,29 @@ def create_validation_gdf():
     gdf = gpd.read_file("./tests/test_data/oelde_growbikenet.gpkg", layer='Grown bike network')
     return gdf
 
-def test_growbikenet_case_success(create_validation_gdf):
+def test_growbikenet_case_success_online(create_validation_gdf):
+    """Verify that the online version of growbikenet works as intended.
+    This test might brake whenever Oelde is changed too much on OSM!
+    """
     create_validation_gdf.equals(
         growbikenet(
             city_name="Oelde",
             proj_crs="3857",
             ranking="betweenness_centrality",
             export_data=False,
-            export_plots=False,
-            export_video=False,
+        )
+    )
+
+def test_growbikenet_case_success_offline(create_validation_gdf):
+    """Verify that the offline version of growbikenet works as intended.
+    """
+    create_validation_gdf.equals(
+        growbikenet(
+            city_name="Oelde",
+            proj_crs="3857",
+            ranking="betweenness_centrality",
+            export_data=False,
+            import_network_file="./tests/test_data/oelde_streets.gpkg",
         )
     )
 
