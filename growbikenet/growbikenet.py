@@ -54,28 +54,28 @@ def growbikenet(
     ----------
     city_name : str
         Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled for data fetching if city_boundary_file or street_network_file is set.
-    proj_crs : str, optional, default '3857'
+    proj_crs : str, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
-    ranking : str, optional, default 'betweenness_centrality'
+    ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
-    seed_point_type : str, optional, default 'grid'
+    seed_point_type : str ('grid' | 'rail'), default 'grid'
         If set to 'grid', creates a square grid.
         If set to 'rail', uses rail stations.
-    seed_point_grid_spacing : int, optional, default 1707
+    seed_point_grid_spacing : int, default 1707
         If seed_point_type is set to 'grid', this is the spacing between seed points, in meters.
-    seed_point_delta : int, optional, default 500
+    seed_point_delta : int, default 500
         Maximum distance between generated seed points and osm nodes for snapping, in meters.
-    existing_network_spacing : int, optional, default None
+    existing_network_spacing : int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
-    export_data : bool, optional, default True
+    export_data : bool, default True
         If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
-    export_data_slug : str, optional, default None
+    export_data_slug : (str | None), default None
         If not set to None, the city_name will be slugified and used as the slug in the filename of the data export.
-    export_file_format : str, optional, default "geojson"
-        File format for the data export, relevant if export_data set to True. Default "geojson", also possible "gpkg". If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
-    export_plots : bool, optional, default False
+    export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
+        File format for the data export, relevant if export_data set to True. Default 'geojson', also possible 'gpkg'. If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
+    export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
-    export_video : bool, optional, default False
+    export_video : bool, default False
         If set to True, video is saved to file (only possible if export_plots is set to True), overwriting existing ones.
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages and deletes growth stages that do not add anything new.
