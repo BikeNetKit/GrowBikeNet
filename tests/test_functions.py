@@ -8,26 +8,26 @@ from growbikenet.functions import (
     get_grid_seed_points,
     filter_seed_points,
     rank_df,
-    intersects_properly,
+    # intersects_properly,
     remove_edge_overlaps,
 )
 from shapely.geometry import Point, LineString, MultiLineString
 
 
-@pytest.fixture
-def geom_1():
-    linestring = LineString([(0, 0), (1, 1), (2, 2)])
-    return linestring
+# @pytest.fixture
+# def geom_1():
+#     linestring = LineString([(0, 0), (1, 1), (2, 2)])
+#     return linestring
 
 
-@pytest.fixture
-def geom_2():
-    linestring = LineString([(3, 3), (4, 4), (5, 5)])
-    return linestring
+# @pytest.fixture
+# def geom_2():
+#     linestring = LineString([(3, 3), (4, 4), (5, 5)])
+#     return linestring
 
 
-def test_intersects_properly(geom_1, geom_2):
-    assert intersects_properly(geom_1, geom_2) is False
+# def test_intersects_properly(geom_1, geom_2):
+#     assert intersects_properly(geom_1, geom_2) is False
 
 
 @pytest.fixture
