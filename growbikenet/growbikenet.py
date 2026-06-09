@@ -20,7 +20,7 @@ from growbikenet.functions import (
     node_to_edge_attributes,
     df_from_graph,
     rank_df,
-    prepare_network,
+    download_network,
     update_with_existing_bike_network,
     update_seed_points_with_existing_bike_network,
     remove_edge_overlaps,
@@ -44,7 +44,7 @@ def growbikenet(
     export_video=False,
     allow_edge_overlaps=False,
     city_boundary_file=None,
-    import_network_file=None,
+    street_network_file=None,
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
 
@@ -53,7 +53,7 @@ def growbikenet(
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled for data fetching if city_boundary_file or import_network_file is set.
+        Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled for data fetching if city_boundary_file or street_network_file is set.
     proj_crs : str, optional, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, optional, default 'betweenness_centrality'
@@ -80,9 +80,9 @@ def growbikenet(
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages and deletes growth stages that do not add anything new.
     city_boundary_file : (str | None), default None
-        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary_file and import_network_file cannot both be set.
-    import_network_file : (str | None), default None
-        If not set to None, the study network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage(). This does not work with seed_point_type="rail". city_boundary_file and import_network_file cannot both be set.
+        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary_file and street_network_file cannot both be set.
+    street_network_file : (str | None), default None
+        If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage(). This does not work with seed_point_type="rail". city_boundary_file and street_network_file cannot both be set.
 
     Returns
     -------
@@ -101,7 +101,7 @@ def growbikenet(
 
     Import street network.
 
-    >>> edges_ranked = growbikenet("Oelde", import_network_file="./tests/test_data/oelde_streets.gpkg")
+    >>> edges_ranked = growbikenet("Oelde", street_network_file="./tests/test_data/oelde_streets.gpkg")
 
     References
     ----------
@@ -160,12 +160,12 @@ def growbikenet(
         raise TypeError("city_boundary_file must be None or a string")
     if type(city_boundary_file) is str and not os.path.isfile(city_boundary_file):
         raise FileNotFoundError("city_boundary_file not found")
-    if city_boundary_file is not None and import_network_file is not None:
-        raise ValueError("city_boundary_file and import_network_file cannot both be set")
-    if type(import_network_file) is str and not os.path.isfile(import_network_file):
-        raise FileNotFoundError("import_network_file not found")
-    if type(import_network_file) is str and seed_point_type != "grid":
-        raise FileNotFoundError("seed_point_type must be grid when import_network_file is set")
+    if city_boundary_file is not None and street_network_file is not None:
+        raise ValueError("city_boundary_file and street_network_file cannot both be set")
+    if type(street_network_file) is str and not os.path.isfile(street_network_file):
+        raise FileNotFoundError("street_network_file not found")
+    if type(street_network_file) is str and seed_point_type != "grid":
+        raise FileNotFoundError("seed_point_type must be grid when street_network_file is set")
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
@@ -176,7 +176,7 @@ def growbikenet(
 
 
     
-    if import_network_file is not None:
+    if street_network_file is not None:
         ### Import and preprocess data from file
         city_boundary_exists = False
         pbar = tqdm(
@@ -185,7 +185,7 @@ def growbikenet(
             unit="network",
             bar_format='{l_bar}{bar:16}{r_bar}',
         )
-        nodes, edges, g_undir = import_network(import_network_file, proj_crs)
+        nodes, edges, g_undir = import_network(street_network_file, proj_crs)
         pbar.update(1)
     else:
         ### Download and preprocess data from OSM
@@ -206,7 +206,7 @@ def growbikenet(
 
         # Fetch street network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = prepare_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir = download_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_geometry=city_boundary_geometry)
         pbar.update(1)
         # ox.io.save_graph_geopackage(g_undir, filepath="streettest.gpkg") # for debugging
 

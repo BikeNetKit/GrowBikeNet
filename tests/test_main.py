@@ -30,7 +30,7 @@ def test_growbikenet_case_success_offline(create_validation_gdf):
             proj_crs="3857",
             ranking="betweenness_centrality",
             export_data=False,
-            import_network_file="./tests/test_data/oelde_streets.gpkg",
+            street_network_file="./tests/test_data/oelde_streets.gpkg",
         )
     )
 

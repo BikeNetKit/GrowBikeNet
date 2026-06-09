@@ -11,33 +11,13 @@ from shapely.geometry import Point, MultiLineString
 from tqdm import tqdm
 
 
-def intersects_properly(geom1, geom2):
-    """
-    Helper function to check whether newly to be added edge intersects with already added edges
-    for 2 shapely geometries, check whether they "properly intersect" (i.e. intersect but not touch, i.e. don't share endpoints)
-
-    Parameters
-    ----------
-    geom1 : shapely geometry
-        A shapely geometry, for example shapely.geometry.Point() or shapely.geometry.LineString()
-    geom2 : shapely geometry
-        A shapely geometry, for example shapely.geometry.Point() or shapely.geometry.LineString()
-
-    Returns
-    -------
-    boolean
-        Returns true if the two provided geometries intersect but do not touch
-    """
-    return geom1.intersects(geom2) and not geom1.touches(geom2)
-
-
-def import_network(import_network_file, proj_crs):
+def import_network(street_network_file, proj_crs):
     """Import and project a street network from gpkg file
 
     Parameters
     ----------
-    import_network_file : str
-        The study network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage().
+    street_network_file : str
+        The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage().
     proj_crs : str
         Coordinate reference system that is used to project osm data.
 
@@ -51,8 +31,8 @@ def import_network(import_network_file, proj_crs):
         Extracted networkX graph, undirected
     """
 
-    nodes = gpd.read_file(import_network_file, layer='nodes')
-    edges = gpd.read_file(import_network_file, layer='edges')
+    nodes = gpd.read_file(street_network_file, layer='nodes')
+    edges = gpd.read_file(street_network_file, layer='edges')
 
     # Set indices as required by osmnx.convert.graph_from_gdfs
     # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
@@ -61,7 +41,7 @@ def import_network(import_network_file, proj_crs):
 
     g = ox.convert.graph_from_gdfs(nodes, edges)
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
-    
+
     nodes, edges = prepare_nodes_edges(nodes, edges, proj_crs)
 
     return nodes, edges, g_undir
@@ -100,7 +80,7 @@ def prepare_nodes_edges(nodes, edges, proj_crs):
     return nodes, edges
 
 
-def prepare_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True, city_boundary_geometry=None):
+def download_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True, city_boundary_geometry=None):
     """Download and prepare a street network from OSM via OSMnx
 
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
@@ -289,7 +269,7 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundar
             ox.settings.useful_tags_way.extend(custom_tag)
     # Fetch protected bike network data from osmnx
     # Due to retain_all=True, this fetches all the connected components
-    nodes_exnw, edges_exnw, g_undir_exnw = prepare_network(city_name, proj_crs, custom_filter=cf, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+    nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, proj_crs, custom_filter=cf, retain_all=True, city_boundary_geometry=city_boundary_geometry)
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
 
     # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
