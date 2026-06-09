@@ -10,6 +10,7 @@ import time
 import datetime
 from growbikenet.functions import (
     get_principal_bearing,
+    prepare_seed_points,
     get_grid_seed_points,
     get_rail_seed_points,
     snap_seed_points,
@@ -31,20 +32,21 @@ from growbikenet.visualizations import make_video, create_plots
 
 def growbikenet(
     city_name,
-    proj_crs="3857",
-    ranking="betweenness_centrality",
-    seed_point_type="grid",
+    proj_crs='3857',
+    ranking='betweenness_centrality',
+    seed_point_type='grid',
     seed_point_grid_spacing=1707,
     seed_point_delta=500,
     existing_network_spacing=None,
     export_data=True,
     export_data_slug=None,
-    export_file_format="geojson",
+    export_file_format='geojson',
     export_plots=False,
     export_video=False,
     allow_edge_overlaps=False,
     city_boundary_file=None,
     street_network_file=None,
+    seed_points_file=None,
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
 
@@ -58,9 +60,10 @@ def growbikenet(
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
-    seed_point_type : str ('grid' | 'rail'), default 'grid'
+    seed_point_type : str ('grid' | 'rail' | 'custom_offline'), default 'grid'
         If set to 'grid', creates a square grid.
         If set to 'rail', uses rail stations.
+        If set to 'custom_offline', imports seed_points_file.
     seed_point_grid_spacing : int, default 1707
         If seed_point_type is set to 'grid', this is the spacing between seed points, in meters.
     seed_point_delta : int, default 500
@@ -82,7 +85,9 @@ def growbikenet(
     city_boundary_file : (str | None), default None
         If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary_file and street_network_file cannot both be set.
     street_network_file : (str | None), default None
-        If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage(). This does not work with seed_point_type="rail". city_boundary_file and street_network_file cannot both be set.
+        If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage(). For example, "./tests/test_data/oelde_streets.shp". This does not work with seed_point_type="rail". city_boundary_file and street_network_file cannot both be set.
+    seed_points_file : (str | None), default None
+        If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'custom_offline'.
 
     Returns
     -------
@@ -99,9 +104,9 @@ def growbikenet(
 
     >>> edges_ranked = growbikenet("Copenhagen", city_boundary_file="./tests/test_data/copenhagen.shp") 
 
-    Import street network.
+    Import offline street network and custom seed points.
 
-    >>> edges_ranked = growbikenet("Oelde", street_network_file="./tests/test_data/oelde_streets.gpkg")
+    >>> edges_ranked = growbikenet("Oelde", street_network_file="./tests/test_data/oelde_streets.gpkg", seed_point_type='custom_offline', seed_points_file="./tests/test_data/oelde_seed_points.gpkg")
 
     References
     ----------
@@ -122,12 +127,14 @@ def growbikenet(
         raise ValueError(
             "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
         )
-    if seed_point_type != "grid" and seed_point_type != "rail":
-        raise ValueError("seed_point_type must be 'grid' or 'rail'")
-    if seed_point_type == "grid" and type(seed_point_grid_spacing) is not int:
+    if seed_point_type != 'grid' and seed_point_type != 'rail' and seed_point_type != 'custom_offline':
+        raise ValueError("seed_point_type must be 'grid' or 'rail' or 'custom_offline'")
+    if seed_point_type == 'grid' and type(seed_point_grid_spacing) is not int:
         raise TypeError("seed_point_grid_spacing must be an integer")
     if seed_point_type == 'grid' and type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:  
         raise ValueError("seed_point_grid_spacing must be a positive integer")
+    if seed_point_type == 'custom_offline' and type(seed_points_file) is None:
+        raise ValueError("With seed_point_type 'custom_offline', seed_points_file must be provided")
     if type(seed_point_delta) is not int:
         raise TypeError("seed_point_delta must be an integer")
     if type(seed_point_delta) is int and seed_point_delta <= 0:
@@ -164,8 +171,10 @@ def growbikenet(
         raise ValueError("city_boundary_file and street_network_file cannot both be set")
     if type(street_network_file) is str and not os.path.isfile(street_network_file):
         raise FileNotFoundError("street_network_file not found")
-    if type(street_network_file) is str and seed_point_type != "grid":
-        raise FileNotFoundError("seed_point_type must be grid when street_network_file is set")
+    if type(seed_points_file) is str and not os.path.isfile(seed_points_file):
+        raise FileNotFoundError("seed_points_file not found")
+    if type(street_network_file) is str and seed_point_type == 'rail':
+        raise FileNotFoundError("seed_point_type must not be rail when street_network_file is set")
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
@@ -208,12 +217,10 @@ def growbikenet(
         # Due to retain_all=False, this fetches the largest connected component
         nodes, edges, g_undir = download_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_geometry=city_boundary_geometry)
         pbar.update(1)
-        # ox.io.save_graph_geopackage(g_undir, filepath="streettest.gpkg") # for debugging
 
         if existing_network_spacing is not None: # update g_undir: add the existing bike network
             nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_geometry=city_boundary_geometry)
             pbar.update(1)
-            # ox.io.save_graph_geopackage(g_undir, filepath="streettest2.gpkg") # for debugging
     pbar.close()
 
     ### Create seed points
@@ -235,6 +242,9 @@ def growbikenet(
         )
     elif seed_point_type == "rail":
         seed_points = get_rail_seed_points(city_name, proj_crs=proj_crs, city_boundary_geometry=city_boundary_geometry)
+    elif seed_point_type == "custom_offline":
+        seed_points = gpd.read_file(seed_points_file)
+        seed_points = prepare_seed_points(seed_points, proj_crs)
     pbar.update(1)
 
     # Snap seed points to OSM nodes

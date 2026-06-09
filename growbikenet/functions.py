@@ -387,6 +387,28 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     return seed_points
 
 
+def prepare_seed_points(seed_points, proj_crs):
+    """Project and prepare seed points for further use
+    
+    Parameters
+    ----------
+    seed_points: geopandas.geodataframe.GeoDataFrame
+        Unprojected seed points
+    proj_crs : str
+        Coordinate reference system that is used to project the seed points.
+        
+    Returns
+    -------
+    seed_points: geopandas.geodataframe.GeoDataFrame
+        Projected and prepared seed points.
+    """
+    seed_points = seed_points[seed_points["geometry"].type == "Point"]
+    seed_points = seed_points[["geometry"]]
+    seed_points.to_crs(proj_crs, inplace=True)
+    # To do optional: merge closeby seed points
+    return seed_points
+
+
 def get_rail_seed_points(city_name, proj_crs, city_boundary_geometry=None):
     """Get rail seed points for a city
 
@@ -413,9 +435,7 @@ def get_rail_seed_points(city_name, proj_crs, city_boundary_geometry=None):
         seed_points = ox.features_from_place(
             city_name, {"railway": ["station", "halt"]}
         )
-    seed_points = seed_points[seed_points["geometry"].type == "Point"]
-    seed_points.to_crs(proj_crs, inplace=True)
-    # To do optional: merge closeby seed points
+    seed_points = prepare_seed_points(seed_points, proj_crs)
     return seed_points
 
 
