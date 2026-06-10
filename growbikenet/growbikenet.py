@@ -3,6 +3,7 @@ import numpy as np
 import networkx as nx
 import osmnx as ox
 import geopandas as gpd
+import pandas as pd
 from slugify import slugify
 import warnings
 from tqdm import tqdm
@@ -278,18 +279,15 @@ def growbikenet(
 
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
-    if seed_point_linking == "quadrangulate":
+    if seed_point_linking == "quadrangulate": # Map geometry to osmid
         mapping = {row.geometry_generated: row.osmid for row in seed_points_snapped.itertuples()}
         nx.relabel_nodes(seed_network, mapping, copy=False)
     progress_bar.update(1)
     seed_points_snapped_filtered = filter_seed_points(seed_points_snapped, seed_point_delta)
-    if seed_point_linking == "quadrangulate":
+    if seed_point_linking == "quadrangulate": # Remove all filtered out nodes
         filtered_nodes = set(seed_points_snapped.osmid) - set(seed_points_snapped_filtered.osmid)
         seed_network.remove_nodes_from(filtered_nodes)
         seed_network = seed_network.subgraph(sorted(nx.connected_components(seed_network), key=len, reverse=True)[0]) # Keep only the largest connected component (the network might have fallen apart)
-    # print(seed_points_snapped_filtered)
-    # print(seed_network.edges)
-    # sys.exit()
     progress_bar.update(1)
 
     if existing_network_spacing is not None:
@@ -307,7 +305,7 @@ def growbikenet(
         # Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
         progress_bar = tqdm(
             desc="{:<23}".format("Triangulation"),
-            total=2,
+            total=1,
             unit="step",
             bar_format='{l_bar}{bar:16}{r_bar}',
             )
@@ -315,42 +313,44 @@ def growbikenet(
         # Create unrouted network with delaunay edges
         grown_bikenet_edges_abstract = create_delaunay_edges(seed_points_snapped_filtered)
         progress_bar.update(1)
-
-        # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
-        grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
-        progress_bar.update(1)
         progress_bar.close()
+    else: # Build the same dataframe structure for the abstract network from the seed_network.edges
+        grown_bikenet_edges_abstract = pd.DataFrame({
+            'pair': seed_network.edges,
+            'source': [e[0] for e in seed_network.edges],
+            'target': [e[1] for e in seed_network.edges]
+            }) # Afterwards, all steps are identical
 
     # Get "routed" geometry (LineString) for each abstract edge (row)
     progress_bar = tqdm(
         desc="{:<23}".format("Routing"),
-        total=2,
+        total=3,
         unit="step",
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
-    if seed_point_linking != "quadrangulate":
-        grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
-        progress_bar.update(1)
+    # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
+    grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
+    progress_bar.update(1)
 
-        # Add distances between source and target from geometry
-        grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
+    grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
+    progress_bar.update(1)
 
-        edge_list = grown_bikenet_edges["pair"]
-        dist_list = grown_bikenet_edges["dist"]
-        dist_dict = dict(zip(edge_list, dist_list))
-        geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
+    # Add distances between source and target from geometry
+    grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
 
-        # Make graph object from edge list
-        B = nx.Graph() # B like bike network
-        B.add_nodes_from(seed_points_snapped.index)
-        B.add_edges_from(edge_list)
-        nx.set_edge_attributes(B, dist_dict, "distance")
-        nx.set_edge_attributes(B, geom_dict, "geometry")
-    else:
-        pass
-    # print(B.edges(data=True))
-    sys.exit()
+    edge_list = grown_bikenet_edges["pair"]
+    dist_list = grown_bikenet_edges["dist"]
+    dist_dict = dict(zip(edge_list, dist_list))
+    geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
+
+    # Make graph object from edge list
+    B = nx.Graph() # B like bike network
+    B.add_nodes_from(seed_points_snapped_filtered.index)
+    B.add_edges_from(edge_list)
+    nx.set_edge_attributes(B, dist_dict, "distance")
+    nx.set_edge_attributes(B, geom_dict, "geometry")
+
     progress_bar.update(1)
     progress_bar.close()
 
@@ -434,17 +434,17 @@ def growbikenet(
         unit="step",
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
-        seed_points_snapped.drop(["osmid"], axis=1, inplace=True)
+        seed_points_snapped_filtered.drop(["osmid"], axis=1, inplace=True)
         # We have meter precision, so rounding to integers is fine. Better would be to 
         # change dtypes to int, but this does not seem possible without manual looping.
         if city_boundary_exists:
             city_boundary_gdf.to_crs(epsg=crs_projected, inplace=True)
             city_boundary_gdf.geometry = city_boundary_gdf.geometry.set_precision(grid_size=1) 
-        seed_points_snapped.geometry = seed_points_snapped.geometry.set_precision(grid_size=1)
+        seed_points_snapped_filtered.geometry = seed_points_snapped_filtered.geometry.set_precision(grid_size=1)
         edges_ranked.geometry = edges_ranked.geometry.set_precision(grid_size=1)
         if export_file_format == "geojson":
             edges_ranked.to_file("./results/"+export_data_filename, driver="GeoJSON")
-            seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
+            seed_points_snapped_filtered.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
             if city_boundary_exists: city_boundary_gdf.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif export_file_format == "gpkg":
             if existing_network_spacing:
@@ -452,7 +452,7 @@ def growbikenet(
                 edges_ranked.iloc[1:-1].to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
             else:
                 edges_ranked.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
-            seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
+            seed_points_snapped_filtered.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
             if city_boundary_exists: city_boundary_gdf.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
         progress_bar.update(1)
         progress_bar.close()
@@ -474,7 +474,7 @@ def growbikenet(
         os.makedirs("./results/plots/ordering_"+ranking+"/", exist_ok=True)
         create_plots(
             routed_edges_gdf,
-            seed_points_snapped,
+            seed_points_snapped_filtered,
             streetcolor,
             edgecolor,
             seedcolor,
