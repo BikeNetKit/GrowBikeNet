@@ -15,7 +15,7 @@ def test_growbikenet_case_success_online(create_validation_gdf):
     create_validation_gdf.equals(
         growbikenet(
             city_name="Oelde",
-            proj_crs="3857",
+            crs_projected="3857",
             ranking="betweenness_centrality",
             export_data=False,
         )
@@ -27,7 +27,7 @@ def test_growbikenet_case_success_offline(create_validation_gdf):
     create_validation_gdf.equals(
         growbikenet(
             city_name="Oelde",
-            proj_crs="3857",
+            crs_projected="3857",
             ranking="betweenness_centrality",
             export_data=False,
             street_network_file="./tests/test_data/oelde_streets.gpkg",
