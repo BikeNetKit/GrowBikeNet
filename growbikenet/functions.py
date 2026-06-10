@@ -11,14 +11,14 @@ from shapely.geometry import Point, MultiLineString
 from tqdm import tqdm
 
 
-def import_network(street_network_file, proj_crs):
+def import_network(street_network_file, crs_projected):
     """Import and project a street network from gpkg file
 
     Parameters
     ----------
     street_network_file : str
         The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage().
-    proj_crs : str
+    crs_projected : str
         Coordinate reference system that is used to project osm data.
 
     Returns
@@ -42,12 +42,12 @@ def import_network(street_network_file, proj_crs):
     g = ox.convert.graph_from_gdfs(nodes, edges)
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
-    nodes, edges = prepare_nodes_edges(nodes, edges, proj_crs)
+    nodes, edges = prepare_nodes_edges(nodes, edges, crs_projected)
 
     return nodes, edges, g_undir
 
 
-def prepare_nodes_edges(nodes, edges, proj_crs):
+def prepare_nodes_edges(nodes, edges, crs_projected):
     """Project and prepare nodes and edges for further use
     
     Parameters
@@ -56,7 +56,7 @@ def prepare_nodes_edges(nodes, edges, proj_crs):
         OSM nodes, unprojected
     edges : geopandas.geodataframe.GeoDataFrame
         OSM edges, unprojected
-    proj_crs : str
+    crs_projected : str
         Coordinate reference system that is used to project osm data.
         
     Returns
@@ -72,25 +72,25 @@ def prepare_nodes_edges(nodes, edges, proj_crs):
     # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
 
     # Project geometries of nodes, edges
-    edges = edges.to_crs(proj_crs)
-    nodes = nodes.to_crs(proj_crs)
+    edges = edges.to_crs(crs_projected)
+    nodes = nodes.to_crs(crs_projected)
 
     # Add osm ID as column to node gdf
     nodes["osmid"] = nodes.index
     return nodes, edges
 
 
-def download_network(city_name, proj_crs, network_type='all_public', custom_filter=None, retain_all=True, city_boundary_geometry=None):
+def download_network(city_name, crs_projected, network_type='all_public', custom_filter=None, retain_all=True, city_boundary_geometry=None):
     """Download and prepare a street network from OSM via OSMnx
 
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
-    Then, stores the undirected OSM data in gdfs and projects using proj_crs.
+    Then, stores the undirected OSM data in gdfs and projects using crs_projected.
 
     Parameters
     ----------
     city_name : str
         Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_geometry is set.
-    proj_crs : str
+    crs_projected : str
         Coordinate reference system that is used to project osm data.
     network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”} 
         What type of street network to retrieve if custom_filter is None.
@@ -124,18 +124,18 @@ def download_network(city_name, proj_crs, network_type='all_public', custom_filt
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     # Export osmnx data to gdfs
-    nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
+    nodes, edges = nx_to_nodes_edges(g_undir, crs_projected)
     return nodes, edges, g_undir
 
 
-def nx_to_nodes_edges(G, proj_crs):
+def nx_to_nodes_edges(G, crs_projected):
     """Get nodes and projected edges from networkX graph
     
     Parameters
     ----------
     G : networkx.classes.multigraph.MultiGraph
         networkX graph, undirected
-    proj_crs : str
+    crs_projected : str
         Coordinate reference system that is used to project osm data.
         
     Returns
@@ -153,14 +153,12 @@ def nx_to_nodes_edges(G, proj_crs):
     fill_edge_geometry=True
     )
 
-    nodes, edges = prepare_nodes_edges(nodes, edges, proj_crs)
+    nodes, edges = prepare_nodes_edges(nodes, edges, crs_projected)
     return nodes, edges
     
 
 def get_correct_edgetuples(edge_gdf, nodelist):
-    """
-    Helper function that maps a node list (output of nx.shortest_paths)
-    to the correct set of edge tuples that can be used for INDEXING THE EDGE GDF
+    """Map a node list (from nx.shortest_paths) to the correct set of edge tuples that can be used for indexing the edge geodataframe
 
     Parameters
     ----------
@@ -172,7 +170,7 @@ def get_correct_edgetuples(edge_gdf, nodelist):
     Returns
     -------
     edgelist_final: list
-        List of edge tuples that can be used for INDEXING THE EDGE GDF
+        List of edge tuples that can be used for indexing the edge geodataframe
     """
     edgelist_prelim = zip(nodelist, nodelist[1:])
     edgelist_final = []
@@ -223,7 +221,7 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     return seed_points_exnw
 
 
-def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_geometry=None):
+def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=None):
     """Update street network with existing bike network
 
     Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir.
@@ -232,7 +230,7 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundar
     ----------
     city_name : str
         Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_geometry is set.
-    proj_crs : str
+    crs_projected : str
         Coordinate reference system that is used to project osm data.
     g_undir : networkx.classes.multigraph.MultiGraph
         Street network networkX graph, undirected
@@ -269,7 +267,7 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundar
             ox.settings.useful_tags_way.extend(custom_tag)
     # Fetch protected bike network data from osmnx
     # Due to retain_all=True, this fetches all the connected components
-    nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, proj_crs, custom_filter=cf, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+    nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, crs_projected, custom_filter=cf, retain_all=True, city_boundary_geometry=city_boundary_geometry)
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
 
     # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
@@ -283,12 +281,12 @@ def update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundar
     # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
     edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
     edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
-    nodes, edges = nx_to_nodes_edges(g_undir, proj_crs)
+    nodes, edges = nx_to_nodes_edges(g_undir, crs_projected)
 
     return nodes, edges, g_undir, nodes_exnw, edges_exnw
 
 
-def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, proj_crs):
+def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, crs_projected):
     """Update seed points with existing bike network
 
     Updates given snapped seed points by incorporating seed points from an existing bike network.
@@ -301,7 +299,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
         Nodes of the existing bike network
     existing_network_spacing : int
         Positive integer denoting spacing between seed points, in meters, only on the existing bicycle network.
-    proj_crs : str
+    crs_projected : str
         Coordinate reference system that is used to project osm data.
 
     Returns
@@ -312,12 +310,12 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
 
     # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
     seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
-    seed_points_exnw.to_crs(proj_crs, inplace=True)
+    seed_points_exnw.to_crs(crs_projected, inplace=True)
 
     # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
     buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing/2)) # To do: Think more about this factor
     buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
-    buffer_seed_points_exnw.to_crs(proj_crs, inplace=True)
+    buffer_seed_points_exnw.to_crs(crs_projected, inplace=True)
 
     # Delete the seed points that are too close to seed_points_exnw via its buffer
     seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
@@ -387,14 +385,14 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     return seed_points
 
 
-def prepare_seed_points(seed_points, proj_crs):
+def prepare_seed_points(seed_points, crs_projected):
     """Project and prepare seed points for further use
     
     Parameters
     ----------
     seed_points: geopandas.geodataframe.GeoDataFrame
         Unprojected seed points
-    proj_crs : str
+    crs_projected : str
         Coordinate reference system that is used to project the seed points.
         
     Returns
@@ -403,19 +401,19 @@ def prepare_seed_points(seed_points, proj_crs):
         Projected and prepared seed points.
     """
     seed_points = seed_points[seed_points["geometry"].type == "Point"]
-    seed_points.to_crs(proj_crs, inplace=True)
+    seed_points.to_crs(crs_projected, inplace=True)
     # To do optional: merge closeby seed points
     return seed_points
 
 
-def get_tags_seed_points(city_name, proj_crs, tags, city_boundary_geometry=None):
+def get_tags_seed_points(city_name, crs_projected, tags, city_boundary_geometry=None):
     """Get tags seed points for a city
 
     Parameters
     ----------
     city_name : str
         Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled (for data fetching) if city_boundary_geometry is set.
-    proj_crs : str
+    crs_projected : str
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     tags : None | dict[str, bool | str | list[str]], default None
         Geocodable tags, see [3]_. For example, tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
@@ -440,12 +438,12 @@ def get_tags_seed_points(city_name, proj_crs, tags, city_boundary_geometry=None)
         seed_points = ox.features_from_place(
             city_name, tags
         )
-    seed_points = prepare_seed_points(seed_points, proj_crs)
+    seed_points = prepare_seed_points(seed_points, crs_projected)
     return seed_points
 
 
 def get_principal_bearing(G):
-    """Determine the most common (principal) bearing, for the best grid orientation.
+    """Determine the most common (principal) bearing, for the best grid orientation
 
     Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
     The bearing is determined from edges weighted by length.
@@ -483,7 +481,7 @@ def get_principal_bearing(G):
 
 
 def reverse_bearing(x):
-    """Reverse bearing.
+    """Reverse bearing
 
     Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
 
@@ -531,8 +529,8 @@ def count_and_merge(n, bearings):
 
 
 def snap_seed_points(seed_points, nodes):
-    """
-    snap generated seed_points to actual osm nodes
+    """Snap generated seed_points to actual osm nodes
+
     Parameters
     ----------
     seed_points: geopandas.geodataframe.GeoDataFrame
@@ -576,8 +574,8 @@ def snap_seed_points(seed_points, nodes):
 
 
 def filter_seed_points(seed_points_snapped, seed_point_delta):
-    """
-    remove seed_points that are further than delta away from an actual osm node
+    """Remove seed_points that are further than delta away from an actual osm node
+
     Parameters
     ----------
     seed_points_snapped: geopandas.geodataframe.GeoDataFrame
@@ -808,15 +806,16 @@ def node_to_edge_attributes(values_nodes, edges):
     return values_edges
 
 
-def add_path_to_df(df, edges, g):
-    """
+def add_path_to_df(df, edges, g_undir):
+    """Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
+
     Parameters
     ----------
     df: pandas.DataFrame
         Dataframe with information about edges
     edges: geopandas.geodataframe.GeoDataFrame
         The street network, in a projected coordinate reference system
-    g: networkx.graph undirected
+    g_undir: networkx.graph undirected
         graph to use for routing
 
     Returns
@@ -828,7 +827,7 @@ def add_path_to_df(df, edges, g):
     for _, row in df.iterrows():
         paths.append(
             nx.shortest_path(
-                G=g,  # !! use undirected graph here
+                G=g_undir,
                 source=int(row.source),
                 target=int(row.target),
                 weight="length",
@@ -840,7 +839,8 @@ def add_path_to_df(df, edges, g):
 
 
 def create_gdf_with_geoms(df, edges):
-    """
+    """Merge path geometries and create geodataframe
+
     Parameters
     ----------
     df: pandas.DataFrame
@@ -853,10 +853,10 @@ def create_gdf_with_geoms(df, edges):
     gdf: geopandas.GeoDataFrame
         projected GeoDataFrame with path nodes and path edges and merged geometries
     """
-    # get geometry by merging all geoms from edge gdf
+    # Get geometry by merging all geoms from edge gdf
     df["geometry"] = df.path_edges.apply(lambda x: edges.loc[x].geometry.union_all())
-    # convert edges into a gdf
+    # Convert edges into a gdf
     gdf = gpd.GeoDataFrame(df, crs=edges.crs, geometry="geometry")
-    # merge multilinestring into linestring where possible (should be possible everywhere)
+    # Merge multilinestring into linestring where possible (should be possible everywhere)
     gdf["geometry"] = gdf.line_merge()
     return gdf

@@ -32,7 +32,7 @@ from growbikenet.visualizations import make_video, create_plots
 
 def growbikenet(
     city_name,
-    proj_crs='3857',
+    crs_projected='3857',
     ranking='betweenness_centrality',
     seed_point_type='grid',
     seed_point_grid_spacing=1707,
@@ -57,7 +57,7 @@ def growbikenet(
     ----------
     city_name : str
         Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled for data fetching if city_boundary_file or street_network_file is set.
-    proj_crs : str, default '3857'
+    crs_projected : str, default '3857'
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
@@ -97,7 +97,7 @@ def growbikenet(
 
     Returns
     -------
-    a_edges : geopandas.geodataframe.GeoDataFrame
+    edges_ranked : geopandas.geodataframe.GeoDataFrame
         ordered geodataframe of all edges in street network
 
     Examples
@@ -136,8 +136,8 @@ def growbikenet(
     # Check if user input is valid
     if type(city_name) is not str:
         raise TypeError("city_name must be a string")
-    if type(proj_crs) is not str:
-        raise TypeError("proj_crs must be a string")
+    if type(crs_projected) is not str:
+        raise TypeError("crs_projected must be a string")
     if type(ranking) is not str:
         raise TypeError("ranking must be a string")
     if ranking not in ["betweenness_centrality", "closeness_centrality", "random"]:
@@ -207,18 +207,18 @@ def growbikenet(
     if street_network_file is not None:
         ### Import and preprocess data from file
         city_boundary_exists = False
-        pbar = tqdm(
+        progress_bar = tqdm(
             desc="{:<23}".format("Importing network data"),
             total=1,
             unit="network",
             bar_format='{l_bar}{bar:16}{r_bar}',
         )
-        nodes, edges, g_undir = import_network(street_network_file, proj_crs)
-        pbar.update(1)
+        nodes, edges, g_undir = import_network(street_network_file, crs_projected)
+        progress_bar.update(1)
     else:
         ### Download and preprocess data from OSM
         city_boundary_exists = True
-        pbar = tqdm(
+        progress_bar = tqdm(
             desc="{:<23}".format("Downloading OSM data"),
             total=1+int(bool(existing_network_spacing)),
             unit="network",
@@ -226,24 +226,24 @@ def growbikenet(
         )
         # Get city boundary 
         if city_boundary_file:
-            shp = gpd.read_file(city_boundary_file)
-            city_boundary_gdf = shp.iloc[[0]]    
+            city_boundary_shp = gpd.read_file(city_boundary_file)
+            city_boundary_gdf = city_boundary_shp.iloc[[0]]    
         else:
             city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_name)
         city_boundary_geometry = city_boundary_gdf.geometry[0]
 
         # Fetch street network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = download_network(city_name, proj_crs, network_type='all_public', retain_all=False, city_boundary_geometry=city_boundary_geometry)
-        pbar.update(1)
+        nodes, edges, g_undir = download_network(city_name, crs_projected, network_type='all_public', retain_all=False, city_boundary_geometry=city_boundary_geometry)
+        progress_bar.update(1)
 
         if existing_network_spacing is not None: # update g_undir: add the existing bike network
-            nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, proj_crs, g_undir, city_boundary_geometry=city_boundary_geometry)
-            pbar.update(1)
-    pbar.close()
+            nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=city_boundary_geometry)
+            progress_bar.update(1)
+    progress_bar.close()
 
     ### Create seed points
-    pbar = tqdm(
+    progress_bar = tqdm(
         desc="{:<23}".format("Creating seed points"),
         total=3+int(bool(existing_network_spacing)),
         unit="step",
@@ -263,22 +263,22 @@ def growbikenet(
         seed_point_tags = PRESET_TAGS[seed_point_type]
     elif seed_point_type == "file":
         seed_points = gpd.read_file(seed_points_file)
-        seed_points = prepare_seed_points(seed_points, proj_crs)
+        seed_points = prepare_seed_points(seed_points, crs_projected)
 
     if seed_point_type == "tags" or seed_point_type in PRESET_TAGS:
-        seed_points = get_tags_seed_points(city_name, proj_crs=proj_crs, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
-    pbar.update(1)
+        seed_points = get_tags_seed_points(city_name, crs_projected=crs_projected, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
+    progress_bar.update(1)
 
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
-    pbar.update(1)
+    progress_bar.update(1)
     seed_points_snapped = filter_seed_points(seed_points_snapped, seed_point_delta)
-    pbar.update(1)
+    progress_bar.update(1)
     
     if existing_network_spacing is not None:
-        seed_points_snapped = update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, proj_crs)
-        pbar.update(1)
-    pbar.close()
+        seed_points_snapped = update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, crs_projected)
+        progress_bar.update(1)
+    progress_bar.close()
 
     # Abort if less than 3 seed points. Delaunay needs at least 3.
     if len(seed_points_snapped) < 3:
@@ -286,52 +286,52 @@ def growbikenet(
 
     ### Triangulate
     # Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
-    pbar = tqdm(
+    progress_bar = tqdm(
         desc="{:<23}".format("Triangulation"),
         total=2,
         unit="step",
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
-    # Create df with delaunay edges
-    df = create_delaunay_edges(seed_points_snapped)
-    pbar.update(1)
+    # Create unrouted network with delaunay edges
+    grown_bikenet_edges_abstract = create_delaunay_edges(seed_points_snapped)
+    progress_bar.update(1)
 
-    # Map each abstract edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
-    df = add_path_to_df(df, edges, g_undir)
-    pbar.update(1)
-    pbar.close()
+    # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
+    grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
+    progress_bar.update(1)
+    progress_bar.close()
 
     # Get "routed" geometry (LineString) for each abstract edge (row)
-    pbar = tqdm(
+    progress_bar = tqdm(
         desc="{:<23}".format("Routing"),
         total=2,
         unit="step",
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
-    gdf = create_gdf_with_geoms(df, edges)
-    pbar.update(1)
+    grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
+    progress_bar.update(1)
 
     # Add distances between source and target from geometry
-    gdf["dist"] = gdf["geometry"].length
+    grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
 
-    edge_list = gdf["pair"]
-    dist_list = gdf["dist"]
+    edge_list = grown_bikenet_edges["pair"]
+    dist_list = grown_bikenet_edges["dist"]
     dist_dict = dict(zip(edge_list, dist_list))
-    geom_dict = dict(zip(edge_list, gdf["geometry"].tolist()))
+    geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
 
     # Make graph object from edge list
-    A = nx.Graph()
-    A.add_nodes_from(seed_points_snapped.index)
-    A.add_edges_from(edge_list)
-    nx.set_edge_attributes(A, dist_dict, "distance")
-    nx.set_edge_attributes(A, geom_dict, "geometry")
-    pbar.update(1)
-    pbar.close()
+    B = nx.Graph() # B like bike network
+    B.add_nodes_from(seed_points_snapped.index)
+    B.add_edges_from(edge_list)
+    nx.set_edge_attributes(B, dist_dict, "distance")
+    nx.set_edge_attributes(B, geom_dict, "geometry")
+    progress_bar.update(1)
+    progress_bar.close()
 
     ### Compute edge attributes
-    pbar = tqdm(
+    progress_bar = tqdm(
         desc="{:<23}".format("Computing edge metrics"),
         total=2,
         unit="step",
@@ -342,49 +342,49 @@ def growbikenet(
     if ranking == "betweenness_centrality":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
-            A, weight="distance", normalized=True
+            B, weight="distance", normalized=True
         )
-        nx.set_edge_attributes(A, bc_values, name="betweenness_centrality")
+        nx.set_edge_attributes(B, bc_values, name="betweenness_centrality")
     elif ranking == "closeness_centrality":
         # Add closeness attributes to nodes and edges
-        cc_values_nodes = nx.closeness_centrality(A, distance="distance")
-        nx.set_node_attributes(A, cc_values_nodes, name="closeness_centrality")
-        cc_values = node_to_edge_attributes(cc_values_nodes, A.edges)
-        nx.set_edge_attributes(A, cc_values, name="closeness_centrality")
-    pbar.update(1)
+        cc_values_nodes = nx.closeness_centrality(B, distance="distance")
+        nx.set_node_attributes(B, cc_values_nodes, name="closeness_centrality")
+        cc_values = node_to_edge_attributes(cc_values_nodes, B.edges)
+        nx.set_edge_attributes(B, cc_values, name="closeness_centrality")
+    progress_bar.update(1)
 
     ### Export attributes to gdfs:
 
     # Create dataframe and add method as edge attribute
-    a_edges = df_from_graph(A, ranking)
+    edges_ranked = df_from_graph(B, ranking)
 
     # Rank edges by specified method
-    a_edges = rank_df(a_edges, ranking)
+    edges_ranked = rank_df(edges_ranked, ranking)
 
-    a_edges = gpd.GeoDataFrame(a_edges, crs=proj_crs, geometry="geometry")
+    edges_ranked = gpd.GeoDataFrame(edges_ranked, crs=crs_projected, geometry="geometry")
 
     # Add existing bike network on top, https://stackoverflow.com/a/43408736
     if existing_network_spacing:
-        bikenet = gpd.GeoDataFrame({c: None for c in a_edges.columns}, index=[-1], crs=proj_crs)
-        bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
-        a_edges.loc[-1] = bikenet.loc[-1]
-        a_edges.index = a_edges.index+1
-        a_edges.sort_index(inplace=True)
-        a_edges.crs = proj_crs
-    pbar.update(1)
-    pbar.close()
+        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ranked.columns}, index=[-1], crs=crs_projected)
+        existing_bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
+        edges_ranked.loc[-1] = existing_bikenet.loc[-1]
+        edges_ranked.index = edges_ranked.index+1
+        edges_ranked.sort_index(inplace=True)
+        edges_ranked.crs = crs_projected
+    progress_bar.update(1)
+    progress_bar.close()
 
     # Remove edge overlaps
     if not allow_edge_overlaps:
-        a_edges = remove_edge_overlaps(a_edges) # Can take a while, could be sped up.
+        edges_ranked = remove_edge_overlaps(edges_ranked) # Can take a while, could be sped up.
         overlap_string = ""
     else:
         overlap_string = "_with-overlaps"
 
     # Add lengths and cumulative lengths, rounded to integer meters
-    a_edges['length'] = a_edges.geometry.length
-    a_edges['length_cumulative'] = a_edges.geometry.length.cumsum()
-    a_edges = a_edges.astype({'length': int, 'length_cumulative': int})
+    edges_ranked['length'] = edges_ranked.geometry.length
+    edges_ranked['length_cumulative'] = edges_ranked.geometry.length.cumsum()
+    edges_ranked = edges_ranked.astype({'length': int, 'length_cumulative': int})
 
     # Generate export data filename
     if export_data or export_plots or export_video:
@@ -404,7 +404,7 @@ def growbikenet(
     # Save to file
     if export_data:
         ### save data
-        pbar = tqdm(
+        progress_bar = tqdm(
         desc="{:<23}".format("Exporting data"),
         total=1,
         unit="step",
@@ -414,24 +414,24 @@ def growbikenet(
         # We have meter precision, so rounding to integers is fine. Better would be to 
         # change dtypes to int, but this does not seem possible without manual looping.
         if city_boundary_exists:
-            city_boundary_gdf.to_crs(epsg=proj_crs, inplace=True)
+            city_boundary_gdf.to_crs(epsg=crs_projected, inplace=True)
             city_boundary_gdf.geometry = city_boundary_gdf.geometry.set_precision(grid_size=1) 
         seed_points_snapped.geometry = seed_points_snapped.geometry.set_precision(grid_size=1)
-        a_edges.geometry = a_edges.geometry.set_precision(grid_size=1)
+        edges_ranked.geometry = edges_ranked.geometry.set_precision(grid_size=1)
         if export_file_format == "geojson":
-            a_edges.to_file("./results/"+export_data_filename, driver="GeoJSON")
+            edges_ranked.to_file("./results/"+export_data_filename, driver="GeoJSON")
             seed_points_snapped.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
             if city_boundary_exists: city_boundary_gdf.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif export_file_format == "gpkg":
             if existing_network_spacing:
-                a_edges.iloc[[0]].to_file("./results/"+export_data_filename, driver="GPKG", layer="Existing bike network")
-                a_edges.iloc[1:-1].to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
+                edges_ranked.iloc[[0]].to_file("./results/"+export_data_filename, driver="GPKG", layer="Existing bike network")
+                edges_ranked.iloc[1:-1].to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
             else:
-                a_edges.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
+                edges_ranked.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
             seed_points_snapped.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
             if city_boundary_exists: city_boundary_gdf.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
-        pbar.update(1)
-        pbar.close()
+        progress_bar.update(1)
+        progress_bar.close()
 
     if export_plots or export_video:
         ### Visualize
@@ -476,4 +476,4 @@ def growbikenet(
     print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
     print("==============================================")
 
-    return a_edges
+    return edges_ranked
