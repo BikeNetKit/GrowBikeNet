@@ -37,6 +37,7 @@ def growbikenet(
     seed_point_type='grid',
     seed_point_grid_spacing=1707,
     seed_point_delta=500,
+    seed_point_linking='triangulate_delaunay',
     existing_network_spacing=None,
     export_data=True,
     export_file_format='geojson',
@@ -51,7 +52,7 @@ def growbikenet(
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
 
-    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point[2]_. The original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is implemented much faster and in practice gives identical results. Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
+    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point[2]_. The original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is implemented much faster and in practice gives identical results. Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
 
     Parameters
     ----------
@@ -72,6 +73,10 @@ def growbikenet(
         If seed_point_type is set to 'grid', this is the spacing between seed points, in meters.
     seed_point_delta : int, default 500
         Maximum distance between raw seed points and osm nodes for snapping, in meters.
+    seed_point_linking : str ('triangulate_delaunay', 'quadrangulate'), default 'triangulate_delaunay'
+        The algorithm for linking up the seed points into an unrouted, abstract network.
+        If set to 'triangulate_delaunay', uses Delaunay triangulation.
+        If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
     existing_network_spacing : int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
     export_data : bool, default True
@@ -145,7 +150,7 @@ def growbikenet(
             "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
         )
     if seed_point_type not in ['grid', 'rail', 'school', 'park', 'file', 'tags']:
-        raise ValueError("seed_point_type must be 'grid' or 'rail'or 'school' or 'park' or 'file' or 'tags'")
+        raise ValueError("seed_point_type must be 'grid' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
     if seed_point_type == 'grid' and type(seed_point_grid_spacing) is not int:
         raise TypeError("seed_point_grid_spacing must be an integer")
     if seed_point_type == 'grid' and type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:  
@@ -158,6 +163,10 @@ def growbikenet(
         raise TypeError("seed_point_delta must be an integer")
     if type(seed_point_delta) is int and seed_point_delta <= 0:
         raise ValueError("seed_point_delta must be a positive integer")
+    if seed_point_linking not in ['triangulate_delaunay', 'quadrangulate']:    
+        raise ValueError("seed_point_linking must be 'triangulate_delaunay' or 'quadrangulate'")
+    if seed_point_linking == 'quadrangulate' and (seed_point_type != 'grid' or existing_network_spacing is not None):
+        raise ValueError("With seed_point_linking 'quadrangulate', seed_point_type must be set to 'grid' and existing_network_spacing must be set to None")
     if type(existing_network_spacing) is not int and existing_network_spacing is not None:
         raise TypeError("existing_network_spacing must be None or a positive integer")
     if type(existing_network_spacing) is int and existing_network_spacing <= 0:
@@ -201,8 +210,6 @@ def growbikenet(
     print("RUNNING GROWBIKENET FOR CITY: " + city_name)
     print(ranking + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
     print("----------------------------------------------╮")
-
-    
     
     if street_network_file is not None:
         ### Import and preprocess data from file
@@ -256,9 +263,9 @@ def growbikenet(
         principal_bearing = get_principal_bearing(g_undir)
 
         # But this is on the projected edges now
-        seed_points = get_grid_seed_points(
+        seed_points, seed_network = get_grid_seed_points(
             edges, seed_point_grid_spacing, principal_bearing
-        )
+        ) # The seed_network is only relevant for quadrangulation
     elif seed_point_type in PRESET_TAGS:
         seed_point_tags = PRESET_TAGS[seed_point_type]
     elif seed_point_type == "file":
@@ -271,36 +278,48 @@ def growbikenet(
 
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
+    if seed_point_linking == "quadrangulate":
+        mapping = {row.geometry_generated: row.osmid for row in seed_points_snapped.itertuples()}
+        nx.relabel_nodes(seed_network, mapping, copy=False)
     progress_bar.update(1)
-    seed_points_snapped = filter_seed_points(seed_points_snapped, seed_point_delta)
+    seed_points_snapped_filtered = filter_seed_points(seed_points_snapped, seed_point_delta)
+    if seed_point_linking == "quadrangulate":
+        filtered_nodes = set(seed_points_snapped.osmid) - set(seed_points_snapped_filtered.osmid)
+        seed_network.remove_nodes_from(filtered_nodes)
+        seed_network = seed_network.subgraph(sorted(nx.connected_components(seed_network), key=len, reverse=True)[0]) # Keep only the largest connected component (the network might have fallen apart)
+    # print(seed_points_snapped_filtered)
+    # print(seed_network.edges)
+    # sys.exit()
     progress_bar.update(1)
-    
+
     if existing_network_spacing is not None:
-        seed_points_snapped = update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, crs_projected)
+        seed_points_snapped_filtered = update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw, existing_network_spacing, crs_projected)
         progress_bar.update(1)
     progress_bar.close()
 
+
     # Abort if less than 3 seed points. Delaunay needs at least 3.
-    if len(seed_points_snapped) < 3:
+    if len(seed_points_snapped_filtered) < 3:
         raise RuntimeError("Found less than 3 seed points, but more are needed.")
 
-    ### Triangulate
-    # Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
-    progress_bar = tqdm(
-        desc="{:<23}".format("Triangulation"),
-        total=2,
-        unit="step",
-        bar_format='{l_bar}{bar:16}{r_bar}',
-        )
+    if seed_point_linking != "quadrangulate":
+        ### Triangulate
+        # Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
+        progress_bar = tqdm(
+            desc="{:<23}".format("Triangulation"),
+            total=2,
+            unit="step",
+            bar_format='{l_bar}{bar:16}{r_bar}',
+            )
 
-    # Create unrouted network with delaunay edges
-    grown_bikenet_edges_abstract = create_delaunay_edges(seed_points_snapped)
-    progress_bar.update(1)
+        # Create unrouted network with delaunay edges
+        grown_bikenet_edges_abstract = create_delaunay_edges(seed_points_snapped_filtered)
+        progress_bar.update(1)
 
-    # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
-    grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
-    progress_bar.update(1)
-    progress_bar.close()
+        # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
+        grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
+        progress_bar.update(1)
+        progress_bar.close()
 
     # Get "routed" geometry (LineString) for each abstract edge (row)
     progress_bar = tqdm(
@@ -310,23 +329,28 @@ def growbikenet(
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
-    grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
-    progress_bar.update(1)
+    if seed_point_linking != "quadrangulate":
+        grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
+        progress_bar.update(1)
 
-    # Add distances between source and target from geometry
-    grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
+        # Add distances between source and target from geometry
+        grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
 
-    edge_list = grown_bikenet_edges["pair"]
-    dist_list = grown_bikenet_edges["dist"]
-    dist_dict = dict(zip(edge_list, dist_list))
-    geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
+        edge_list = grown_bikenet_edges["pair"]
+        dist_list = grown_bikenet_edges["dist"]
+        dist_dict = dict(zip(edge_list, dist_list))
+        geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
 
-    # Make graph object from edge list
-    B = nx.Graph() # B like bike network
-    B.add_nodes_from(seed_points_snapped.index)
-    B.add_edges_from(edge_list)
-    nx.set_edge_attributes(B, dist_dict, "distance")
-    nx.set_edge_attributes(B, geom_dict, "geometry")
+        # Make graph object from edge list
+        B = nx.Graph() # B like bike network
+        B.add_nodes_from(seed_points_snapped.index)
+        B.add_edges_from(edge_list)
+        nx.set_edge_attributes(B, dist_dict, "distance")
+        nx.set_edge_attributes(B, geom_dict, "geometry")
+    else:
+        pass
+    # print(B.edges(data=True))
+    sys.exit()
     progress_bar.update(1)
     progress_bar.close()
 
