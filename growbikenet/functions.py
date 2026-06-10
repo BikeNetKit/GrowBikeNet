@@ -8,6 +8,7 @@ import osmnx as ox
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point, MultiLineString
+from shapely.affinity import rotate
 from tqdm import tqdm
 
 
@@ -350,6 +351,8 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     -------
     seed_points: geopandas.geodataframe.GeoDataFrame
         Seed points, rotated by principal bearing, to be snapped to the street network, in the same projected coordinate reference system as edges
+    seed_network: networkx graph
+        Quadrangulated network of the seed_points, where node ids are the seed_points
     """
 
     # Rotate edges counter to the principal bearing
@@ -365,14 +368,17 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     # https://stackoverflow.com/questions/66010964/fastest-way-to-produce-a-grid-of-points-that-fall-within-a-polygon-or-shape
     # Populate hull bbox with evenly spaced seeding points
     points = []
-    for x in np.arange(xmin, xmax, seed_point_spacing):
-        for y in np.arange(ymin, ymax, seed_point_spacing):
-            points.append(Point((round(x, 4), round(y, 4))))
+    x_array = list(range(int(xmin), int(xmax), seed_point_spacing)) # round to whole meters
+    y_array = list(range(int(ymin), int(ymax), seed_point_spacing))
+    for x in x_array:
+        for y in y_array:
+            points.append(Point(x, y))
 
     # Keep only those seed points that are within the hull polygon
     prep_polygon = prep(hull)
     valid_points = []
     valid_points.extend(filter(prep_polygon.contains, points))
+    valid_points_coords = set([(int(p.x), int(p.y)) for p in valid_points])
 
     # store seed points in gdf
     seed_points = gpd.GeoDataFrame({"geometry": valid_points}, crs=edges.crs)
@@ -382,7 +388,17 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
         -1 * principal_bearing, origin=(0, 0)
     )
 
-    return seed_points
+    # Create, prune, and rotate also a seed network, for quadrangulation
+    seed_network = nx.grid_2d_graph(x_array, y_array)
+    invalid_nodes = set(seed_network.nodes) - valid_points_coords
+    seed_network.remove_nodes_from(invalid_nodes)
+    nx.relabel_nodes(
+        seed_network,
+        lambda xy: rotate(Point(xy[0],xy[1]), -1 * principal_bearing, origin=(0, 0)),
+        copy=False
+        )
+
+    return seed_points, seed_network
 
 
 def prepare_seed_points(seed_points, crs_projected):
