@@ -1,16 +1,7 @@
-name: Docs
+name: Docs Rebuild
 
 on:
-  push:
-    branches:
-      - main
-      - dow_workflow
-    paths:
-      - "growbikenet/**"
-      - "docs/**"
-      - "logging.cfg"
-
-  # Allows you to run this workflow manually from the Actions tab
+  # Allows you to run this workflow only manually from the Actions tab
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -52,16 +43,15 @@ jobs:
         with:
           create-args: python=${{ matrix.python-version }}
           environment-file: environment-dev.yml
-          cache-environment: true
-          cache-environment-key: W${{ env.WEEK }}
+          cache-environment: false
 
       - name: Add Notebook Kernel
         run: python -m ipykernel install --user --name growbikenet --display-name "Python (growbikenet)"
 
-      # - name: Generating .rst files
-      #   run: sphinx-apidoc -o docs/api/ growbikenet/
+      - name: Generating .rst files
+        run: sphinx-apidoc -F -o docs/source/ growbikenet/
       - name: Generating html
-        run: sphinx-build docs/source/ public -b dirhtml
+        run: sphinx-build -b dirhtml -a -E docs/source/ public 
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
