@@ -1,5 +1,13 @@
 # Changelog
 
+## Version 0.10.0 (2026-06-11)
+
+- ✨ Added auto options for seed points
+- ♻️ Refactored code: parameter validation
+- ✨ Added triangular grid
+- ✨ Added quadrangulation
+- 🎨 Renamed variables for better readability
+
 ## Version 0.9.0 (2026-06-09)
 
 - ✨ Added import from file for street network and seed points
