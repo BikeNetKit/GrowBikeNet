@@ -37,8 +37,8 @@ def growbikenet(
     crs_projected='3857',
     ranking='betweenness_centrality',
     seed_point_type='grid',
-    seed_point_grid_spacing=1707,
-    seed_point_delta=500,
+    seed_point_grid_spacing='auto',
+    seed_point_delta='auto',
     seed_point_linking='triangulate_delaunay',
     existing_network_spacing=None,
     export_data=True,
@@ -65,23 +65,29 @@ def growbikenet(
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str ('grid' | 'triangular' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'grid'
-        If set to 'grid', creates a square grid. Suggested seed_point_grid_spacing for seed_point_linking 'triangulate_delaunay': 1707. For seed_point_linking 'quadrangulate': 1000
-        If set to 'triangular', creates a triangular grid. Suggested seed_point_grid_spacing: 1155. In this case, seed_point_linking must not be set to 'quadrangulate'.
+        If set to 'grid', creates a square grid. 
+        If set to 'triangular', creates a triangular grid. In this case, seed_point_linking must not be set to 'quadrangulate'.
         If set to 'rail', uses railway stations and halts.
         If set to 'school', uses kindergartens, schools, colleges, and universities.
         If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
         If set to 'file', imports seed_points_file.
         If set to 'tags', uses geocodable seed_point_tags, see [3]_. 
-    seed_point_grid_spacing : int, default 1707
-        If seed_point_type is set to 'grid', this is the spacing between seed points, in meters.
-    seed_point_delta : int, default 500
+    seed_point_grid_spacing : 'auto' | int, default 'auto'
+        If seed_point_type is set to 'grid' or 'triangular', this is the spacing between seed points, in meters.
+        Auto-value for seed_point_type 'grid' with seed_point_linking 'triangulate_delaunay': 1707
+        Auto-value for seed_point_type 'grid' with seed_point_linking 'quadrangulate': 1000
+        Auto-value for seed_point_type 'triangular': 1154
+        Auto-value otherwise: 1707
+        These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly). For case 1707, see [1]_.
+    seed_point_delta : 'auto' | int, default 'auto'
         Maximum distance between raw seed points and osm nodes for snapping, in meters.
+        Auto-value is round(seed_point_grid_spacing/4).
     seed_point_linking : str ('triangulate_delaunay', 'quadrangulate'), default 'triangulate_delaunay'
         The algorithm for linking up the seed points into an unrouted, abstract network.
         If set to 'triangulate_delaunay', uses Delaunay triangulation.
         If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
     existing_network_spacing : int, default None
-        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
+        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around a third, to ensure that the existing bicycle network is built first.
     export_data : bool, default True
         If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
     export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
@@ -161,6 +167,21 @@ def growbikenet(
         seed_point_tags,
         PRESET_TAGS)
     
+    if seed_point_grid_spacing == 'auto': 
+        # These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly).
+        # In comments, general equations for arbitrary buffer distance b
+        if seed_point_type == 'grid' and seed_point_linking == 'triangulate_delaunay':
+            seed_point_grid_spacing = 1707 # a=2b/(2-sqrt(2))
+        elif seed_point_type == 'grid' and seed_point_linking == 'quadrangulate':
+            seed_point_grid_spacing = 1000 # a=2b
+        elif seed_point_type == 'triangular':
+            seed_point_grid_spacing = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
+        else:
+            seed_point_grid_spacing = 1707
+
+    if seed_point_delta == 'auto':
+        seed_point_delta = int(np.ceil(seed_point_grid_spacing/4))
+
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
     print("==============================================")

@@ -3,8 +3,6 @@
 import growbikenet as gbn
 
 edges_ranked = gbn.growbikenet(
-	"Oelde",
-	street_network_file="./tests/test_data/oelde_streets.gpkg",
-	seed_point_type='triangular',
-	export_file_format="gpkg"
+	"Hallettsville",
+    existing_network_spacing=500,
 	)

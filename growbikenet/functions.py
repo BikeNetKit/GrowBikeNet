@@ -58,16 +58,16 @@ def validate_parameters(city_name,
         )
     if seed_point_type not in ['grid', 'triangular', 'rail', 'school', 'park', 'file', 'tags']:
         raise ValueError("seed_point_type must be 'grid' or 'triangular' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
-    if seed_point_type == 'grid' and type(seed_point_grid_spacing) is not int:
-        raise TypeError("seed_point_grid_spacing must be an integer")
-    if seed_point_type == 'grid' and type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:  
+    if type(seed_point_grid_spacing) is not int and seed_point_grid_spacing != 'auto':
+        raise TypeError("seed_point_grid_spacing must be 'auto' or an integer")
+    if type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:
         raise ValueError("seed_point_grid_spacing must be a positive integer")
     if seed_point_type == 'file' and type(seed_points_file) is None:
         raise ValueError("With seed_point_type 'file', a seed_points_file must be provided")
     if seed_point_type == 'tags' and type(seed_points_file) is None:
-        raise ValueError("With seed_point_type 'tags', a seed_point_tags must be provided")
-    if type(seed_point_delta) is not int:
-        raise TypeError("seed_point_delta must be an integer")
+        raise ValueError("With seed_point_type 'tags', seed_point_tags must be provided")
+    if type(seed_point_delta) is not int and seed_point_delta != 'auto':
+        raise TypeError("seed_point_delta must be 'auto' or an integer")
     if type(seed_point_delta) is int and seed_point_delta <= 0:
         raise ValueError("seed_point_delta must be a positive integer")
     if seed_point_linking not in ['triangulate_delaunay', 'quadrangulate']:    
@@ -78,10 +78,8 @@ def validate_parameters(city_name,
         raise TypeError("existing_network_spacing must be None or a positive integer")
     if type(existing_network_spacing) is int and existing_network_spacing <= 0:
         raise ValueError("existing_network_spacing must be None or a positive integer")
-    if type(existing_network_spacing) is int and existing_network_spacing >= seed_point_grid_spacing:
-        warnings.warn("existing_network_spacing is recommended to be smaller than seed_point_grid_spacing to ensure that the existing bicycle network is built first.")
-    if type(seed_point_delta) is not int:
-        raise TypeError("seed_point_delta must be an integer")
+    if type(existing_network_spacing) is int and seed_point_grid_spacing is int and existing_network_spacing >= seed_point_grid_spacing:
+        warnings.warn("existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around a third, to ensure that the existing bicycle network is built first.")
     if type(export_data) is not bool:
         raise TypeError("export_data must be a boolean")
     if export_data_slug is not None and type(export_data_slug) is not str:
@@ -434,7 +432,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     return seed_points_snapped
 
 
-def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type):
+def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type='grid'):
     """Get grid seed points for street network, rotated by principal bearing
 
     Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
@@ -467,6 +465,7 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poin
     hull = edges_temp.union_all().convex_hull
     # get bounds of hull
     xmin, ymin, xmax, ymax = hull.bounds
+    xmin = int(xmin); ymin = int(ymin); xmax = int(xmax); ymax = int(ymax); # Round to meters
 
     # https://stackoverflow.com/questions/66010964/fastest-way-to-produce-a-grid-of-points-that-fall-within-a-polygon-or-shape
     # Populate hull bbox with evenly spaced seeding points
@@ -480,9 +479,9 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poin
     elif seed_point_type == "triangular":
         h = np.sqrt(3)/2
         x_array = list(np.arange(xmin, xmax+seed_point_spacing, seed_point_spacing)) # overshoot by one
-        y_array = list(np.arange(ymin, ymax+seed_point_spacing, seed_point_spacing * 2*h))
+        y_array = list(np.arange(ymin, ymax+seed_point_spacing, seed_point_spacing*2*h))
         for x in x_array:
-            for y in y_array:
+            for y in y_array: # Build two rows in each step: one regular, one staggered
                 points.append(Point(x, y))
                 points.append(Point(x - 0.5*seed_point_spacing, y + h*seed_point_spacing))
 
