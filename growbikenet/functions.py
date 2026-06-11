@@ -1,5 +1,6 @@
 """Utility functions for growbikenet."""
 
+import os
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -10,6 +11,106 @@ from shapely.prepared import prep
 from shapely.geometry import Point, MultiLineString
 from shapely.affinity import rotate
 from tqdm import tqdm
+
+
+def validate_parameters(city_name,
+        crs_projected,
+        ranking,
+        seed_point_type,
+        seed_point_grid_spacing,
+        seed_point_delta,
+        seed_point_linking,
+        existing_network_spacing,
+        export_data,
+        export_file_format,
+        export_data_slug,
+        export_plots,
+        export_video,
+        allow_edge_overlaps,
+        city_boundary_file,
+        street_network_file,
+        seed_points_file,
+        seed_point_tags,
+        PRESET_TAGS):
+    """ Check if user parameter input is valid. If not, raise an exception or warning
+    
+    Parameters
+    ----------
+    Same as growbikenet.growbikenet()
+    Additionally:
+    PRESET_TAGS : dict
+        Dictionary of preset seed point tags.
+
+    Returns
+    -------
+    True
+    """
+
+    if type(city_name) is not str:
+        raise TypeError("city_name must be a string")
+    if type(crs_projected) is not str:
+        raise TypeError("crs_projected must be a string")
+    if type(ranking) is not str:
+        raise TypeError("ranking must be a string")
+    if ranking not in ["betweenness_centrality", "closeness_centrality", "random"]:
+        raise ValueError(
+            "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
+        )
+    if seed_point_type not in ['grid', 'triangular', 'rail', 'school', 'park', 'file', 'tags']:
+        raise ValueError("seed_point_type must be 'grid' or 'triangular' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
+    if seed_point_type == 'grid' and type(seed_point_grid_spacing) is not int:
+        raise TypeError("seed_point_grid_spacing must be an integer")
+    if seed_point_type == 'grid' and type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:  
+        raise ValueError("seed_point_grid_spacing must be a positive integer")
+    if seed_point_type == 'file' and type(seed_points_file) is None:
+        raise ValueError("With seed_point_type 'file', a seed_points_file must be provided")
+    if seed_point_type == 'tags' and type(seed_points_file) is None:
+        raise ValueError("With seed_point_type 'tags', a seed_point_tags must be provided")
+    if type(seed_point_delta) is not int:
+        raise TypeError("seed_point_delta must be an integer")
+    if type(seed_point_delta) is int and seed_point_delta <= 0:
+        raise ValueError("seed_point_delta must be a positive integer")
+    if seed_point_linking not in ['triangulate_delaunay', 'quadrangulate']:    
+        raise ValueError("seed_point_linking must be 'triangulate_delaunay' or 'quadrangulate'")
+    if seed_point_linking == 'quadrangulate' and (seed_point_type != 'grid' or existing_network_spacing is not None):
+        raise ValueError("With seed_point_linking 'quadrangulate', seed_point_type must be set to 'grid' and existing_network_spacing must be set to None")
+    if type(existing_network_spacing) is not int and existing_network_spacing is not None:
+        raise TypeError("existing_network_spacing must be None or a positive integer")
+    if type(existing_network_spacing) is int and existing_network_spacing <= 0:
+        raise ValueError("existing_network_spacing must be None or a positive integer")
+    if type(existing_network_spacing) is int and existing_network_spacing >= seed_point_grid_spacing:
+        warnings.warn("existing_network_spacing is recommended to be smaller than seed_point_grid_spacing to ensure that the existing bicycle network is built first.")
+    if type(seed_point_delta) is not int:
+        raise TypeError("seed_point_delta must be an integer")
+    if type(export_data) is not bool:
+        raise TypeError("export_data must be a boolean")
+    if export_data_slug is not None and type(export_data_slug) is not str:
+        raise TypeError("export_data_slug must be None or a string")
+    if type(export_data_slug) is str and (
+        len(export_data_slug) < 1 or len(slugify(export_data_slug)) < 1
+    ):
+        raise ValueError(
+            "export_data_slug must contain at least one non-special character"
+        )
+    if export_file_format != "geojson" and export_file_format != "gpkg":
+        raise ValueError("export_file_format must be 'geojson' or 'gpkg'")
+    if type(export_plots) is not bool:
+        raise TypeError("export_plots must be a boolean")
+    if type(export_video) is not bool:
+        raise TypeError("export_video must be a boolean")
+    if city_boundary_file is not None and type(city_boundary_file) is not str:
+        raise TypeError("city_boundary_file must be None or a string")
+    if type(city_boundary_file) is str and not os.path.isfile(city_boundary_file):
+        raise FileNotFoundError("city_boundary_file not found")
+    if city_boundary_file is not None and street_network_file is not None:
+        raise ValueError("city_boundary_file and street_network_file cannot both be set")
+    if type(street_network_file) is str and not os.path.isfile(street_network_file):
+        raise FileNotFoundError("street_network_file not found")
+    if type(seed_points_file) is str and not os.path.isfile(seed_points_file):
+        raise FileNotFoundError("seed_points_file not found")
+    if type(street_network_file) is str and seed_point_type in PRESET_TAGS:
+        raise FileNotFoundError("When street_network_file is set, seed_point_type must not be 'rail' or 'school' or 'park'")
+    return True
 
 
 def import_network(street_network_file, crs_projected):
