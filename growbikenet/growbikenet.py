@@ -65,8 +65,8 @@ def growbikenet(
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str ('grid' | 'triangular' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'grid'
-        If set to 'grid', creates a square grid.
-        If set to 'triangular', creates a triangular grid. In this case, seed_point_linking has no effect.
+        If set to 'grid', creates a square grid. Suggested seed_point_grid_spacing for seed_point_linking 'triangulate_delaunay': 1707. For seed_point_linking 'quadrangulate': 1000
+        If set to 'triangular', creates a triangular grid. Suggested seed_point_grid_spacing: 1155. In this case, seed_point_linking must not be set to 'quadrangulate'.
         If set to 'rail', uses railway stations and halts.
         If set to 'school', uses kindergartens, schools, colleges, and universities.
         If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
@@ -209,19 +209,19 @@ def growbikenet(
     ### Create seed points
     progress_bar = tqdm(
         desc="{:<23}".format("Creating seed points"),
-        total=3+int(bool(existing_network_spacing)),
+        total=3+int(bool(existing_network_spacing)), # 3 or 4
         unit="step",
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
-    if seed_point_type == "grid":
+    if seed_point_type == "grid" or seed_point_type == "triangular":
         # Bearings work on unprojected graph
         ox.bearing.add_edge_bearings(g_undir)
         principal_bearing = get_principal_bearing(g_undir)
 
         # But this is on the projected edges now
         seed_points, seed_network = get_grid_seed_points(
-            edges, seed_point_grid_spacing, principal_bearing
+            edges, seed_point_grid_spacing, principal_bearing, seed_point_type
         ) # The seed_network is only relevant for quadrangulation
     elif seed_point_type in PRESET_TAGS:
         seed_point_tags = PRESET_TAGS[seed_point_type]
@@ -252,7 +252,7 @@ def growbikenet(
     progress_bar.close()
 
 
-    # Abort if less than 3 seed points. Delaunay needs at least 3.
+    # Abort if less than 3 seed points. Triangulation needs at least 3.
     if len(seed_points_snapped_filtered) < 3:
         raise RuntimeError("Found less than 3 seed points, but more are needed.")
 
@@ -266,7 +266,7 @@ def growbikenet(
             bar_format='{l_bar}{bar:16}{r_bar}',
             )
 
-        # Create unrouted network with delaunay edges
+        # Create unrouted network with delaunay triangulation edges
         grown_bikenet_edges_abstract = create_delaunay_edges(seed_points_snapped_filtered)
         progress_bar.update(1)
         progress_bar.close()
@@ -277,7 +277,7 @@ def growbikenet(
             'target': [e[1] for e in seed_network.edges]
             }) # Afterwards, all steps are identical
 
-    # Get "routed" geometry (LineString) for each abstract edge (row)
+    ### Get routed geometry (LineString) for each abstract edge (row)
     progress_bar = tqdm(
         desc="{:<23}".format("Routing"),
         total=3,
@@ -333,8 +333,7 @@ def growbikenet(
         nx.set_edge_attributes(B, cc_values, name="closeness_centrality")
     progress_bar.update(1)
 
-    ### Export attributes to gdfs:
-
+    # Export attributes to gdfs:
     # Create dataframe and add method as edge attribute
     edges_ranked = df_from_graph(B, ranking)
 
@@ -354,7 +353,7 @@ def growbikenet(
     progress_bar.update(1)
     progress_bar.close()
 
-    # Remove edge overlaps
+    ### Remove edge overlaps
     if not allow_edge_overlaps:
         edges_ranked = remove_edge_overlaps(edges_ranked) # Can take a while, could be sped up.
         overlap_string = ""
@@ -381,9 +380,8 @@ def growbikenet(
             slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + export_file_format
         )
 
-    # Save to file
+    ### Export data
     if export_data:
-        ### save data
         progress_bar = tqdm(
         desc="{:<23}".format("Exporting data"),
         total=1,

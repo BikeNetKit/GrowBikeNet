@@ -434,7 +434,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     return seed_points_snapped
 
 
-def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
+def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type):
     """Get grid seed points for street network, rotated by principal bearing
 
     Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
@@ -447,13 +447,15 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
         Distance between seed points, in meters
     principal_bearing: float
         Principal bearing (most common bearing of streets)
+    seed_point_type: str ('grid' | 'triangular')
 
     Returns
     -------
     seed_points: geopandas.geodataframe.GeoDataFrame
         Seed points, rotated by principal bearing, to be snapped to the street network, in the same projected coordinate reference system as edges
     seed_network: networkx graph
-        Quadrangulated network of the seed_points, where node ids are the seed_points
+        If seed_point_type is 'grid', quadrangulated network of the seed_points, where node ids are the seed_points. 
+        If seed_point_type is 'triangular', empty network because the seed points will be triangulated.
     """
 
     # Rotate edges counter to the principal bearing
@@ -469,17 +471,26 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     # https://stackoverflow.com/questions/66010964/fastest-way-to-produce-a-grid-of-points-that-fall-within-a-polygon-or-shape
     # Populate hull bbox with evenly spaced seeding points
     points = []
-    x_array = list(range(int(xmin), int(xmax), seed_point_spacing)) # round to whole meters
-    y_array = list(range(int(ymin), int(ymax), seed_point_spacing))
-    for x in x_array:
-        for y in y_array:
-            points.append(Point(x, y))
+    if seed_point_type == "grid":
+        x_array = list(range(xmin, xmax+seed_point_spacing, seed_point_spacing)) # overshoot by one
+        y_array = list(range(ymin, ymax+seed_point_spacing, seed_point_spacing))
+        for x in x_array:
+            for y in y_array:
+                points.append(Point(x, y))
+    elif seed_point_type == "triangular":
+        h = np.sqrt(3)/2
+        x_array = list(np.arange(xmin, xmax+seed_point_spacing, seed_point_spacing)) # overshoot by one
+        y_array = list(np.arange(ymin, ymax+seed_point_spacing, seed_point_spacing * 2*h))
+        for x in x_array:
+            for y in y_array:
+                points.append(Point(x, y))
+                points.append(Point(x - 0.5*seed_point_spacing, y + h*seed_point_spacing))
 
     # Keep only those seed points that are within the hull polygon
     prep_polygon = prep(hull)
     valid_points = []
     valid_points.extend(filter(prep_polygon.contains, points))
-    valid_points_coords = set([(int(p.x), int(p.y)) for p in valid_points])
+    valid_points_coords = set([(p.x, p.y) for p in valid_points])
 
     # store seed points in gdf
     seed_points = gpd.GeoDataFrame({"geometry": valid_points}, crs=edges.crs)
@@ -490,14 +501,17 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing):
     )
 
     # Create, prune, and rotate also a seed network, for quadrangulation
-    seed_network = nx.grid_2d_graph(x_array, y_array)
-    invalid_nodes = set(seed_network.nodes) - valid_points_coords
-    seed_network.remove_nodes_from(invalid_nodes)
-    nx.relabel_nodes(
-        seed_network,
-        lambda xy: rotate(Point(xy[0],xy[1]), -1 * principal_bearing, origin=(0, 0)),
-        copy=False
-        )
+    if seed_point_type == "grid":
+        seed_network = nx.grid_2d_graph(x_array, y_array)
+        invalid_nodes = set(seed_network.nodes) - valid_points_coords
+        seed_network.remove_nodes_from(invalid_nodes)
+        nx.relabel_nodes(
+            seed_network,
+            lambda xy: rotate(Point(xy[0],xy[1]), -1 * principal_bearing, origin=(0, 0)),
+            copy=False
+            )
+    elif seed_point_type == "triangular":
+        seed_network = nx.Graph() # We could create a triangular lattice, but triangulation will do the job anyway
 
     return seed_points, seed_network
 
