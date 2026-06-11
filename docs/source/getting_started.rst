@@ -6,17 +6,17 @@ Get Started in 4 Steps
 
 1. Install GrowBikeNet by following the :doc:`installation` guide.
 
-2. Read the :ref:`introducing-growbikenet` section below.
+2. Read the :ref:`overview-of-growbikenet` section below.
 
 3. To check that the installation worked, run ``python examples/mwe.py`` or the Jupyter :doc:`mwe`.
 
-4. Consult the :doc:`reference_user` for complete details on using the package.
+4. Walk through illustrative examples of growbikenet's features on our :doc:`usage` pages.
 
-Finally, if you're not already familiar with `OSMnx`_ and `GeoPandas`_, make sure you read their user guides as GrowBikeNet uses their data structures.
+Finally, consult the :doc:`reference_user` for complete details on using the package. Also, if you're not already familiar with `OSMnx`_ and `GeoPandas`_, make sure you read their user guides as GrowBikeNet uses their data structures.
 
-.. _introducing-growbikenet:
+.. _overview-of-growbikenet:
 
-Introducing GrowBikeNet
+Overview of GrowBikeNet
 -----------------------
 
 GrowBikeNet is built on top of `OSMnx`_ and `GeoPandas`_. It takes one mandatory parameter, the city name, which it passes via `Nominatim`_ to `OSMnx`_, to download a city's street network. GrowBikeNet then runs the following operations:
