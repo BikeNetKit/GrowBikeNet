@@ -172,7 +172,7 @@ def resolve_auto_parameters(
                     seed_point_linking = 'triangulate_delaunay'
 
     if seed_point_grid_spacing == 'auto': 
-        # These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly).
+        # These values ensure that any point in the city is always within b=500m of the network (if seed points snap perfectly).
         # In comments, general equations for arbitrary buffer distance b
         if seed_point_type == 'grid_square' and seed_point_linking == 'triangulate_delaunay':
             seed_point_grid_spacing = 1707 # a=2b/(2-sqrt(2))
