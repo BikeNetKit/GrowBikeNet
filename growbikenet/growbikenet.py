@@ -81,7 +81,7 @@ def growbikenet(
         Auto-value for seed_point_type 'grid_square' with seed_point_linking 'quadrangulate': 1000
         Auto-value for seed_point_type 'grid_triangle': 1154
         Auto-value otherwise: 1707
-        These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly). For case 1707, see [1]_.
+        These values ensure that any point in the city is always within 500m of the network (under perfect conditions). For case 1707, see [1]_.
     seed_point_delta : 'auto' | int, default 'auto'
         Maximum distance between raw seed points and osm nodes for snapping, in meters.
         Auto-value is round(seed_point_grid_spacing/4).
