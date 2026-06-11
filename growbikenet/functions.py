@@ -13,7 +13,8 @@ from shapely.affinity import rotate
 from tqdm import tqdm
 
 
-def validate_parameters(city_name,
+def validate_parameters(
+        city_name,
         crs_projected,
         ranking,
         seed_point_type,
@@ -31,7 +32,8 @@ def validate_parameters(city_name,
         street_network_file,
         seed_points_file,
         seed_point_tags,
-        PRESET_TAGS):
+        PRESET_TAGS
+    ):
     """ Check if user parameter input is valid. If not, raise an exception or warning
     
     Parameters
@@ -110,6 +112,81 @@ def validate_parameters(city_name,
         raise FileNotFoundError("When street_network_file is set, seed_point_type must not be 'rail' or 'school' or 'park'")
     return True
 
+
+def resolve_auto_parameters(
+        seed_point_type,
+        seed_point_grid_spacing,
+        seed_point_delta,
+        seed_point_linking,
+        existing_network_spacing,
+        phi,
+        PHI_LIMITS
+    ):
+    """Resolve auto parameters and parameter inconsistencies
+    
+    Parameters
+    ----------
+    seed_point_* and existing_network_spacing from growbikenet.growbikenet()
+    
+    Additionally:
+    phi : float
+        Weighted orientation order
+    PHI_LIMITS : list
+        Limits for phi between seed point type categories
+
+    Returns
+    -------
+    seed_point_* and existing_network_spacing from growbikenet.growbikenet()
+    """
+    
+    if seed_point_type == 'auto':
+        if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+            seed_point_type = 'grid'
+            if seed_point_linking == 'auto':
+                seed_point_linking = 'quadrangulate'
+                if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
+                    existing_network_spacing = None
+                    warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
+        elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+            seed_point_type = 'grid'
+            if seed_point_linking == 'auto':
+                seed_point_linking = 'triangulate_delaunay'
+        elif phi<=PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
+            seed_point_type = 'triangular'
+            if seed_point_linking == 'auto':
+                seed_point_linking = 'triangulate_delaunay'
+            elif seed_point_linking == 'quadrangulate': # Case incompatible auto-type and set linking
+                seed_point_linking = 'triangulate_delaunay'
+                warnings.warn("seed_point_linking 'quadrangulate' is incompatible with automatically selected seed_point_type. Changing seed_point_linking to 'triangulate_delaunay'.")
+    else:
+        if seed_point_linking == 'auto':
+            if seed_point_type != 'grid': # Everything is triangulated, but the grid could also be quadrangulated
+                seed_point_linking = 'triangulate_delaunay'
+            else:
+                if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+                    seed_point_linking = 'quadrangulate'
+                    if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
+                        existing_network_spacing = None
+                        warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
+                elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+                    seed_point_linking = 'triangulate_delaunay'
+
+    if seed_point_grid_spacing == 'auto': 
+        # These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly).
+        # In comments, general equations for arbitrary buffer distance b
+        if seed_point_type == 'grid' and seed_point_linking == 'triangulate_delaunay':
+            seed_point_grid_spacing = 1707 # a=2b/(2-sqrt(2))
+        elif seed_point_type == 'grid' and seed_point_linking == 'quadrangulate':
+            seed_point_grid_spacing = 1000 # a=2b
+        elif seed_point_type == 'triangular':
+            seed_point_grid_spacing = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
+        else:
+            seed_point_grid_spacing = 1707
+
+    if seed_point_delta == 'auto':
+        seed_point_delta = int(np.ceil(seed_point_grid_spacing/4))
+
+    return seed_point_type, seed_point_grid_spacing, seed_point_delta, seed_point_linking, existing_network_spacing
 
 def import_network(street_network_file, crs_projected):
     """Import and project a street network from gpkg file

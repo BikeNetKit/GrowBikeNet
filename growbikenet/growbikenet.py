@@ -12,6 +12,7 @@ import datetime
 from growbikenet.functions import (
     validate_parameters,
     orientation_order,
+    resolve_auto_parameters,
     get_principal_bearing,
     prepare_seed_points,
     get_grid_seed_points,
@@ -230,52 +231,15 @@ def growbikenet(
     # Now that the graph is ready, decide auto values
     ox.bearing.add_edge_bearings(g_undir)
     phi = orientation_order(g_undir)
-    if seed_point_type == 'auto':
-        if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
-            seed_point_type = 'grid'
-            if seed_point_linking == 'auto':
-                seed_point_linking = 'quadrangulate'
-                if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
-                    existing_network_spacing = None
-                    warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-        elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
-            seed_point_type = 'grid'
-            if seed_point_linking == 'auto':
-                seed_point_linking = 'triangulate_delaunay'
-        elif phi<=PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
-            seed_point_type = 'triangular'
-            if seed_point_linking == 'auto':
-                seed_point_linking = 'triangulate_delaunay'
-            elif seed_point_linking == 'quadrangulate': # Case incompatible auto-type and set linking
-                seed_point_linking = 'triangulate_delaunay'
-                warnings.warn("seed_point_linking 'quadrangulate' is incompatible with automatically selected seed_point_type. Changing seed_point_linking to 'triangulate_delaunay'.")
-    else:
-        if seed_point_linking == 'auto':
-            if seed_point_type != 'grid': # Everything is triangulated, but the grid could also be quadrangulated
-                seed_point_linking = 'triangulate_delaunay'
-            else:
-                if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
-                    seed_point_linking = 'quadrangulate'
-                    if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
-                        existing_network_spacing = None
-                        warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-                elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
-                    seed_point_linking = 'triangulate_delaunay'
-
-    if seed_point_grid_spacing == 'auto': 
-        # These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly).
-        # In comments, general equations for arbitrary buffer distance b
-        if seed_point_type == 'grid' and seed_point_linking == 'triangulate_delaunay':
-            seed_point_grid_spacing = 1707 # a=2b/(2-sqrt(2))
-        elif seed_point_type == 'grid' and seed_point_linking == 'quadrangulate':
-            seed_point_grid_spacing = 1000 # a=2b
-        elif seed_point_type == 'triangular':
-            seed_point_grid_spacing = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
-        else:
-            seed_point_grid_spacing = 1707
-
-    if seed_point_delta == 'auto':
-        seed_point_delta = int(np.ceil(seed_point_grid_spacing/4))
+    seed_point_type, seed_point_grid_spacing, seed_point_delta, seed_point_linking, existing_network_spacing = resolve_auto_parameters(
+        seed_point_type,
+        seed_point_grid_spacing,
+        seed_point_delta,
+        seed_point_linking,
+        existing_network_spacing,
+        phi,
+        PHI_LIMITS
+    )
     # At this point no value should be on 'auto' any longer and inconsistencies should be resolved.
 
 
@@ -337,17 +301,22 @@ def growbikenet(
             unit="step",
             bar_format='{l_bar}{bar:16}{r_bar}',
             )
-
         # Create unrouted network with delaunay triangulation edges
         grown_bikenet_edges_abstract = create_delaunay_edges(seed_points_snapped_filtered)
-        progress_bar.update(1)
-        progress_bar.close()
     else: # Build the same dataframe structure for the abstract network from the seed_network.edges
+        progress_bar = tqdm(
+            desc="{:<23}".format("Quadrangulation"),
+            total=1,
+            unit="step",
+            bar_format='{l_bar}{bar:16}{r_bar}',
+            )
         grown_bikenet_edges_abstract = pd.DataFrame({
             'pair': seed_network.edges,
             'source': [e[0] for e in seed_network.edges],
             'target': [e[1] for e in seed_network.edges]
             }) # Afterwards, all steps are identical
+    progress_bar.update(1)
+    progress_bar.close()
 
     ### Get routed geometry (LineString) for each abstract edge (row)
     progress_bar = tqdm(
