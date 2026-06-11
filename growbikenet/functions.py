@@ -58,8 +58,8 @@ def validate_parameters(
         raise ValueError(
             "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
         )
-    if seed_point_type not in ['auto', 'grid', 'triangular', 'rail', 'school', 'park', 'file', 'tags']:
-        raise ValueError("seed_point_type must be 'auto' or 'grid' or 'triangular' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
+    if seed_point_type not in ['auto', 'grid_square', 'grid_triangle', 'rail', 'school', 'park', 'file', 'tags']:
+        raise ValueError("seed_point_type must be 'auto' or 'grid_square' or 'grid_triangle' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
     if type(seed_point_grid_spacing) is not int and seed_point_grid_spacing != 'auto':
         raise TypeError("seed_point_grid_spacing must be 'auto' or an integer")
     if type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:
@@ -74,8 +74,8 @@ def validate_parameters(
         raise ValueError("seed_point_delta must be a positive integer")
     if seed_point_linking not in ['auto', 'triangulate_delaunay', 'quadrangulate']:    
         raise ValueError("seed_point_linking must be 'auto' or 'triangulate_delaunay' or 'quadrangulate'")
-    if seed_point_linking == 'quadrangulate' and (seed_point_type != 'grid' or existing_network_spacing is not None):
-        raise ValueError("With seed_point_linking 'quadrangulate', seed_point_type must be set to 'grid' and existing_network_spacing must be set to None")
+    if seed_point_linking == 'quadrangulate' and (seed_point_type != 'grid_square' or existing_network_spacing is not None):
+        raise ValueError("With seed_point_linking 'quadrangulate', seed_point_type must be set to 'grid_square' and existing_network_spacing must be set to None")
     if type(existing_network_spacing) is not int and existing_network_spacing is not None:
         raise TypeError("existing_network_spacing must be None or a positive integer")
     if type(existing_network_spacing) is int and existing_network_spacing <= 0:
@@ -141,18 +141,18 @@ def resolve_auto_parameters(
     
     if seed_point_type == 'auto':
         if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
-            seed_point_type = 'grid'
+            seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'quadrangulate'
                 if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
                     existing_network_spacing = None
                     warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
         elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
-            seed_point_type = 'grid'
+            seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
         elif phi<=PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
-            seed_point_type = 'triangular'
+            seed_point_type = 'grid_triangle'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
             elif seed_point_linking == 'quadrangulate': # Case incompatible auto-type and set linking
@@ -160,7 +160,7 @@ def resolve_auto_parameters(
                 warnings.warn("seed_point_linking 'quadrangulate' is incompatible with automatically selected seed_point_type. Changing seed_point_linking to 'triangulate_delaunay'.")
     else:
         if seed_point_linking == 'auto':
-            if seed_point_type != 'grid': # Everything is triangulated, but the grid could also be quadrangulated
+            if seed_point_type != 'grid_square': # Everything is triangulated, but the grid could also be quadrangulated
                 seed_point_linking = 'triangulate_delaunay'
             else:
                 if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
@@ -174,11 +174,11 @@ def resolve_auto_parameters(
     if seed_point_grid_spacing == 'auto': 
         # These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly).
         # In comments, general equations for arbitrary buffer distance b
-        if seed_point_type == 'grid' and seed_point_linking == 'triangulate_delaunay':
+        if seed_point_type == 'grid_square' and seed_point_linking == 'triangulate_delaunay':
             seed_point_grid_spacing = 1707 # a=2b/(2-sqrt(2))
-        elif seed_point_type == 'grid' and seed_point_linking == 'quadrangulate':
+        elif seed_point_type == 'grid_square' and seed_point_linking == 'quadrangulate':
             seed_point_grid_spacing = 1000 # a=2b
-        elif seed_point_type == 'triangular':
+        elif seed_point_type == 'grid_triangle':
             seed_point_grid_spacing = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
         else:
             seed_point_grid_spacing = 1707
@@ -536,7 +536,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     return seed_points_snapped
 
 
-def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type='grid'):
+def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type='grid_square'):
     """Get grid seed points for street network, rotated by principal bearing
 
     Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
@@ -549,15 +549,15 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poin
         Distance between seed points, in meters
     principal_bearing: float
         Principal bearing (most common bearing of streets)
-    seed_point_type: str ('grid' | 'triangular')
+    seed_point_type: str ('grid_square' | 'grid_triangle')
 
     Returns
     -------
     seed_points: geopandas.geodataframe.GeoDataFrame
         Seed points, rotated by principal bearing, to be snapped to the street network, in the same projected coordinate reference system as edges
     seed_network: networkx graph
-        If seed_point_type is 'grid', quadrangulated network of the seed_points, where node ids are the seed_points. 
-        If seed_point_type is 'triangular', empty network because the seed points will be triangulated.
+        If seed_point_type is 'grid_square', quadrangulated network of the seed_points, where node ids are the seed_points. 
+        If seed_point_type is 'grid_triangle', empty network because the seed points will be triangulated.
     """
 
     # Rotate edges counter to the principal bearing
@@ -574,13 +574,13 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poin
     # https://stackoverflow.com/questions/66010964/fastest-way-to-produce-a-grid-of-points-that-fall-within-a-polygon-or-shape
     # Populate hull bbox with evenly spaced seeding points
     points = []
-    if seed_point_type == "grid":
+    if seed_point_type == 'grid_square':
         x_array = list(range(xmin, xmax+seed_point_spacing, seed_point_spacing)) # overshoot by one
         y_array = list(range(ymin, ymax+seed_point_spacing, seed_point_spacing))
         for x in x_array:
             for y in y_array:
                 points.append(Point(x, y))
-    elif seed_point_type == "triangular":
+    elif seed_point_type == 'grid_triangle':
         h = np.sqrt(3)/2
         x_array = list(np.arange(xmin, xmax+seed_point_spacing, seed_point_spacing)) # overshoot by one
         y_array = list(np.arange(ymin, ymax+seed_point_spacing, seed_point_spacing*2*h))
@@ -604,7 +604,7 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poin
     )
 
     # Create, prune, and rotate also a seed network, for quadrangulation
-    if seed_point_type == "grid":
+    if seed_point_type == 'grid_square':
         seed_network = nx.grid_2d_graph(x_array, y_array)
         invalid_nodes = set(seed_network.nodes) - valid_points_coords
         seed_network.remove_nodes_from(invalid_nodes)
@@ -613,7 +613,7 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poin
             lambda xy: rotate(Point(xy[0],xy[1]), -1 * principal_bearing, origin=(0, 0)),
             copy=False
             )
-    elif seed_point_type == "triangular":
+    elif seed_point_type == 'grid_triangle':
         seed_network = nx.Graph() # We could create a triangular lattice, but triangulation will do the job anyway
 
     return seed_points, seed_network

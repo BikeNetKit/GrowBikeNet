@@ -66,20 +66,20 @@ def growbikenet(
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
-    seed_point_type : str ('auto' | 'grid' | 'triangular' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
-        If set to 'auto', selects 'grid' or 'triangular' automatically depending on the street network's orientation entropy, see [3]_.
-        If set to 'grid', creates a square grid. 
-        If set to 'triangular', creates a triangular grid. In this case, seed_point_linking must not be set to 'quadrangulate'.
+    seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
+        If set to 'auto', selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [3]_.
+        If set to 'grid_square', creates a square grid. 
+        If set to 'grid_triangle', creates a triangle grid. In this case, seed_point_linking must not be set to 'quadrangulate'.
         If set to 'rail', uses railway stations and halts.
         If set to 'school', uses kindergartens, schools, colleges, and universities.
         If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
         If set to 'file', imports seed_points_file.
         If set to 'tags', uses geocodable seed_point_tags, see [4]_. 
     seed_point_grid_spacing : 'auto' | int, default 'auto'
-        If seed_point_type is set to 'grid' or 'triangular', this is the spacing between seed points, in meters.
-        Auto-value for seed_point_type 'grid' with seed_point_linking 'triangulate_delaunay': 1707
-        Auto-value for seed_point_type 'grid' with seed_point_linking 'quadrangulate': 1000
-        Auto-value for seed_point_type 'triangular': 1154
+        If seed_point_type is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters.
+        Auto-value for seed_point_type 'grid_square' with seed_point_linking 'triangulate_delaunay': 1707
+        Auto-value for seed_point_type 'grid_square' with seed_point_linking 'quadrangulate': 1000
+        Auto-value for seed_point_type 'grid_triangle': 1154
         Auto-value otherwise: 1707
         These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly). For case 1707, see [1]_.
     seed_point_delta : 'auto' | int, default 'auto'
@@ -89,7 +89,7 @@ def growbikenet(
         The algorithm for linking up the seed points into an unrouted, abstract network.
         If set to 'auto', selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
         If set to 'triangulate_delaunay', uses Delaunay triangulation.
-        If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
+        If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid_square' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
     existing_network_spacing : int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 25%, to ensure that the existing bicycle network is built first.
     export_data : bool, default True
@@ -251,7 +251,7 @@ def growbikenet(
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
-    if seed_point_type == "grid" or seed_point_type == "triangular":
+    if seed_point_type == 'grid_square' or seed_point_type == 'grid_triangle':
         # Bearings work on unprojected graph
         principal_bearing = get_principal_bearing(g_undir)
 
