@@ -10,6 +10,9 @@ from tqdm import tqdm
 import time
 import datetime
 from growbikenet.functions import (
+    validate_parameters,
+    orientation_order,
+    resolve_auto_parameters,
     get_principal_bearing,
     prepare_seed_points,
     get_grid_seed_points,
@@ -35,10 +38,10 @@ def growbikenet(
     city_name,
     crs_projected='3857',
     ranking='betweenness_centrality',
-    seed_point_type='grid',
-    seed_point_grid_spacing=1707,
-    seed_point_delta=500,
-    seed_point_linking='triangulate_delaunay',
+    seed_point_type='auto',
+    seed_point_grid_spacing='auto',
+    seed_point_delta='auto',
+    seed_point_linking='auto',
     existing_network_spacing=None,
     export_data=True,
     export_file_format='geojson',
@@ -63,23 +66,32 @@ def growbikenet(
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
-    seed_point_type : str ('grid' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'grid'
-        If set to 'grid', creates a square grid.
+    seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
+        If set to 'auto', selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [3]_.
+        If set to 'grid_square', creates a square grid. 
+        If set to 'grid_triangle', creates a triangle grid. In this case, seed_point_linking must not be set to 'quadrangulate'.
         If set to 'rail', uses railway stations and halts.
         If set to 'school', uses kindergartens, schools, colleges, and universities.
         If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
         If set to 'file', imports seed_points_file.
-        If set to 'tags', uses geocodable seed_point_tags, see [3]_. 
-    seed_point_grid_spacing : int, default 1707
-        If seed_point_type is set to 'grid', this is the spacing between seed points, in meters.
-    seed_point_delta : int, default 500
+        If set to 'tags', uses geocodable seed_point_tags, see [4]_. 
+    seed_point_grid_spacing : 'auto' | int, default 'auto'
+        If seed_point_type is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters.
+        Auto-value for seed_point_type 'grid_square' with seed_point_linking 'triangulate_delaunay': 1707
+        Auto-value for seed_point_type 'grid_square' with seed_point_linking 'quadrangulate': 1000
+        Auto-value for seed_point_type 'grid_triangle': 1154
+        Auto-value otherwise: 1707
+        These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly). For case 1707, see [1]_.
+    seed_point_delta : 'auto' | int, default 'auto'
         Maximum distance between raw seed points and osm nodes for snapping, in meters.
-    seed_point_linking : str ('triangulate_delaunay', 'quadrangulate'), default 'triangulate_delaunay'
+        Auto-value is round(seed_point_grid_spacing/4).
+    seed_point_linking : str ('auto' | 'triangulate_delaunay' | 'quadrangulate'), default 'auto'
         The algorithm for linking up the seed points into an unrouted, abstract network.
+        If set to 'auto', selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
         If set to 'triangulate_delaunay', uses Delaunay triangulation.
-        If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
+        If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid_square' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
     existing_network_spacing : int, default None
-        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored.
+        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 25%, to ensure that the existing bicycle network is built first.
     export_data : bool, default True
         If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
     export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
@@ -99,7 +111,7 @@ def growbikenet(
     seed_points_file : str | None, default None
         If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
-        If not None, must be a geocodable seed_point_tags, see [3]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
+        If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
 
     Returns
     -------
@@ -128,82 +140,47 @@ def growbikenet(
     ----------
     .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
     .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
-    .. [3] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
+    .. [3] G. Boeing, "Urban spatial order: Street network orientation, configuration, and entropy", Applied Network Science 4, 67 (2019)
+    .. [4] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
 
     """
     starttime = time.time()
 
+    # Constants
+    # Pre-defined tags to select tags as seed points
     PRESET_TAGS = {
                 "rail": {"railway": ["station", "halt"]},
                 "school": {"amenity": ["kindergarten", "school", "college", "university"]},
                 "park": {"leisure": ["park", "garden", "nature_reserve", "bathing_place"]},
                 }
+    # Orientation order limits between street networks with:
+    # 1) negligible grid elements, 2) some grid elements, 3) grid.
+    # I aimed to use the tercile limits from the paper [4]_ (Fig 2), but the values
+    # here are lower for unknown reasons, also with the unweighted version. Also, I 
+    # wanted to have Barcelona in the grid category. So I lowered the limits.
+    PHI_LIMITS = [0.02, 0.08] # Tercile limits in the paper: 0.033, 0.161
     
-    # Check if user input is valid
-    if type(city_name) is not str:
-        raise TypeError("city_name must be a string")
-    if type(crs_projected) is not str:
-        raise TypeError("crs_projected must be a string")
-    if type(ranking) is not str:
-        raise TypeError("ranking must be a string")
-    if ranking not in ["betweenness_centrality", "closeness_centrality", "random"]:
-        raise ValueError(
-            "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
-        )
-    if seed_point_type not in ['grid', 'rail', 'school', 'park', 'file', 'tags']:
-        raise ValueError("seed_point_type must be 'grid' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
-    if seed_point_type == 'grid' and type(seed_point_grid_spacing) is not int:
-        raise TypeError("seed_point_grid_spacing must be an integer")
-    if seed_point_type == 'grid' and type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:  
-        raise ValueError("seed_point_grid_spacing must be a positive integer")
-    if seed_point_type == 'file' and type(seed_points_file) is None:
-        raise ValueError("With seed_point_type 'file', a seed_points_file must be provided")
-    if seed_point_type == 'tags' and type(seed_points_file) is None:
-        raise ValueError("With seed_point_type 'tags', a seed_point_tags must be provided")
-    if type(seed_point_delta) is not int:
-        raise TypeError("seed_point_delta must be an integer")
-    if type(seed_point_delta) is int and seed_point_delta <= 0:
-        raise ValueError("seed_point_delta must be a positive integer")
-    if seed_point_linking not in ['triangulate_delaunay', 'quadrangulate']:    
-        raise ValueError("seed_point_linking must be 'triangulate_delaunay' or 'quadrangulate'")
-    if seed_point_linking == 'quadrangulate' and (seed_point_type != 'grid' or existing_network_spacing is not None):
-        raise ValueError("With seed_point_linking 'quadrangulate', seed_point_type must be set to 'grid' and existing_network_spacing must be set to None")
-    if type(existing_network_spacing) is not int and existing_network_spacing is not None:
-        raise TypeError("existing_network_spacing must be None or a positive integer")
-    if type(existing_network_spacing) is int and existing_network_spacing <= 0:
-        raise ValueError("existing_network_spacing must be None or a positive integer")
-    if type(existing_network_spacing) is int and existing_network_spacing >= seed_point_grid_spacing:
-        warnings.warn("existing_network_spacing is recommended to be smaller than seed_point_grid_spacing to ensure that the existing bicycle network is built first.")
-    if type(seed_point_delta) is not int:
-        raise TypeError("seed_point_delta must be an integer")
-    if type(export_data) is not bool:
-        raise TypeError("export_data must be a boolean")
-    if export_data_slug is not None and type(export_data_slug) is not str:
-        raise TypeError("export_data_slug must be None or a string")
-    if type(export_data_slug) is str and (
-        len(export_data_slug) < 1 or len(slugify(export_data_slug)) < 1
-    ):
-        raise ValueError(
-            "export_data_slug must contain at least one non-special character"
-        )
-    if export_file_format != "geojson" and export_file_format != "gpkg":
-        raise ValueError("export_file_format must be 'geojson' or 'gpkg'")
-    if type(export_plots) is not bool:
-        raise TypeError("export_plots must be a boolean")
-    if type(export_video) is not bool:
-        raise TypeError("export_video must be a boolean")
-    if city_boundary_file is not None and type(city_boundary_file) is not str:
-        raise TypeError("city_boundary_file must be None or a string")
-    if type(city_boundary_file) is str and not os.path.isfile(city_boundary_file):
-        raise FileNotFoundError("city_boundary_file not found")
-    if city_boundary_file is not None and street_network_file is not None:
-        raise ValueError("city_boundary_file and street_network_file cannot both be set")
-    if type(street_network_file) is str and not os.path.isfile(street_network_file):
-        raise FileNotFoundError("street_network_file not found")
-    if type(seed_points_file) is str and not os.path.isfile(seed_points_file):
-        raise FileNotFoundError("seed_points_file not found")
-    if type(street_network_file) is str and seed_point_type in PRESET_TAGS:
-        raise FileNotFoundError("When street_network_file is set, seed_point_type must not be 'rail' or 'school' or 'park'")
+    validate_parameters(
+        city_name,
+        crs_projected,
+        ranking,
+        seed_point_type,
+        seed_point_grid_spacing,
+        seed_point_delta,
+        seed_point_linking,
+        existing_network_spacing,
+        export_data,
+        export_file_format,
+        export_data_slug,
+        export_plots,
+        export_video,
+        allow_edge_overlaps,
+        city_boundary_file,
+        street_network_file,
+        seed_points_file,
+        seed_point_tags,
+        PRESET_TAGS
+    )
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
@@ -250,22 +227,37 @@ def growbikenet(
             progress_bar.update(1)
     progress_bar.close()
 
+
+    # Now that the graph is ready, decide auto values
+    ox.bearing.add_edge_bearings(g_undir)
+    phi = orientation_order(g_undir)
+    seed_point_type, seed_point_grid_spacing, seed_point_delta, seed_point_linking, existing_network_spacing = resolve_auto_parameters(
+        seed_point_type,
+        seed_point_grid_spacing,
+        seed_point_delta,
+        seed_point_linking,
+        existing_network_spacing,
+        phi,
+        PHI_LIMITS
+    )
+    # At this point no value should be on 'auto' any longer and inconsistencies should be resolved.
+
+
     ### Create seed points
     progress_bar = tqdm(
         desc="{:<23}".format("Creating seed points"),
-        total=3+int(bool(existing_network_spacing)),
+        total=3+int(bool(existing_network_spacing)), # 3 or 4
         unit="step",
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
-    if seed_point_type == "grid":
+    if seed_point_type == 'grid_square' or seed_point_type == 'grid_triangle':
         # Bearings work on unprojected graph
-        ox.bearing.add_edge_bearings(g_undir)
         principal_bearing = get_principal_bearing(g_undir)
 
         # But this is on the projected edges now
         seed_points, seed_network = get_grid_seed_points(
-            edges, seed_point_grid_spacing, principal_bearing
+            edges, seed_point_grid_spacing, principal_bearing, seed_point_type
         ) # The seed_network is only relevant for quadrangulation
     elif seed_point_type in PRESET_TAGS:
         seed_point_tags = PRESET_TAGS[seed_point_type]
@@ -296,7 +288,7 @@ def growbikenet(
     progress_bar.close()
 
 
-    # Abort if less than 3 seed points. Delaunay needs at least 3.
+    # Abort if less than 3 seed points. Triangulation needs at least 3.
     if len(seed_points_snapped_filtered) < 3:
         raise RuntimeError("Found less than 3 seed points, but more are needed.")
 
@@ -309,19 +301,24 @@ def growbikenet(
             unit="step",
             bar_format='{l_bar}{bar:16}{r_bar}',
             )
-
-        # Create unrouted network with delaunay edges
+        # Create unrouted network with delaunay triangulation edges
         grown_bikenet_edges_abstract = create_delaunay_edges(seed_points_snapped_filtered)
-        progress_bar.update(1)
-        progress_bar.close()
     else: # Build the same dataframe structure for the abstract network from the seed_network.edges
+        progress_bar = tqdm(
+            desc="{:<23}".format("Quadrangulation"),
+            total=1,
+            unit="step",
+            bar_format='{l_bar}{bar:16}{r_bar}',
+            )
         grown_bikenet_edges_abstract = pd.DataFrame({
             'pair': seed_network.edges,
             'source': [e[0] for e in seed_network.edges],
             'target': [e[1] for e in seed_network.edges]
             }) # Afterwards, all steps are identical
+    progress_bar.update(1)
+    progress_bar.close()
 
-    # Get "routed" geometry (LineString) for each abstract edge (row)
+    ### Get routed geometry (LineString) for each abstract edge (row)
     progress_bar = tqdm(
         desc="{:<23}".format("Routing"),
         total=3,
@@ -377,8 +374,7 @@ def growbikenet(
         nx.set_edge_attributes(B, cc_values, name="closeness_centrality")
     progress_bar.update(1)
 
-    ### Export attributes to gdfs:
-
+    # Export attributes to gdfs:
     # Create dataframe and add method as edge attribute
     edges_ranked = df_from_graph(B, ranking)
 
@@ -398,7 +394,7 @@ def growbikenet(
     progress_bar.update(1)
     progress_bar.close()
 
-    # Remove edge overlaps
+    ### Remove edge overlaps
     if not allow_edge_overlaps:
         edges_ranked = remove_edge_overlaps(edges_ranked) # Can take a while, could be sped up.
         overlap_string = ""
@@ -425,9 +421,8 @@ def growbikenet(
             slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + export_file_format
         )
 
-    # Save to file
+    ### Export data
     if export_data:
-        ### save data
         progress_bar = tqdm(
         desc="{:<23}".format("Exporting data"),
         total=1,
