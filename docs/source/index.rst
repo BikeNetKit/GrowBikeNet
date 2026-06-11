@@ -67,6 +67,7 @@ Documentation contents
    Home <self>
    installation
    getting_started
+   usage <usage>
    reference_user
    reference_developer
    references
