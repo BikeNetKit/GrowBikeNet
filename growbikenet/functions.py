@@ -56,8 +56,8 @@ def validate_parameters(city_name,
         raise ValueError(
             "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
         )
-    if seed_point_type not in ['grid', 'triangular', 'rail', 'school', 'park', 'file', 'tags']:
-        raise ValueError("seed_point_type must be 'grid' or 'triangular' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
+    if seed_point_type not in ['auto', 'grid', 'triangular', 'rail', 'school', 'park', 'file', 'tags']:
+        raise ValueError("seed_point_type must be 'auto' or 'grid' or 'triangular' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
     if type(seed_point_grid_spacing) is not int and seed_point_grid_spacing != 'auto':
         raise TypeError("seed_point_grid_spacing must be 'auto' or an integer")
     if type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:
@@ -70,8 +70,8 @@ def validate_parameters(city_name,
         raise TypeError("seed_point_delta must be 'auto' or an integer")
     if type(seed_point_delta) is int and seed_point_delta <= 0:
         raise ValueError("seed_point_delta must be a positive integer")
-    if seed_point_linking not in ['triangulate_delaunay', 'quadrangulate']:    
-        raise ValueError("seed_point_linking must be 'triangulate_delaunay' or 'quadrangulate'")
+    if seed_point_linking not in ['auto', 'triangulate_delaunay', 'quadrangulate']:    
+        raise ValueError("seed_point_linking must be 'auto' or 'triangulate_delaunay' or 'quadrangulate'")
     if seed_point_linking == 'quadrangulate' and (seed_point_type != 'grid' or existing_network_spacing is not None):
         raise ValueError("With seed_point_linking 'quadrangulate', seed_point_type must be set to 'grid' and existing_network_spacing must be set to None")
     if type(existing_network_spacing) is not int and existing_network_spacing is not None:
@@ -145,6 +145,33 @@ def import_network(street_network_file, crs_projected):
     nodes, edges = prepare_nodes_edges(nodes, edges, crs_projected)
 
     return nodes, edges, g_undir
+
+
+def orientation_order(g_undir):
+    """Calculate a graph's weighted orientation order phi, see [1]_
+
+    Whether phi is weighted or unweighted does not matter much, but for the purpose of growing bike networks, weighted seems more appropriate.
+    Note that the values here are lower than in the paper [1]_ for unknown reasons, also with the unweighted version.
+
+    Parameters
+    ----------
+    g_undir : networkx.classes.multigraph.MultiGraph
+        networkX street network, undirected, weighted with "length"
+
+    Returns
+    -------
+    phi : float
+        Weighted orientation order
+
+    References
+    ----------
+    .. [1] G. Boeing, "Urban spatial order: Street network orientation, configuration, and entropy", Applied Network Science 4, 67 (2019)
+    """
+    Hw = ox.bearing.orientation_entropy(g_undir, weight="length")
+    Hg = 1.386
+    Hmax = 3.584
+    phi = 1 - ((Hw-Hg)/(Hmax-Hg))**2
+    return phi
 
 
 def prepare_nodes_edges(nodes, edges, crs_projected):

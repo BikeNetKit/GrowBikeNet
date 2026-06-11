@@ -2,7 +2,4 @@
 
 import growbikenet as gbn
 
-edges_ranked = gbn.growbikenet(
-	"Hallettsville",
-    existing_network_spacing=500,
-	)
+edges_ranked = gbn.growbikenet("Paris", export_file_format="gpkg")

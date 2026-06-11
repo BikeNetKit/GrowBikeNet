@@ -11,6 +11,7 @@ import time
 import datetime
 from growbikenet.functions import (
     validate_parameters,
+    orientation_order,
     get_principal_bearing,
     prepare_seed_points,
     get_grid_seed_points,
@@ -36,10 +37,10 @@ def growbikenet(
     city_name,
     crs_projected='3857',
     ranking='betweenness_centrality',
-    seed_point_type='grid',
+    seed_point_type='auto',
     seed_point_grid_spacing='auto',
     seed_point_delta='auto',
-    seed_point_linking='triangulate_delaunay',
+    seed_point_linking='auto',
     existing_network_spacing=None,
     export_data=True,
     export_file_format='geojson',
@@ -64,14 +65,15 @@ def growbikenet(
         Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
-    seed_point_type : str ('grid' | 'triangular' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'grid'
+    seed_point_type : str ('auto' | 'grid' | 'triangular' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
+        If set to 'auto', selects 'grid' or 'triangular' automatically depending on the street network's orientation entropy, see [3]_.
         If set to 'grid', creates a square grid. 
         If set to 'triangular', creates a triangular grid. In this case, seed_point_linking must not be set to 'quadrangulate'.
         If set to 'rail', uses railway stations and halts.
         If set to 'school', uses kindergartens, schools, colleges, and universities.
         If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
         If set to 'file', imports seed_points_file.
-        If set to 'tags', uses geocodable seed_point_tags, see [3]_. 
+        If set to 'tags', uses geocodable seed_point_tags, see [4]_. 
     seed_point_grid_spacing : 'auto' | int, default 'auto'
         If seed_point_type is set to 'grid' or 'triangular', this is the spacing between seed points, in meters.
         Auto-value for seed_point_type 'grid' with seed_point_linking 'triangulate_delaunay': 1707
@@ -82,12 +84,13 @@ def growbikenet(
     seed_point_delta : 'auto' | int, default 'auto'
         Maximum distance between raw seed points and osm nodes for snapping, in meters.
         Auto-value is round(seed_point_grid_spacing/4).
-    seed_point_linking : str ('triangulate_delaunay', 'quadrangulate'), default 'triangulate_delaunay'
+    seed_point_linking : str ('auto' | 'triangulate_delaunay' | 'quadrangulate'), default 'auto'
         The algorithm for linking up the seed points into an unrouted, abstract network.
+        If set to 'auto', selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
         If set to 'triangulate_delaunay', uses Delaunay triangulation.
         If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
     existing_network_spacing : int, default None
-        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around a third, to ensure that the existing bicycle network is built first.
+        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 25%, to ensure that the existing bicycle network is built first.
     export_data : bool, default True
         If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
     export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
@@ -107,7 +110,7 @@ def growbikenet(
     seed_points_file : str | None, default None
         If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
-        If not None, must be a geocodable seed_point_tags, see [3]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
+        If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
 
     Returns
     -------
@@ -136,18 +139,28 @@ def growbikenet(
     ----------
     .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
     .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
-    .. [3] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
+    .. [3] G. Boeing, "Urban spatial order: Street network orientation, configuration, and entropy", Applied Network Science 4, 67 (2019)
+    .. [4] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
 
     """
     starttime = time.time()
 
+    # Constants
+    # Pre-defined tags to select tags as seed points
     PRESET_TAGS = {
                 "rail": {"railway": ["station", "halt"]},
                 "school": {"amenity": ["kindergarten", "school", "college", "university"]},
                 "park": {"leisure": ["park", "garden", "nature_reserve", "bathing_place"]},
                 }
+    # Orientation order limits between street networks with:
+    # 1) negligible grid elements, 2) some grid elements, 3) grid.
+    # I aimed to use the tercile limits from the paper [4]_ (Fig 2), but the values
+    # here are lower for unknown reasons, also with the unweighted version. Also, I 
+    # wanted to have Barcelona in the grid category. So I lowered the limits.
+    PHI_LIMITS = [0.02, 0.08] # Tercile limits in the paper: 0.033, 0.161
     
-    validate_parameters(city_name,
+    validate_parameters(
+        city_name,
         crs_projected,
         ranking,
         seed_point_type,
@@ -165,22 +178,8 @@ def growbikenet(
         street_network_file,
         seed_points_file,
         seed_point_tags,
-        PRESET_TAGS)
-    
-    if seed_point_grid_spacing == 'auto': 
-        # These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly).
-        # In comments, general equations for arbitrary buffer distance b
-        if seed_point_type == 'grid' and seed_point_linking == 'triangulate_delaunay':
-            seed_point_grid_spacing = 1707 # a=2b/(2-sqrt(2))
-        elif seed_point_type == 'grid' and seed_point_linking == 'quadrangulate':
-            seed_point_grid_spacing = 1000 # a=2b
-        elif seed_point_type == 'triangular':
-            seed_point_grid_spacing = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
-        else:
-            seed_point_grid_spacing = 1707
-
-    if seed_point_delta == 'auto':
-        seed_point_delta = int(np.ceil(seed_point_grid_spacing/4))
+        PRESET_TAGS
+    )
 
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
@@ -227,6 +226,59 @@ def growbikenet(
             progress_bar.update(1)
     progress_bar.close()
 
+
+    # Now that the graph is ready, decide auto values
+    ox.bearing.add_edge_bearings(g_undir)
+    phi = orientation_order(g_undir)
+    if seed_point_type == 'auto':
+        if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+            seed_point_type = 'grid'
+            if seed_point_linking == 'auto':
+                seed_point_linking = 'quadrangulate'
+                if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
+                    existing_network_spacing = None
+                    warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
+        elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+            seed_point_type = 'grid'
+            if seed_point_linking == 'auto':
+                seed_point_linking = 'triangulate_delaunay'
+        elif phi<=PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
+            seed_point_type = 'triangular'
+            if seed_point_linking == 'auto':
+                seed_point_linking = 'triangulate_delaunay'
+            elif seed_point_linking == 'quadrangulate': # Case incompatible auto-type and set linking
+                seed_point_linking = 'triangulate_delaunay'
+                warnings.warn("seed_point_linking 'quadrangulate' is incompatible with automatically selected seed_point_type. Changing seed_point_linking to 'triangulate_delaunay'.")
+    else:
+        if seed_point_linking == 'auto':
+            if seed_point_type != 'grid': # Everything is triangulated, but the grid could also be quadrangulated
+                seed_point_linking = 'triangulate_delaunay'
+            else:
+                if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+                    seed_point_linking = 'quadrangulate'
+                    if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
+                        existing_network_spacing = None
+                        warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
+                elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+                    seed_point_linking = 'triangulate_delaunay'
+
+    if seed_point_grid_spacing == 'auto': 
+        # These values ensure that any point in the city is always within 500m of the network (if seed points snap perfectly).
+        # In comments, general equations for arbitrary buffer distance b
+        if seed_point_type == 'grid' and seed_point_linking == 'triangulate_delaunay':
+            seed_point_grid_spacing = 1707 # a=2b/(2-sqrt(2))
+        elif seed_point_type == 'grid' and seed_point_linking == 'quadrangulate':
+            seed_point_grid_spacing = 1000 # a=2b
+        elif seed_point_type == 'triangular':
+            seed_point_grid_spacing = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
+        else:
+            seed_point_grid_spacing = 1707
+
+    if seed_point_delta == 'auto':
+        seed_point_delta = int(np.ceil(seed_point_grid_spacing/4))
+    # At this point no value should be on 'auto' any longer and inconsistencies should be resolved.
+
+
     ### Create seed points
     progress_bar = tqdm(
         desc="{:<23}".format("Creating seed points"),
@@ -237,7 +289,6 @@ def growbikenet(
 
     if seed_point_type == "grid" or seed_point_type == "triangular":
         # Bearings work on unprojected graph
-        ox.bearing.add_edge_bearings(g_undir)
         principal_bearing = get_principal_bearing(g_undir)
 
         # But this is on the projected edges now
