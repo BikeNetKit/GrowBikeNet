@@ -108,8 +108,6 @@ def validate_parameters(
         raise FileNotFoundError("street_network_file not found")
     if type(seed_points_file) is str and not os.path.isfile(seed_points_file):
         raise FileNotFoundError("seed_points_file not found")
-    if type(street_network_file) is str and seed_point_type in PRESET_TAGS:
-        raise FileNotFoundError("When street_network_file is set, seed_point_type must not be 'rail' or 'school' or 'park'")
     return True
 
 
@@ -194,7 +192,9 @@ def import_network(street_network_file, crs_projected):
     Parameters
     ----------
     street_network_file : str
-        The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage().
+        The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
+        >>> g = ox.graph_from_place("Barcelona", network_type='all_public')
+        >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg")
     crs_projected : str
         Coordinate reference system that is used to project osm data.
 
@@ -206,6 +206,8 @@ def import_network(street_network_file, crs_projected):
         Extracted OSM edges, projected
     g_undir : networkx.classes.multigraph.MultiGraph
         Extracted networkX graph, undirected
+    city_boundary_gdf : geopandas.geodataframe.GeoDataFrame
+        Convex hull of the street network
     """
 
     nodes = gpd.read_file(street_network_file, layer='nodes')
@@ -219,9 +221,12 @@ def import_network(street_network_file, crs_projected):
     g = ox.convert.graph_from_gdfs(nodes, edges)
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
+    city_boundary_gdf = gpd.GeoDataFrame(gpd.GeoSeries(nodes.union_all().convex_hull), geometry=0, crs=nodes.crs) # We do this before the projection of nodes below
+    # To do: To be super-correct, the hull should be buffered by seed_point_delta (in degrees due to being unprojected)
+
     nodes, edges = prepare_nodes_edges(nodes, edges, crs_projected)
 
-    return nodes, edges, g_undir
+    return nodes, edges, g_undir, city_boundary_gdf
 
 
 def orientation_order(g_undir):
@@ -918,9 +923,6 @@ def remove_edge_overlaps(edges_in):
     edges_out: geopandas.geodataframe.GeoDataFrame
         The grown bike network without edge overlaps, in a projected coordinate reference system
     """
-    # import time
-    # start = time.time()
-
     edges_out = edges_in.copy()
     grown_net = MultiLineString()
     for row in tqdm(
@@ -942,8 +944,6 @@ def remove_edge_overlaps(edges_in):
     edges_out.drop_duplicates(inplace=True) # How can duplicates happen??
     edges_out.reset_index(drop=True, inplace=True)
 
-    # end = time.time()
-    # print(end - start)
     return edges_out
 
 def df_from_graph(A, method):

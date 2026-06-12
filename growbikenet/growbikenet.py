@@ -63,7 +63,7 @@ def growbikenet(
     city_name : str
         Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled for data fetching if city_boundary_file or street_network_file is set.
     crs_projected : str, default '3857'
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
+        EPSG code of the coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
@@ -107,7 +107,10 @@ def growbikenet(
     city_boundary_file : str | None, default None
         If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary_file and street_network_file cannot both be set.
     street_network_file : str | None, default None
-        If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network has after saved via ox.io.save_graph_geopackage(). For example, "./tests/test_data/oelde_streets.shp". This does not work with seed_point_type="rail". city_boundary_file and street_network_file cannot both be set.
+        If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
+        >>> g = ox.graph_from_place("Barcelona", network_type='all_public')
+        >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg").
+        city_boundary_file and street_network_file cannot both be set.
     seed_points_file : str | None, default None
         If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
@@ -191,14 +194,15 @@ def growbikenet(
     
     if street_network_file is not None:
         ### Import and preprocess data from file
-        city_boundary_exists = False
+        city_boundary_exists = True
         progress_bar = tqdm(
             desc="{:<23}".format("Importing network data"),
             total=1,
             unit="network",
             bar_format='{l_bar}{bar:16}{r_bar}',
         )
-        nodes, edges, g_undir = import_network(street_network_file, crs_projected)
+        nodes, edges, g_undir, city_boundary_gdf = import_network(street_network_file, crs_projected)
+        city_boundary_geometry = city_boundary_gdf.geometry[0]
         progress_bar.update(1)
     else:
         ### Download and preprocess data from OSM
@@ -216,7 +220,6 @@ def growbikenet(
         else:
             city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_name)
         city_boundary_geometry = city_boundary_gdf.geometry[0]
-
         # Fetch street network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
         nodes, edges, g_undir = download_network(city_name, crs_projected, network_type='all_public', retain_all=False, city_boundary_geometry=city_boundary_geometry)
