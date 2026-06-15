@@ -108,9 +108,9 @@ def validate_parameters(
         raise FileNotFoundError("street_network_file not found")
     if type(seed_point_file) is str and not os.path.isfile(seed_point_file):
         raise FileNotFoundError("seed_point_file not found")
-    if type(seed_point_tags) is not None and type(seed_point_tags) is not dict:
+    if seed_point_tags is not None and type(seed_point_tags) is not dict:
         raise TypeError("seed_point_tags must be None or a dictionary")
-    if type(seed_point_tags) is not None and seed_point_type!="tags":
+    if seed_point_tags is not None and seed_point_type!="tags":
         raise ValueError("When using seed_point_tags, seed_point_type must be set to 'tags'")
     return True
 
