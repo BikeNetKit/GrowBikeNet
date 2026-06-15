@@ -3,7 +3,8 @@ data/
 results/
 cache/
 examples/*.gpkg
-/*.gpkg
+/*gpkg
+docs/source/*.gpkg
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,macos,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,python,macos,windows

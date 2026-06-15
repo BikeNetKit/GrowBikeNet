@@ -22,7 +22,7 @@ Setup and use
 
 To set up GrowBikeNet, see the :doc:`installation` page.
 To use GrowBikeNet, the :doc:`getting_started` page
-is a good place to start, which also explains how the package works in detail. For technical documentation, consult the :doc:`reference_user`.
+is a good place to start, which also explains how the package works in detail. Various usage examples are walked through on the :doc:`usage` page. For technical documentation, consult the :doc:`reference_user`.
 
 .. Statement of need
 .. =================
@@ -67,6 +67,7 @@ Documentation contents
    Home <self>
    installation
    getting_started
+   usage
    reference_user
    reference_developer
    references
