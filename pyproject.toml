@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "growbikenet"
-version = "0.10.0"
+version = "0.10.1"
 authors = [
+  { name = "Michael Szell" },
   { name = "Manuel Knepper" },
   { name = "Anastassia Vybornova" },
-  { name = "Michael Szell" },
 ]
 maintainers = [{ name = "Manuel Knepper", email = "manuel.knepper@gmx.net" }]
 license = "AGPL-3.0-or-later"

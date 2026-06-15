@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.10.1 (2026-06-15)
+
+- 🐛 Added missing checks for seed_point_tags
+- 📝 Added first usage docs
+- ♻️ Renamed seed_points_file parameter for consistency
+
 ## Version 0.10.0 (2026-06-11)
 
 - ✨ Added auto options for seed points
