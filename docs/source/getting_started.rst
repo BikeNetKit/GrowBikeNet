@@ -19,7 +19,7 @@ Finally, consult the :doc:`reference_user` for complete details on using the pac
 Overview of GrowBikeNet
 -----------------------
 
-GrowBikeNet is built on top of `OSMnx`_ and `GeoPandas`_. It takes one mandatory parameter, the city name, which it passes via `Nominatim`_ to `OSMnx`_, to download a city's street network. GrowBikeNet then runs the following operations:
+GrowBikeNet is built on top of `OSMnx`_ and `GeoPandas`_. It takes one mandatory parameter, the city name, which it passes via `OSMnx`_ to `Nominatim`_, to download a city's street network. GrowBikeNet then runs the following operations:
 
 * Optional, also download the city's existing bicycle network.
 * Create seed points following :cite:t:`szell2022gub`. By default this is a grid (square or triangular), but it can also be set to the city's rail stations, schools, parks, or arbitrary custom points of interest. If the city's existing bicycle network is used, the seed points are first selected on the bicycle network following :cite:t:`folco2023dmn`.
