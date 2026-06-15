@@ -30,7 +30,7 @@ def validate_parameters(
         allow_edge_overlaps,
         city_boundary_file,
         street_network_file,
-        seed_points_file,
+        seed_point_file,
         seed_point_tags,
         PRESET_TAGS
     ):
@@ -64,9 +64,9 @@ def validate_parameters(
         raise TypeError("seed_point_grid_spacing must be 'auto' or an integer")
     if type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:
         raise ValueError("seed_point_grid_spacing must be a positive integer")
-    if seed_point_type == 'file' and type(seed_points_file) is None:
-        raise ValueError("With seed_point_type 'file', a seed_points_file must be provided")
-    if seed_point_type == 'tags' and type(seed_points_file) is None:
+    if seed_point_type == 'file' and type(seed_point_file) is None:
+        raise ValueError("With seed_point_type 'file', a seed_point_file must be provided")
+    if seed_point_type == 'tags' and type(seed_point_file) is None:
         raise ValueError("With seed_point_type 'tags', seed_point_tags must be provided")
     if type(seed_point_delta) is not int and seed_point_delta != 'auto':
         raise TypeError("seed_point_delta must be 'auto' or an integer")
@@ -106,8 +106,8 @@ def validate_parameters(
         raise ValueError("city_boundary_file and street_network_file cannot both be set")
     if type(street_network_file) is str and not os.path.isfile(street_network_file):
         raise FileNotFoundError("street_network_file not found")
-    if type(seed_points_file) is str and not os.path.isfile(seed_points_file):
-        raise FileNotFoundError("seed_points_file not found")
+    if type(seed_point_file) is str and not os.path.isfile(seed_point_file):
+        raise FileNotFoundError("seed_point_file not found")
     if type(seed_point_tags) is not None and type(seed_point_tags) is not dict:
         raise TypeError("seed_point_tags must be None or a dictionary")
     if type(seed_point_tags) is not None and seed_point_type!="tags":

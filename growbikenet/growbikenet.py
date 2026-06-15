@@ -51,7 +51,7 @@ def growbikenet(
     allow_edge_overlaps=False,
     city_boundary_file=None,
     street_network_file=None,
-    seed_points_file=None,
+    seed_point_file=None,
     seed_point_tags=None,
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
@@ -73,7 +73,7 @@ def growbikenet(
         If set to 'rail', uses railway stations and halts.
         If set to 'school', uses kindergartens, schools, colleges, and universities.
         If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
-        If set to 'file', imports seed_points_file.
+        If set to 'file', imports seed_point_file.
         If set to 'tags', uses geocodable seed_point_tags, see [4]_. 
     seed_point_grid_spacing : 'auto' | int, default 'auto'
         If seed_point_type is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters.
@@ -111,7 +111,7 @@ def growbikenet(
         >>> g = ox.graph_from_place("Barcelona", network_type='all_public')
         >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg").
         city_boundary_file and street_network_file cannot both be set.
-    seed_points_file : str | None, default None
+    seed_point_file : str | None, default None
         If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
@@ -137,7 +137,7 @@ def growbikenet(
 
     Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
 
-    >>> edges_ranked = growbikenet("Oelde", street_network_file="./tests/test_data/oelde_streets.gpkg", seed_point_type='file', seed_points_file="./tests/test_data/oelde_seed_points.gpkg")
+    >>> edges_ranked = growbikenet("Oelde", street_network_file="./tests/test_data/oelde_streets.gpkg", seed_point_type='file', seed_point_file="./tests/test_data/oelde_seed_points.gpkg")
 
     References
     ----------
@@ -180,7 +180,7 @@ def growbikenet(
         allow_edge_overlaps,
         city_boundary_file,
         street_network_file,
-        seed_points_file,
+        seed_point_file,
         seed_point_tags,
         PRESET_TAGS
     )
@@ -265,7 +265,7 @@ def growbikenet(
     elif seed_point_type in PRESET_TAGS:
         seed_point_tags = PRESET_TAGS[seed_point_type]
     elif seed_point_type == "file":
-        seed_points = gpd.read_file(seed_points_file)
+        seed_points = gpd.read_file(seed_point_file)
         seed_points = prepare_seed_points(seed_points, crs_projected)
 
     if seed_point_type == "tags" or seed_point_type in PRESET_TAGS:
