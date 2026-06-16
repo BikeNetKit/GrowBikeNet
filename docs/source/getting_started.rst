@@ -6,13 +6,13 @@ Get Started in 4 Steps
 
 1. Install GrowBikeNet by following the :doc:`installation` guide.
 
-2. Read the :ref:`overview-of-growbikenet` section below.
+2. To check that the installation worked, run the :doc:`mwe`.
 
-3. To check that the installation worked, run ``python examples/mwe.py`` or the Jupyter :doc:`mwe`.
+3. Walk through illustrative examples of growbikenet's features on our :doc:`usage` pages.
 
-4. Walk through illustrative examples of growbikenet's features on our :doc:`usage` pages.
+4. Consult the :doc:`reference_user` for complete details on using the package.
 
-Finally, consult the :doc:`reference_user` for complete details on using the package. Also, if you're not already familiar with `OSMnx`_ and `GeoPandas`_, make sure you read their user guides as GrowBikeNet uses their data structures.
+Also, if you're not already familiar with `OSMnx`_ and `GeoPandas`_, make sure you read their user guides as GrowBikeNet uses their data structures.
 
 .. _overview-of-growbikenet:
 
