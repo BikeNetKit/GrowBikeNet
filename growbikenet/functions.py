@@ -197,7 +197,7 @@ def import_network(street_network_file, crs_projected):
     ----------
     street_network_file : str
         The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
-        >>> g = ox.graph_from_place("Barcelona", network_type='all_public')
+        >>> g = ox.graph_from_place("Barcelona", network_type='drive')
         >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg")
     crs_projected : str
         Coordinate reference system that is used to project osm data.
@@ -293,7 +293,7 @@ def prepare_nodes_edges(nodes, edges, crs_projected):
     return nodes, edges
 
 
-def download_network(city_name, crs_projected, network_type='all_public', custom_filter=None, retain_all=True, city_boundary_geometry=None):
+def download_network(city_name, crs_projected, network_type='drive', custom_filter=None, retain_all=True, city_boundary_geometry=None):
     """Download and prepare a street network from OSM via OSMnx
 
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
@@ -305,7 +305,7 @@ def download_network(city_name, crs_projected, network_type='all_public', custom
         Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_geometry is set.
     crs_projected : str
         Coordinate reference system that is used to project osm data.
-    network_type : {“all”, “all_public”, “bike”, “drive”, “drive_service”, “walk”} 
+    network_type : {'all', 'all_public', 'bike', 'drive', 'drive_service', 'walk'} 
         What type of street network to retrieve if custom_filter is None.
     custom_filter : (str | list[str] | None)
         A custom ways filter to be used instead of the network_type presets
