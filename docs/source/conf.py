@@ -39,7 +39,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "numpydoc",
     "nbsphinx",
-    "jupyter_sphinx", # See: https://github.com/jupyter-widgets/ipywidgets/blob/80921ac9f9a18c43b02918ce3913818c188ae34c/docs/source/conf.py#L42C5-L42C30
+    "jupyter_sphinx.execute", # See: https://github.com/jupyter-widgets/ipywidgets/blob/80921ac9f9a18c43b02918ce3913818c188ae34c/docs/source/conf.py#L42C5-L42C30
     "matplotlib.sphinxext.plot_directive",
     "IPython.sphinxext.ipython_console_highlighting",
     "myst_parser",
