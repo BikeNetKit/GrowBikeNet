@@ -20,6 +20,7 @@ dependencies:
   - myst-nb
   - sphinx-book-theme
   - nbsphinx
+  - jupyter_sphinx
   - myst-parser
   - ipython
   - pip:
