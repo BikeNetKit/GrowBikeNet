@@ -190,6 +190,28 @@ def resolve_auto_parameters(
 
     return seed_point_type, seed_point_grid_spacing, seed_point_delta, seed_point_linking, existing_network_spacing
 
+def add_point_data_to_net(points, edges, matching_distance=500):
+    """Match point data to network edges
+
+    Parameters
+    ----------
+    points : geopandas.geodataframe.GeoDataFrame
+        A gdf of point geometries, optional having a column "num" containing an integer. This could be (number of) point events like crashes or citizen feedback to improve bike infrastructure. If "num" column is not provided, assumes 1 per point.
+    edges : geopandas.geodataframe.GeoDataFrame
+        A gdf of spatial network edges. This is the abstract, unrouted network of seed points.
+    matching_distance : int
+        Matching distance in meters
+
+    Returns
+    -------
+    edges_with_data : geopandas.geodataframe.GeoDataFrame
+        The same spatial network edges, but with a new int column "num_points" populated with the summed up "num" values of all points, matched to the closest links if within matching_distance. 
+    """
+
+    # To do: Write function
+    edges_with_data = gpd.GeoDataFrame()
+    return edges_with_data
+
 def import_network(street_network_file, crs_projected):
     """Import and project a street network from gpkg file
 
