@@ -302,7 +302,7 @@ def download_network(city_name, crs_projected, network_type='drive', custom_filt
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_geometry is set.
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file or street_network_file is set.
     crs_projected : str
         Coordinate reference system that is used to project osm data.
     network_type : {'all', 'all_public', 'bike', 'drive', 'drive_service', 'walk'} 
