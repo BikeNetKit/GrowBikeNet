@@ -4,13 +4,16 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "growbikenet"
-version = "0.10.1"
+version = "0.10.2"
 authors = [
-  { name = "Michael Szell" },
-  { name = "Manuel Knepper" },
-  { name = "Anastassia Vybornova" },
+    { name = "Michael Szell", email = "michael@szell.net"},
+    { name = "Manuel Knepper"},
+    { name = "Anastassia Vybornova"},
 ]
-maintainers = [{ name = "Manuel Knepper", email = "manuel.knepper@gmx.net" }]
+maintainers = [
+    { name = "Michael Szell", email = "michael@szell.net"},
+    { name = "Manuel Knepper", email = "manuel.knepper@gmx.net"},
+]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
 description = "BikeNetKit Python package to grow urban bicycle networks"
@@ -19,6 +22,8 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
+    "Intended Audience :: Other Audience",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -26,6 +31,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Natural Language :: English",
+    "Topic :: Scientific/Engineering :: GIS",
 ]
 requires-python = ">=3.10"
 dependencies = [
@@ -41,8 +47,11 @@ dependencies = [
 ]
 
 [project.urls]
+Homepage = "https://bikenetkit.org/"
+Documentation = "https://bikenetkit.github.io/GrowBikeNet/"
 Repository = "https://github.com/BikeNetKit/GrowBikeNet"
 Issues = "https://github.com/BikeNetKit/GrowBikeNet/issues"
+Changelog = "https://github.com/BikeNetKit/GrowBikeNet/blob/main/docs/changelog.md"
 
 [project.optional-dependencies]
 test = ["pytest"]
