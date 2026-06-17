@@ -198,7 +198,7 @@ def add_point_data_to_net(points, edges, matching_distance=500):
     points : geopandas.geodataframe.GeoDataFrame
         A gdf of point geometries, optional having a column "num" containing an integer. This could be (number of) point events like crashes or citizen feedback to improve bike infrastructure. If "num" column is not provided, assumes 1 per point.
     edges : geopandas.geodataframe.GeoDataFrame
-        A gdf of spatial network edges. This is the abstract, unrouted network of seed points.
+        A gdf of spatial network edges. This is the routed network of seed points.
     matching_distance : int
         Matching distance in meters
 
