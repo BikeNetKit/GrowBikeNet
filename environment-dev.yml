@@ -31,5 +31,5 @@ dependencies:
       - sphinx-copybutton
       - sphinx-gallery
       - python-slugify
-      - growbikenet>=0.10.2
+      - growbikenet>=0.10.1
       - furo
