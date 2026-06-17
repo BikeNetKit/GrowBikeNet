@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.10.3 (2026-06-17)
+
+- ➖ Removed unneeded dependencies
+- 📌 Pinned dependencies consistently
+- 🔥 Removed video code, temporarily
+
 ## Version 0.10.2 (2026-06-17)
 
 - 🐛 Fixed wrong street network definition "all_public", to "drive"
