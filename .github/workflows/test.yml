@@ -25,7 +25,7 @@ jobs:
         os: [ubuntu-latest]
       fail-fast: false
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: false
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     defaults:
       run:
@@ -40,7 +40,7 @@ jobs:
         run: echo "WEEK=$(date +'%V')" >> $GITHUB_ENV
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           create-args: python=${{ matrix.python-version }}
           environment-file: environment-dev.yml
@@ -72,7 +72,7 @@ jobs:
         run: echo "WEEK=$(date +'%V')" >> $GITHUB_ENV
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: mamba-org/setup-micromamba@v2
+        uses: mamba-org/setup-micromamba@v3
         with:
           create-args: python=${{ matrix.python-version }}
           environment-file: environment-dev.yml
