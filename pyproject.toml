@@ -54,6 +54,9 @@ doc = ["sphinx"]
 [tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["F401"]  # "Imported but unused: happens with packages
 
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
 [tool.setuptools.packages.find]
 exclude = [
     "examples*",
