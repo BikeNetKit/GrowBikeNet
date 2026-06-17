@@ -2,34 +2,25 @@ name: gbnenvdev
 channels:
   - conda-forge
 dependencies:
-  - python=3.12
-  - geopandas>=0.14
-  - jupyter
-  - jupyterlab
-  - ipywidgets
-  - ipykernel
+  - python>=3.12
   - matplotlib
-  - osmnx>=1.9.4
+  - osmnx>=2
   - tqdm
   - geojson
-  - pip
-  - momepy
+
+  # extra to non-dev env
+  - ipykernel
   - pytest
   - sphinx
   - numpydoc
   - myst-nb
-  - sphinx-book-theme
   - nbsphinx
   - jupyter_sphinx
   - myst-parser
-  - ipython
+  - pre-commit
   - pip:
       # not available via conda-forge:
-      - opencv-python
-      - pre-commit
       - sphinxcontrib-bibtex
       - sphinx-copybutton
-      - sphinx-gallery
-      - python-slugify
       - growbikenet>=0.10.1
       - furo

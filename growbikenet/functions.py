@@ -1,6 +1,7 @@
 """Utility functions for growbikenet."""
 
 import os
+import re
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -26,7 +27,7 @@ def validate_parameters(
         export_file_format,
         export_data_slug,
         export_plots,
-        export_video,
+        # export_video,
         allow_edge_overlaps,
         city_boundary_file,
         street_network_file,
@@ -96,8 +97,8 @@ def validate_parameters(
         raise ValueError("export_file_format must be 'geojson' or 'gpkg'")
     if type(export_plots) is not bool:
         raise TypeError("export_plots must be a boolean")
-    if type(export_video) is not bool:
-        raise TypeError("export_video must be a boolean")
+    # if type(export_video) is not bool:
+    #     raise TypeError("export_video must be a boolean")
     if city_boundary_file is not None and type(city_boundary_file) is not str:
         raise TypeError("city_boundary_file must be None or a string")
     if type(city_boundary_file) is str and not os.path.isfile(city_boundary_file):
@@ -113,6 +114,28 @@ def validate_parameters(
     if seed_point_tags is not None and seed_point_type!="tags":
         raise ValueError("When using seed_point_tags, seed_point_type must be set to 'tags'")
     return True
+
+
+def slugify(s): 
+    """Slugify a string
+    
+    Source: https://github.com/Chalarangelo/30-seconds-of-code/blob/master/content/snippets/python/s/slugify.md
+
+    Parameters
+    ----------
+    s : str
+        String to slufigy
+
+    Returns
+    -------
+    s : str
+        Slugified string
+    """
+    s = s.lower().strip()
+    s = re.sub(r'[^\w\s-]', '', s)
+    s = re.sub(r'[\s_-]+', '-', s)
+    s = re.sub(r'^-+|-+$', '', s)
+    return s
 
 
 def resolve_auto_parameters(
