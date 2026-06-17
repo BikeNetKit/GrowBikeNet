@@ -35,7 +35,7 @@ export_existing_network_spacing = [None, 500] # Full array: [None, 500]
 # Main
 import growbikenet as gbn
 import sys
-from slugify import slugify
+from growbikenet.functions import slugify
 
 city_name = "Barcelona"
 export_data_slug = "Barcelona"

@@ -1,6 +1,7 @@
 """Utility functions for growbikenet."""
 
 import os
+import re
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -113,6 +114,28 @@ def validate_parameters(
     if seed_point_tags is not None and seed_point_type!="tags":
         raise ValueError("When using seed_point_tags, seed_point_type must be set to 'tags'")
     return True
+
+
+def slugify(s): 
+    """Slugify a string
+    
+    Source: https://github.com/Chalarangelo/30-seconds-of-code/blob/master/content/snippets/python/s/slugify.md
+
+    Parameters
+    ----------
+    s : str
+        String to slufigy
+
+    Returns
+    -------
+    s : str
+        Slugified string
+    """
+    s = s.lower().strip()
+    s = re.sub(r'[^\w\s-]', '', s)
+    s = re.sub(r'[\s_-]+', '-', s)
+    s = re.sub(r'^-+|-+$', '', s)
+    return s
 
 
 def resolve_auto_parameters(

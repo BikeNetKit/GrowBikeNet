@@ -4,7 +4,6 @@ import networkx as nx
 import osmnx as ox
 import geopandas as gpd
 import pandas as pd
-from slugify import slugify
 import warnings
 from tqdm import tqdm
 import time
@@ -30,6 +29,7 @@ from growbikenet.functions import (
     update_seed_points_with_existing_bike_network,
     remove_edge_overlaps,
     import_network,
+    slugify,
 )
 from growbikenet.visualizations import make_video, create_plots
 
