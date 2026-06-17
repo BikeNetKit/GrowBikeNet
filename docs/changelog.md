@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.10.2 (2026-06-17)
+
+- 🐛 Fixed wrong street network definition "all_public", to "drive"
+- 🐛 Fixed existing bike net not being usable with street net file
+- 📝 Added more usage docs
+
 ## Version 0.10.1 (2026-06-15)
 
 - 🐛 Added missing checks for seed_point_tags
