@@ -10,8 +10,8 @@ authors:
   given-names: "Anastassia"
   orcid: "https://orcid.org/0000-0001-6915-2561"
 title: "GrowBikeNet"
-version: 0.10.1
-date-released: 2026-06-15
+version: 0.10.2
+date-released: 2026-06-17
 url: "https://github.com/BikeNetKit/GrowBikeNet"
 preferred-citation:
   type: article
