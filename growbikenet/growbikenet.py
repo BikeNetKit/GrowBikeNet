@@ -108,7 +108,7 @@ def growbikenet(
         If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary_file and street_network_file cannot both be set.
     street_network_file : str | None, default None
         If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
-        >>> g = ox.graph_from_place("Barcelona", network_type='all_public')
+        >>> g = ox.graph_from_place("Barcelona", network_type='drive')
         >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg").
         city_boundary_file and street_network_file cannot both be set.
     seed_point_file : str | None, default None
@@ -222,12 +222,12 @@ def growbikenet(
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         # Fetch street network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = download_network(city_name, crs_projected, network_type='all_public', retain_all=False, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir = download_network(city_name, crs_projected, network_type='drive', retain_all=False, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
 
-        if existing_network_spacing is not None: # update g_undir: add the existing bike network
-            nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=city_boundary_geometry)
-            progress_bar.update(1)
+    if existing_network_spacing is not None: # update g_undir: add the existing bike network
+        nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=city_boundary_geometry)
+        progress_bar.update(1)
     progress_bar.close()
 
 

@@ -20,6 +20,7 @@ dependencies:
   - myst-nb
   - sphinx-book-theme
   - nbsphinx
+  - jupyter_sphinx
   - myst-parser
   - ipython
   - pip:
@@ -30,5 +31,5 @@ dependencies:
       - sphinx-copybutton
       - sphinx-gallery
       - python-slugify
-      - growbikenet
+      - growbikenet>=0.10.1
       - furo
