@@ -8,7 +8,7 @@ Get Started in 4 Steps
 
 2. To check that the installation worked, run the :doc:`mwe`.
 
-3. Walk through illustrative examples of growbikenet's features on our :doc:`usage` pages.
+3. Walk through illustrative examples of GrowBikeNet's features on our :doc:`usage` pages.
 
 4. Consult the :doc:`reference_user` for complete details on using the package.
 
