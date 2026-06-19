@@ -22,5 +22,4 @@ dependencies:
       # not available via conda-forge:
       - sphinxcontrib-bibtex
       - sphinx-copybutton
-      - growbikenet>=0.10.2
       - furo
