@@ -23,7 +23,7 @@ GrowBikeNet can also be installed with pip, if all dependencies can be installed
 
 .. warning::
 
-    When using pip to install GrowBikeNet, you need to make sure that all dependencies are installed correctly. We do not recommend doing so. Using conda (see above) avoids the need to compile the dependencies yourself.
+    We do not recommend using pip, because you need to make sure that all dependencies of growbikenet are installed correctly. Using conda (see above) avoids the need to compile the dependencies yourself.
 
 Environment installations
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -36,7 +36,7 @@ install the package, and then to use or run the environment. Use either of the m
 With conda
 ^^^^^^^^^^
 
-Installation with `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`__ (or the faster `mamba <https://mamba.readthedocs.io/en/latest/index.html>`__). The following commands create a new environment with the name ``gbnenv``, configures it to install packages always from conda-forge, and installs GrowBikeNet in it:
+Installation with `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`__ (or the faster `mamba <https://mamba.readthedocs.io/en/latest/index.html>`__). The following commands create the ``gbnenv`` environment, configures it to install packages always from conda-forge, and installs GrowBikeNet in it:
 
 ::
 
