@@ -24,13 +24,15 @@ conda install -c conda-forge growbikenet
 ```
 
 ### Advanced and development installations
-For more installation options, see our [installation docs](https://bikenetkit.github.io/GrowBikeNet/installation/).
+For more installation options, see our [Installation docs](https://bikenetkit.github.io/GrowBikeNet/installation/).
 
 ## Usage
 We provide a minimum working example in two formats:
 
 - Python script ([examples/mwe.py](examples/mwe.py))
 - Jupyter notebook ([examples/mwe.ipynb](examples/mwe.ipynb))
+
+For a walkthrough with illustrative examples, see our [Usage docs](https://bikenetkit.github.io/GrowBikeNet/usage/).
 
 ## Docs
 Find more information in our docs: [https://bikenetkit.github.io/GrowBikeNet/](https://bikenetkit.github.io/GrowBikeNet/)
