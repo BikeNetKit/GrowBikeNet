@@ -17,31 +17,22 @@ The software downloads and pre-processes data from OpenStreetMap, prepares seed 
 
 ### The easy way
 
-The currently default way to install GrowBikeNet is using pip:
-
-```
-pip install growbikenet
-```
-
-<!-- > [!IMPORTANT]  
-> As of 2026-05-04, the conda-forge installation is not yet working. We will remove this note once it works.
-
-The best way to install GrowBikeNet is using [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html) and the `conda-forge` channel:
+The best way to install GrowBikeNet is using [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html) (or the faster [`mamba`](https://mamba.readthedocs.io/en/latest/index.html)) via the `conda-forge` channel:
 
 ```
 conda install -c conda-forge growbikenet
-``` -->
-
-If this does not work, consult our [installation docs](https://bikenetkit.github.io/GrowBikeNet/installation/).
+```
 
 ### Advanced and development installations
- See our [installation docs](https://bikenetkit.github.io/GrowBikeNet/installation/) for details.
+For more installation options, see our [Installation docs](https://bikenetkit.github.io/GrowBikeNet/installation/).
 
 ## Usage
 We provide a minimum working example in two formats:
 
 - Python script ([examples/mwe.py](examples/mwe.py))
 - Jupyter notebook ([examples/mwe.ipynb](examples/mwe.ipynb))
+
+For a walkthrough with illustrative examples, see our [Usage docs](https://bikenetkit.github.io/GrowBikeNet/usage/).
 
 ## Docs
 Find more information in our docs: [https://bikenetkit.github.io/GrowBikeNet/](https://bikenetkit.github.io/GrowBikeNet/)

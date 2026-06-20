@@ -8,7 +8,7 @@ dependencies:
   - tqdm
   - geojson
 
-  # extra to non-dev env
+  # additional to the non-dev env
   - ipykernel
   - pytest
   - sphinx
@@ -18,9 +18,11 @@ dependencies:
   - jupyter_sphinx
   - myst-parser
   - pre-commit
+  - jupyterlab
+  - pixi-kernel
+  - growbikenet
   - pip:
       # not available via conda-forge:
       - sphinxcontrib-bibtex
       - sphinx-copybutton
-      - growbikenet>=0.10.2
       - furo
