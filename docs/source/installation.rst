@@ -104,11 +104,9 @@ such:
 
    pixi run python examples/mwe.py
 
-..
+.. note::
 
-   | The first time you run code with Pixi, it might take a minute
-     longer, as Pixi resolves the environment’s dependencies only at
-     this point.
+    The first time you run code with Pixi, it might take a minute longer, as Pixi resolves the environment’s dependencies only at this point.
 
 Alternatively, start a pixi shell:
 
