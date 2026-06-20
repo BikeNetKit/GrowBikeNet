@@ -47,35 +47,6 @@ Installation with `conda <https://docs.conda.io/projects/conda/en/latest/index.h
    conda install python=3 growbikenet
 
 
-With Pixi
-^^^^^^^^^
-
-Installation with `Pixi <https://pixi.prefix.dev/latest/>`__ is easy and probably fastest.
-
-::
-
-   pixi init --channel conda-forge gbnenv
-   pixi add growbikenet
-
-At this point you can run growbikenet in the environment, for example as
-such:
-
-::
-
-   pixi run python examples/mwe.py
-
-..
-
-   | The first time you run code with Pixi, it might take a minute
-     longer, as Pixi resolves the environment’s dependencies only at
-     this point.
-
-Alternatively, start a pixi shell:
-
-::
-
-   pixi shell
-
 
 Run growbikenet in Jupyter lab
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -114,31 +85,37 @@ Once Jupyter lab opens, switch the kernel (Kernel > Change Kernel >
 gbnenv)
 
 
-With Pixi
-^^^^^^^^^
-
-Running growbikenet in Jupter lab with
-`Pixi <https://pixi.prefix.dev/latest/>`__ is straightforward:
-
-::
-
-   pixi run jupyter lab
-
-An instance of Jupyter lab is automatically going to open in your
-browser after the environment is built.
-
 Development installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you want to develop the project, `clone this
 repository <https://github.com/BikeNetKit/growbikenet/archive/refs/heads/main.zip>`__
-and create the environment via the
+and create the environment via `Pixi <https://pixi.prefix.dev/latest/>`__ and the
 ``environment-dev.yml`` file:
 
 ::
 
    pixi init --import environment-dev.yml
 
-The development environment is called ``gbnenvdev``. Make sure to also
+The development environment is called ``gbnenvdev``. At this point you can run growbikenet in the environment, for example as
+such:
+
+::
+
+   pixi run python examples/mwe.py
+
+..
+
+   | The first time you run code with Pixi, it might take a minute
+     longer, as Pixi resolves the environment’s dependencies only at
+     this point.
+
+Alternatively, start a pixi shell:
+
+::
+
+   pixi shell
+
+Make sure to also
 read `our contribution
 guidelines <https://github.com/BikeNetKit/GrowBikeNet?tab=contributing-ov-file#contributing-to-bikenetkit>`__.
