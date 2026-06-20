@@ -40,7 +40,7 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://bikenetkit.org/"
-Documentation = "https://bikenetkit.github.io/GrowBikeNet/"
+Documentation = "https://docs.bikenetkit.org/GrowBikeNet/"
 Repository = "https://github.com/BikeNetKit/GrowBikeNet"
 Issues = "https://github.com/BikeNetKit/GrowBikeNet/issues"
 Changelog = "https://github.com/BikeNetKit/GrowBikeNet/blob/main/docs/changelog.md"
