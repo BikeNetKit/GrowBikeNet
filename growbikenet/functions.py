@@ -10,6 +10,7 @@ from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point, MultiLineString
 from shapely.affinity import rotate
+from shapely.strtree import STRtree
 from tqdm import tqdm
 
 
@@ -213,9 +214,29 @@ def add_point_data_to_net(points, edges, matching_distance=500):
         The same spatial network edges, but with a new int column "num_points" populated with the summed up "num" values of all points, matched to the closest links if within matching_distance. 
     """
 
-    # To do: Write function
-    edges_with_data = gpd.GeoDataFrame()
-    return edges_with_data
+    points_projected = points.to_crs("EPSG:3857")
+
+    # Reasoning copied from osmnx.distance.nearest_edges()
+    geoms = edges['geometry']                            
+    
+    # Build an r-tree spatial index by position for subsequent iloc
+    rtree = STRtree(geoms)                              
+
+    points = points_projected['geometry']               
+    nums = points_projected['num']
+    pos = rtree.query_nearest(                          
+        points, 
+        max_distance = matching_distance, 
+        all_matches=False)
+
+    edges['num_points'] = 0 * len(edges)
+
+    # Add the number of events at each point to its nearest edge
+    for point_idx, nearest_edge_idx in zip(pos[0], pos[1]):
+        num = nums[point_idx]
+        edges.at[nearest_edge_idx, "num_points"] += num
+
+    return edges
 
 def import_network(street_network_file, crs_projected):
     """Import and project a street network from gpkg file
