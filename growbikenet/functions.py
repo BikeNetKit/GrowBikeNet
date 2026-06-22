@@ -32,6 +32,7 @@ def validate_parameters(
         street_network_file,
         seed_point_file,
         seed_point_tags,
+        point_data_file,
         PRESET_TAGS
     ):
     """ Check if user parameter input is valid. If not, raise an exception or warning
@@ -112,6 +113,10 @@ def validate_parameters(
         raise TypeError("seed_point_tags must be None or a dictionary")
     if seed_point_tags is not None and seed_point_type!="tags":
         raise ValueError("When using seed_point_tags, seed_point_type must be set to 'tags'")
+    if point_data_file is not None and type(point_data_file) is not str:
+        raise TypeError("point_data_file must be None or a string")
+    if type(point_data_file) is str and not os.path.isfile(point_data_file):
+        raise FileNotFoundError("point_data_file not found")
     return True
 
 

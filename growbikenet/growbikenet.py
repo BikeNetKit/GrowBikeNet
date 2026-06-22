@@ -186,6 +186,7 @@ def growbikenet(
         street_network_file,
         seed_point_file,
         seed_point_tags,
+        point_data_file,
         PRESET_TAGS
     )
 
