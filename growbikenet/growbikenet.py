@@ -90,8 +90,8 @@ def growbikenet(
         If set to 'auto', selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
         If set to 'triangulate_delaunay', uses Delaunay triangulation.
         If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid_square' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
-    existing_network_spacing : int, default None
-        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 25%, to ensure that the existing bicycle network is built first.
+    existing_network_spacing : None | 'auto' | int, default None
+        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
     export_data : bool, default True
         If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
     export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
