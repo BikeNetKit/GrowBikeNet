@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - dow_workflow
     paths:
       - "growbikenet/**"
       - "docs/**"
@@ -52,8 +51,8 @@ jobs:
         with:
           create-args: python=${{ matrix.python-version }}
           environment-file: environment-dev.yml
-          cache-environment: true
-          cache-environment-key: W${{ env.WEEK }}
+          cache-environment: false
+          # cache-environment-key: W${{ env.WEEK }}
 
       - name: Add Notebook Kernel
         run: python -m ipykernel install --user --name growbikenet --display-name "Python (growbikenet)"

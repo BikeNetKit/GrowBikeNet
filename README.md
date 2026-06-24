@@ -1,6 +1,6 @@
 # Bike Net Kit / Grow Bike Net
 
-[![Docs](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml/badge.svg)](https://bikenetkit.github.io/GrowBikeNet/)
+[![Docs](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml/badge.svg)](https://docs.bikenetkit.org/GrowBikeNet/)
 [![Test](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml)
 [![PyPI - Version](https://img.shields.io/pypi/v/growbikenet)](https://pypi.org/project/growbikenet/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -17,25 +17,14 @@ The software downloads and pre-processes data from OpenStreetMap, prepares seed 
 
 ### The easy way
 
-The currently default way to install GrowBikeNet is using pip:
-
-```
-pip install growbikenet
-```
-
-<!-- > [!IMPORTANT]  
-> As of 2026-05-04, the conda-forge installation is not yet working. We will remove this note once it works.
-
-The best way to install GrowBikeNet is using [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html) and the `conda-forge` channel:
+The best way to install GrowBikeNet is using [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html) (or the faster [`mamba`](https://mamba.readthedocs.io/en/latest/index.html)) via the `conda-forge` channel:
 
 ```
 conda install -c conda-forge growbikenet
-``` -->
-
-If this does not work, consult our [installation docs](https://bikenetkit.github.io/GrowBikeNet/installation/).
+```
 
 ### Advanced and development installations
- See our [installation docs](https://bikenetkit.github.io/GrowBikeNet/installation/) for details.
+For more installation options, see our [Installation docs](https://docs.bikenetkit.org/GrowBikeNet/installation/).
 
 ## Usage
 We provide a minimum working example in two formats:
@@ -43,8 +32,10 @@ We provide a minimum working example in two formats:
 - Python script ([examples/mwe.py](examples/mwe.py))
 - Jupyter notebook ([examples/mwe.ipynb](examples/mwe.ipynb))
 
+For a walkthrough with illustrative examples, see our [Usage docs](https://docs.bikenetkit.org/GrowBikeNet/usage/).
+
 ## Docs
-Find more information in our docs: [https://bikenetkit.github.io/GrowBikeNet/](https://bikenetkit.github.io/GrowBikeNet/)
+Find more information in our docs: [https://docs.bikenetkit.org/GrowBikeNet/](https://docs.bikenetkit.org/GrowBikeNet/)
 
 
 ## Supported by

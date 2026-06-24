@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "growbikenet"
-version = "0.10.2"
+version = "0.10.3"
 authors = [
     { name = "Michael Szell", email = "michael@szell.net"},
     { name = "Manuel Knepper"},
@@ -12,7 +12,6 @@ authors = [
 ]
 maintainers = [
     { name = "Michael Szell", email = "michael@szell.net"},
-    { name = "Manuel Knepper", email = "manuel.knepper@gmx.net"},
 ]
 license = "AGPL-3.0-or-later"
 readme = "README.md"
@@ -26,38 +25,35 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Natural Language :: English",
     "Topic :: Scientific/Engineering :: GIS",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
-    "geopandas>=0.14",
+    "geopandas>=1",
     "matplotlib",
-    "osmnx>=1.9.4",
+    "osmnx>=2",
     "geojson",
     "tqdm",
-    "pip",
-    "momepy",
-    "opencv-python",
-    "python-slugify",
 ]
 
 [project.urls]
 Homepage = "https://bikenetkit.org/"
-Documentation = "https://bikenetkit.github.io/GrowBikeNet/"
+Documentation = "https://docs.bikenetkit.org/GrowBikeNet/"
 Repository = "https://github.com/BikeNetKit/GrowBikeNet"
 Issues = "https://github.com/BikeNetKit/GrowBikeNet/issues"
 Changelog = "https://github.com/BikeNetKit/GrowBikeNet/blob/main/docs/changelog.md"
 
 [project.optional-dependencies]
 test = ["pytest"]
-doc = ["sphinx", "momepy"]
+doc = ["sphinx"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "__init__.py" = ["F401"]  # "Imported but unused: happens with packages
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.setuptools.packages.find]
 exclude = [

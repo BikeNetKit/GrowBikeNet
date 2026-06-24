@@ -4,7 +4,6 @@ import networkx as nx
 import osmnx as ox
 import geopandas as gpd
 import pandas as pd
-from slugify import slugify
 import warnings
 from tqdm import tqdm
 import time
@@ -31,8 +30,9 @@ from growbikenet.functions import (
     remove_edge_overlaps,
     import_network,
     add_point_data_to_net,
+    slugify,
 )
-from growbikenet.visualizations import make_video, create_plots
+from growbikenet.visualization import create_plots
 
 
 def growbikenet(
@@ -48,7 +48,7 @@ def growbikenet(
     export_file_format='geojson',
     export_data_slug=None,
     export_plots=False,
-    export_video=False,
+    # export_video=False,
     allow_edge_overlaps=False,
     city_boundary_file=None,
     street_network_file=None,
@@ -92,8 +92,8 @@ def growbikenet(
         If set to 'auto', selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
         If set to 'triangulate_delaunay', uses Delaunay triangulation.
         If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid_square' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
-    existing_network_spacing : int, default None
-        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 25%, to ensure that the existing bicycle network is built first.
+    existing_network_spacing : None | 'auto' | int, default None
+        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
     export_data : bool, default True
         If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
     export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
@@ -102,8 +102,6 @@ def growbikenet(
         If not None, the city_name will be slugified and used as the slug in the filename of the data export.
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
-    export_video : bool, default False
-        If set to True, video is saved to file (only possible if export_plots is set to True), overwriting existing ones.
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages and deletes growth stages that do not add anything new.
     city_boundary_file : str | None, default None
@@ -180,7 +178,6 @@ def growbikenet(
         export_file_format,
         export_data_slug,
         export_plots,
-        export_video,
         allow_edge_overlaps,
         city_boundary_file,
         street_network_file,
@@ -418,7 +415,7 @@ def growbikenet(
     edges_ranked = edges_ranked.astype({'length': int, 'length_cumulative': int})
 
     # Generate export data filename
-    if export_data or export_plots or export_video:
+    if export_data or export_plots:# or export_video:
         os.makedirs("./results/", exist_ok=True)
         if export_data_slug is None:
             city_string = city_name
@@ -463,7 +460,7 @@ def growbikenet(
         progress_bar.update(1)
         progress_bar.close()
 
-    if export_plots or export_video:
+    if export_plots:# or export_video:
         ### Visualize
 
         # Read in file to plot
@@ -488,18 +485,18 @@ def growbikenet(
             ranking,
         )
 
-        if export_video:
-            os.makedirs("./results/plots/ordering_"+ranking+"/video/", exist_ok=True)
-            make_video(img_folder_name="./results/plots/ordering_"+ranking+"/", fps=5)
+        # if export_video:
+        #     os.makedirs("./results/plots/ordering_"+ranking+"/video/", exist_ok=True)
+        #     make_video(img_folder_name="./results/plots/ordering_"+ranking+"/", fps=5)
 
     print("----------------------------------------------╯")
     if export_data:
         print("Data exported to results/")
     if export_plots:
         print("Plots exported to results/plots/")
-    if export_video:
-        print("Video exported to results/plots/")
-    if export_data or export_plots or export_video:
+    # if export_video:
+    #     print("Video exported to results/plots/")
+    if export_data or export_plots:# or export_video:
         print("----------------------------------------------")
 
     endtime = time.time()

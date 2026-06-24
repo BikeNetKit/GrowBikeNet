@@ -1,6 +1,7 @@
 """Utility functions for growbikenet."""
 
 import os
+import re
 import numpy as np
 import pandas as pd
 import geopandas as gpd
@@ -27,7 +28,7 @@ def validate_parameters(
         export_file_format,
         export_data_slug,
         export_plots,
-        export_video,
+        # export_video,
         allow_edge_overlaps,
         city_boundary_file,
         street_network_file,
@@ -78,8 +79,8 @@ def validate_parameters(
         raise ValueError("seed_point_linking must be 'auto' or 'triangulate_delaunay' or 'quadrangulate'")
     if seed_point_linking == 'quadrangulate' and (seed_point_type != 'grid_square' or existing_network_spacing is not None):
         raise ValueError("With seed_point_linking 'quadrangulate', seed_point_type must be set to 'grid_square' and existing_network_spacing must be set to None")
-    if type(existing_network_spacing) is not int and existing_network_spacing is not None:
-        raise TypeError("existing_network_spacing must be None or a positive integer")
+    if type(existing_network_spacing) is not int and existing_network_spacing is not None and existing_network_spacing != 'auto':
+        raise TypeError("existing_network_spacing must be None or 'auto' or a positive integer")
     if type(existing_network_spacing) is int and existing_network_spacing <= 0:
         raise ValueError("existing_network_spacing must be None or a positive integer")
     if type(existing_network_spacing) is int and seed_point_grid_spacing is int and existing_network_spacing >= seed_point_grid_spacing:
@@ -98,8 +99,8 @@ def validate_parameters(
         raise ValueError("export_file_format must be 'geojson' or 'gpkg'")
     if type(export_plots) is not bool:
         raise TypeError("export_plots must be a boolean")
-    if type(export_video) is not bool:
-        raise TypeError("export_video must be a boolean")
+    # if type(export_video) is not bool:
+    #     raise TypeError("export_video must be a boolean")
     if city_boundary_file is not None and type(city_boundary_file) is not str:
         raise TypeError("city_boundary_file must be None or a string")
     if type(city_boundary_file) is str and not os.path.isfile(city_boundary_file):
@@ -119,6 +120,28 @@ def validate_parameters(
     if type(point_data_file) is str and not os.path.isfile(point_data_file):
         raise FileNotFoundError("point_data_file not found")
     return True
+
+
+def slugify(s): 
+    """Slugify a string
+    
+    Source: https://github.com/Chalarangelo/30-seconds-of-code/blob/master/content/snippets/python/s/slugify.md
+
+    Parameters
+    ----------
+    s : str
+        String to slufigy
+
+    Returns
+    -------
+    s : str
+        Slugified string
+    """
+    s = s.lower().strip()
+    s = re.sub(r'[^\w\s-]', '', s)
+    s = re.sub(r'[\s_-]+', '-', s)
+    s = re.sub(r'^-+|-+$', '', s)
+    return s
 
 
 def resolve_auto_parameters(
@@ -193,6 +216,9 @@ def resolve_auto_parameters(
 
     if seed_point_delta == 'auto':
         seed_point_delta = int(np.ceil(seed_point_grid_spacing/4))
+
+    if existing_network_spacing == 'auto':
+        existing_network_spacing = int(np.ceil(seed_point_grid_spacing/2))
 
     return seed_point_type, seed_point_grid_spacing, seed_point_delta, seed_point_linking, existing_network_spacing
 
