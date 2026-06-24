@@ -342,7 +342,7 @@ def growbikenet(
     progress_bar.update(1)
 
     if point_data_file is not None:
-        grown_bikenet_edges = add_point_data_to_net(point_data_file, grown_bikenet_edges)
+        grown_bikenet_edges = add_point_data_to_net(point_data_file, grown_bikenet_edges, crs_projected)
 
     # Add distances between source and target from geometry
     grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length

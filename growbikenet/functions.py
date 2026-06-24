@@ -196,17 +196,19 @@ def resolve_auto_parameters(
 
     return seed_point_type, seed_point_grid_spacing, seed_point_delta, seed_point_linking, existing_network_spacing
 
-def add_point_data_to_net(points, edges, matching_distance=500):
+def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
     """Match point data to network edges
 
     Parameters
     ----------
     points : geopandas.geodataframe.GeoDataFrame
-        A gdf of point geometries, optional having a column "num" containing an integer. This could be (number of) point events like crashes or citizen feedback to improve bike infrastructure. If "num" column is not provided, assumes 1 per point.
+        A gdf of unprojected point geometries, optional having a column "num" containing an integer. This could be (number of) point events like crashes or citizen feedback to improve bike infrastructure. If "num" column is not provided, assumes 1 per point.
     edges : geopandas.geodataframe.GeoDataFrame
-        A gdf of spatial network edges. This is the routed network of seed points.
+        A gdf of projected spatial network edges. This is the routed network of seed points.
     matching_distance : int
         Matching distance in meters
+    crs_projected : str
+        Coordinate reference system that is used to project osm data.
 
     Returns
     -------
@@ -214,29 +216,36 @@ def add_point_data_to_net(points, edges, matching_distance=500):
         The same spatial network edges, but with a new int column "num_points" populated with the summed up "num" values of all points, matched to the closest links if within matching_distance. 
     """
 
-    points_projected = points.to_crs("EPSG:3857")
+    edges_with_data = edges.copy()
+
+    points_projected = points.to_crs(crs_projected)
+
+    # If column "num" is not provided assume 1 event per point
+    if 'num' in points_projected.columns:
+        nums = points_projected['num']
+    else:
+        num = [1] * len(points_projected)
 
     # Reasoning copied from osmnx.distance.nearest_edges()
-    geoms = edges['geometry']                            
+    edges_geoms = edges_with_data['geometry']                            
     
     # Build an r-tree spatial index by position for subsequent iloc
-    rtree = STRtree(geoms)                              
+    rtree = STRtree(edges_geoms)                              
 
-    points = points_projected['geometry']               
-    nums = points_projected['num']
+    points_geoms = points_projected['geometry']               
     pos = rtree.query_nearest(                          
-        points, 
+        points_geoms, 
         max_distance = matching_distance, 
         all_matches=False)
 
-    edges['num_points'] = 0 * len(edges)
+    edges_with_data['num_points'] = 0 * len(edges_with_data)
 
     # Add the number of events at each point to its nearest edge
     for point_idx, nearest_edge_idx in zip(pos[0], pos[1]):
         num = nums[point_idx]
-        edges.at[nearest_edge_idx, "num_points"] += num
+        edges_with_data.at[nearest_edge_idx, "num_points"] += num
 
-    return edges
+    return edges_with_data
 
 def import_network(street_network_file, crs_projected):
     """Import and project a street network from gpkg file
