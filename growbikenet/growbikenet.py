@@ -29,6 +29,7 @@ from growbikenet.functions import (
     update_seed_points_with_existing_bike_network,
     remove_edge_overlaps,
     import_network,
+    add_point_data_to_net,
     add_trip_data_to_net,
     slugify,
 )
@@ -54,6 +55,7 @@ def growbikenet(
     street_network_file=None,
     seed_point_file=None,
     seed_point_tags=None,
+    point_data_file=None,
     trip_data_file=None,
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
@@ -99,22 +101,24 @@ def growbikenet(
     export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
         File format for the data export, relevant if export_data set to True. Default 'geojson', also possible 'gpkg'. If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
     export_data_slug : str | None, default None
-        If not set to None, the city_name will be slugified and used as the slug in the filename of the data export.
+        If not None, the city_name will be slugified and used as the slug in the filename of the data export.
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages and deletes growth stages that do not add anything new.
     city_boundary_file : str | None, default None
-        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary_file and street_network_file cannot both be set.
-    street_network_file : str | None, default None
-        If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
+        If not None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary_file and street_network_file cannot both be set.
+    street_network_file : None | str, default None
+        If not None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
         >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg").
         city_boundary_file and street_network_file cannot both be set.
-    seed_point_file : str | None, default None
-        If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
+    seed_point_file : None | str, default None
+        If not None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
+    point_data_file : None | str, default None
+        If not None, an additional data set of points will be loaded from this file, representing point events like crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events.
     trip_data_file : None | str, default None
         If not None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination.
 
@@ -183,6 +187,7 @@ def growbikenet(
         street_network_file,
         seed_point_file,
         seed_point_tags,
+        point_data_file,
         PRESET_TAGS
     )
 
@@ -336,6 +341,9 @@ def growbikenet(
 
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
+
+    if point_data_file is not None:
+        grown_bikenet_edges = add_point_data_to_net(point_data_file, grown_bikenet_edges, crs_projected)
 
     # Add distances between source and target from geometry
     grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length

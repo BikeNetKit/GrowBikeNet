@@ -11,6 +11,7 @@ from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point, MultiLineString
 from shapely.affinity import rotate
+from shapely.strtree import STRtree
 from tqdm import tqdm
 
 
@@ -33,6 +34,7 @@ def validate_parameters(
         street_network_file,
         seed_point_file,
         seed_point_tags,
+        point_data_file,
         PRESET_TAGS
     ):
     """ Check if user parameter input is valid. If not, raise an exception or warning
@@ -113,6 +115,10 @@ def validate_parameters(
         raise TypeError("seed_point_tags must be None or a dictionary")
     if seed_point_tags is not None and seed_point_type!="tags":
         raise ValueError("When using seed_point_tags, seed_point_type must be set to 'tags'")
+    if point_data_file is not None and type(point_data_file) is not str:
+        raise TypeError("point_data_file must be None or a string")
+    if type(point_data_file) is str and not os.path.isfile(point_data_file):
+        raise FileNotFoundError("point_data_file not found")
     return True
 
 
@@ -243,6 +249,58 @@ def add_trip_data_to_net(trips, nodes, edges, crs_projected, matching_distance=5
 
     # To do: Write function
     edges_with_data = gpd.GeoDataFrame()
+    return edges_with_data
+
+
+def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
+    """Match point data to network edges
+
+    Parameters
+    ----------
+    points : geopandas.geodataframe.GeoDataFrame
+        A gdf of unprojected point geometries, optional having a column "num" containing an integer. This could be (number of) point events like crashes or citizen feedback to improve bike infrastructure. If "num" column is not provided, assumes 1 per point.
+    edges : geopandas.geodataframe.GeoDataFrame
+        A gdf of projected spatial network edges. This is the routed network of seed points.
+    matching_distance : int
+        Matching distance in meters
+    crs_projected : str
+        Coordinate reference system that is used to project osm data.
+
+    Returns
+    -------
+    edges_with_data : geopandas.geodataframe.GeoDataFrame
+        The same spatial network edges, but with a new int column "num_points" populated with the summed up "num" values of all points, matched to the closest links if within matching_distance. 
+    """
+
+    edges_with_data = edges.copy()
+
+    points_projected = points.to_crs(crs_projected)
+
+    # If column "num" is not provided assume 1 event per point
+    if 'num' in points_projected.columns:
+        nums = points_projected['num']
+    else:
+        num = [1] * len(points_projected)
+
+    # Reasoning copied from osmnx.distance.nearest_edges()
+    edges_geoms = edges_with_data['geometry']                            
+    
+    # Build an r-tree spatial index by position for subsequent iloc
+    rtree = STRtree(edges_geoms)                              
+
+    points_geoms = points_projected['geometry']               
+    pos = rtree.query_nearest(                          
+        points_geoms, 
+        max_distance = matching_distance, 
+        all_matches=False)
+
+    edges_with_data['num_points'] = 0 * len(edges_with_data)
+
+    # Add the number of events at each point to its nearest edge
+    for point_idx, nearest_edge_idx in zip(pos[0], pos[1]):
+        num = nums[point_idx]
+        edges_with_data.at[nearest_edge_idx, "num_points"] += num
+
     return edges_with_data
 
 
