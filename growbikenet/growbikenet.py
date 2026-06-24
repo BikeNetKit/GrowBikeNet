@@ -29,6 +29,7 @@ from growbikenet.functions import (
     update_seed_points_with_existing_bike_network,
     remove_edge_overlaps,
     import_network,
+    add_trip_data_to_net,
     slugify,
 )
 from growbikenet.visualization import create_plots
@@ -53,6 +54,7 @@ def growbikenet(
     street_network_file=None,
     seed_point_file=None,
     seed_point_tags=None,
+    trip_data_file=None,
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
 
@@ -113,6 +115,8 @@ def growbikenet(
         If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
+    trip_data_file : None | str, default None
+        If not None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination.
 
     Returns
     -------

@@ -216,6 +216,36 @@ def resolve_auto_parameters(
 
     return seed_point_type, seed_point_grid_spacing, seed_point_delta, seed_point_linking, existing_network_spacing
 
+
+def add_trip_data_to_net(trips, nodes, edges, crs_projected, matching_distance=500):
+    """Match trip data to network edges
+
+    First, match origin and destination points given in trips to the nodes. Only consider trips where both origins and nodes are matched within matching_distance. Then, for each trip, find the shortest path over the edges from matched origin node to matched destination node, and add 1 (or optionally "num" if column provided in trips) to the affected edges.
+
+    Parameters
+    ----------
+    trips : pandas DataFrame
+        A df of unprojected origin-destination coordinates (columns: origin, destination), with each row encoding a trip. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
+    nodes : geopandas.geodataframe.GeoDataFrame
+        A gdf of projected spatial network nodes. This network is the abstract, unrouted network of seed points.
+    edges : geopandas.geodataframe.GeoDataFrame
+        A gdf of projected spatial network edges. This network is the abstract, unrouted network of seed points.
+    crs_projected : str
+        Coordinate reference system that is used to project spatial data.
+    matching_distance : int
+        Matching distance in meters
+
+    Returns
+    -------
+    edges_with_data : geopandas.geodataframe.GeoDataFrame
+        The same projected spatial network edges, but with a new int column "num_trips" populated with the summed up "num" values of all trips where both origins and destinations could be matched to the closest network nodes within matching_distance. 
+    """
+
+    # To do: Write function
+    edges_with_data = gpd.GeoDataFrame()
+    return edges_with_data
+
+
 def import_network(street_network_file, crs_projected):
     """Import and project a street network from gpkg file
 
