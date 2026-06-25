@@ -58,7 +58,7 @@ def test_rank_df(test_data_rank, method, validation_data_rank):
 
 
 @pytest.fixture
-def seed_point_delta():
+def seed_point_snap_distance():
     return 500
 
 
@@ -86,10 +86,10 @@ def filtered_seed_points():
 
 
 def test_filter_seed_points(
-    snapped_seed_points, filtered_seed_points, seed_point_delta
+    snapped_seed_points, filtered_seed_points, seed_point_snap_distance
 ):
     assert_frame_equal(
-        filter_seed_points(snapped_seed_points, seed_point_delta),
+        filter_seed_points(snapped_seed_points, seed_point_snap_distance),
         filtered_seed_points,
         check_dtype=False,
     )
