@@ -2,8 +2,8 @@
 
 import growbikenet as gbn
 
-edges_ranked = gbn.growbikenet("Barcelona",
-                              seed_point_type="park",
-                              street_network_file="./Barcelona_streets.gpkg",
+edges_ranked = gbn.growbikenet("Municipality of Athens",
+                                seed_point_linking="triangulate_delaunay",
+                              existing_network_spacing=500,
                               export_file_format="gpkg")
 

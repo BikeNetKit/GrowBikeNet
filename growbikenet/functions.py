@@ -1,10 +1,12 @@
 """Utility functions for growbikenet."""
 
+from growbikenet.constants import *
 import os
 import re
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+import warnings
 import networkx as nx
 import osmnx as ox
 from scipy.spatial import Delaunay
@@ -307,11 +309,12 @@ def prepare_nodes_edges(nodes, edges, crs_projected):
     """
 
     # Replace after dropping edges with key = 1
-    edges = edges.loc[:,:,0].copy()
-    # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
+    if not edges.empty:
+        edges = edges.loc[:,:,0].copy()
+        # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
 
-    # Project geometries of nodes, edges
-    edges = edges.to_crs(crs_projected)
+        # Project geometries of nodes, edges
+        edges = edges.to_crs(crs_projected)
     nodes = nodes.to_crs(crs_projected)
 
     # Add osm ID as column to node gdf
@@ -509,6 +512,9 @@ def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_bo
     nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, crs_projected, custom_filter=cf, retain_all=True, city_boundary_geometry=city_boundary_geometry)
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
 
+    # Intermezzo: Get filtered existing network by component length
+    nodes_exnw_filtered, _, _ = filter_network_by_component_length(g_undir_exnw, crs_projected)
+
     # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
     # We delete those parts next:
     # Take largest connected component lcc of the merged network
@@ -517,12 +523,54 @@ def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_bo
     # Restrict nodes and edges of the existing bike net to this lcc
     valid_node_osmids = g_undir.nodes()
     nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
+    nodes_exnw_filtered = nodes_exnw_filtered[nodes_exnw_filtered['osmid'].isin(valid_node_osmids)]
     # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
     edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
     edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
     nodes, edges = nx_to_nodes_edges(g_undir, crs_projected)
 
-    return nodes, edges, g_undir, nodes_exnw, edges_exnw
+    return nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered
+
+
+def filter_network_by_component_length(g_undir, crs_projected):
+    """Filter a network to remove too short components
+    
+    The application is that g_undir is all the components of the existing bicycle network, but we do not snap seed points to components shorter than EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH. So we create a new set of nodes where the nodes from the too small components are removed.
+
+    Parameters
+    ----------
+    g_undir : networkx.classes.multigraph.MultiGraph
+        Street network networkX graph, undirected
+    crs_projected : str
+        Coordinate reference system that is used to project osm data.
+
+    Returns
+    -------
+    nodes_filtered : geopandas.geodataframe.GeoDataFrame
+        Filtered OSM nodes of the street network, projected
+    edges_filtered : geopandas.geodataframe.GeoDataFrame
+        Filtered OSM edges of the street network, projected
+    g_undir_filtered : networkx.classes.multigraph.MultiGraph
+        Filtered street networkX graph, undirected
+    """
+
+    g_undir_filtered = nx.MultiGraph()
+    components_by_length = [g_undir.subgraph(c).copy() for c in sorted(nx.connected_components(g_undir), key=lambda c: sum([l[-1] for l in g_undir.subgraph(c).copy().edges.data('length')]), reverse=True)]
+    for c in components_by_length: # Create the union of long enough components. Probably there is a way to do this faster/vectorized.
+        if c.number_of_edges() and sum([l[-1] for l in c.edges.data('length')]) >= EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH: # no matter the min length, remove isolated nodes
+            g_undir_filtered = nx.union(g_undir_filtered, c)
+        else:
+            break
+    # Get nodes_exnw_filtered
+    nodes_filtered, edges_filtered = ox.graph_to_gdfs(
+        g_undir_filtered,
+        nodes=True,
+        edges=True,
+        node_geometry=True,
+        fill_edge_geometry=True
+        )
+    nodes_filtered, _ = prepare_nodes_edges(nodes_filtered, gpd.GeoDataFrame(), crs_projected)
+    return nodes_filtered, edges_filtered, g_undir_filtered
 
 
 def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, crs_projected):
@@ -535,7 +583,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     seed_points_snapped : geopandas.geodataframe.GeoDataFrame
         Snapped seed points on the street network, constructed with seed_point_grid_spacing
     nodes_exnw : geopandas.geodataframe.GeoDataFrame
-        Nodes of the existing bike network
+        Nodes of the existing bike network, after shortest components below EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH have been filtered out
     existing_network_spacing : int
         Positive integer denoting spacing between seed points, in meters, only on the existing bicycle network.
     crs_projected : str

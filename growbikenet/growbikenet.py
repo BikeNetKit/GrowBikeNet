@@ -1,3 +1,4 @@
+from growbikenet.constants import *
 import os
 import numpy as np
 import networkx as nx
@@ -147,19 +148,7 @@ def growbikenet(
     """
     starttime = time.time()
 
-    # Constants
-    # Pre-defined tags to select tags as seed points
-    PRESET_TAGS = {
-                "rail": {"railway": ["station", "halt"]},
-                "school": {"amenity": ["kindergarten", "school", "college", "university"]},
-                "park": {"leisure": ["park", "garden", "nature_reserve", "bathing_place"]},
-                }
-    # Orientation order limits between street networks with:
-    # 1) negligible grid elements, 2) some grid elements, 3) grid.
-    # I aimed to use the tercile limits from the paper [4]_ (Fig 2), but the values
-    # here are lower for unknown reasons, also with the unweighted version. Also, I 
-    # wanted to have Barcelona in the grid category. So I lowered the limits.
-    PHI_LIMITS = [0.02, 0.08] # Tercile limits in the paper: 0.033, 0.161
+    
     
     validate_parameters(
         city_name,
@@ -223,7 +212,7 @@ def growbikenet(
         progress_bar.update(1)
 
     if existing_network_spacing is not None: # update g_undir: add the existing bike network
-        nodes, edges, g_undir, nodes_exnw, edges_exnw = update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
     progress_bar.close()
 
@@ -283,7 +272,7 @@ def growbikenet(
     progress_bar.update(1)
 
     if existing_network_spacing is not None:
-        seed_points_snapped_filtered = update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw, existing_network_spacing, crs_projected)
+        seed_points_snapped_filtered = update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing, crs_projected)
         progress_bar.update(1)
     progress_bar.close()
 
