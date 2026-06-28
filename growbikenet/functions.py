@@ -891,7 +891,7 @@ def snap_seed_points(seed_points, nodes):
 
 
 def filter_seed_points(seed_points_snapped, seed_point_snap_distance):
-    """Remove seed_points that are further than delta away from an actual osm node
+    """Remove seed_points that are further than the snap distance away from an actual osm node
 
     Parameters
     ----------
@@ -903,7 +903,7 @@ def filter_seed_points(seed_points_snapped, seed_point_snap_distance):
     Returns
     -------
     seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-        seed_points within delta away from an actual osm node, only columns are osmid and the associated osm geometry
+        seed_points within snap distance away from an actual osm node, only columns are osmid and the associated osm geometry
     """
     gdf = seed_points_snapped.copy()
 
