@@ -492,24 +492,10 @@ def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_bo
     edges_exnw : geopandas.geodataframe.GeoDataFrame
         OSM edges of the corresponding bike network, projected
     """
-    cf = ['["cycleway"~"track"]',
-          '["highway"~"cycleway"]',
-          '["highway"~"path"]["bicycle"~"designated"]',
-          '["cycleway:right"~"track"]',
-          '["cycleway:left"~"track"]',
-          '["cycleway:both"~"track"]',
-          '["cycleway:right"~"opposite_track"]', # deprecated, but could still exist
-          '["cycleway:left"~"opposite_track"]', # deprecated, but could still exist
-          '["cycleway:both"~"opposite_track"]', # deprecated, but could still exist
-          '["cyclestreet"]',
-          '["highway"~"living_street"]'
-        ]
-    for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cycleway:both", "cyclestreet"]:
-        if custom_tag not in ox.settings.useful_tags_way:
-            ox.settings.useful_tags_way.extend(custom_tag)
+    
     # Fetch protected bike network data from osmnx
     # Due to retain_all=True, this fetches all the connected components
-    nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, crs_projected, custom_filter=cf, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+    nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, crs_projected, custom_filter=PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
 
     # Intermezzo: Get filtered existing network by component length
