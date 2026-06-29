@@ -10,7 +10,7 @@ export_data_slug : str, default None
 export_file_format : str, default "geojson"
     File format for the data export. Default "geojson", also possible "gpkg". If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
 city_boundary : (str | None), default None
-    If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp".
+    If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary shape or gpkg file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen_city_boundary.shp".
 
 Notes
 -------

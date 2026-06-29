@@ -106,8 +106,6 @@ def validate_parameters(
         raise TypeError("city_boundary must be None or a string")
     if type(import_files['city_boundary']) is str and not os.path.isfile(import_files['city_boundary']):
         raise FileNotFoundError("city_boundary not found")
-    if import_files['city_boundary'] is not None and import_files['street_network'] is not None:
-        raise ValueError("city_boundary and street_network cannot both be set")
     if type(import_files['street_network']) is str and not os.path.isfile(import_files['street_network']):
         raise FileNotFoundError("street_network not found")
     if type(import_files['seed_points']) is str and not os.path.isfile(import_files['seed_points']):

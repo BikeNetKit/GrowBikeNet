@@ -49,6 +49,7 @@ def test_growbikenet_case_success_offline2(create_validation_gdf_athens):
             ranking="betweenness_centrality",
             export_data=False,
             import_files={
+                "city_boundary":"./tests/test_data/athens_city_boundary.gpkg",
                 "street_network":"./tests/test_data/athens_street_network.gpkg",
                 "bike_network":"./tests/test_data/athens_bike_network.gpkg",
             }
