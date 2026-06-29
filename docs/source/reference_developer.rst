@@ -9,6 +9,13 @@ growbikenet.growbikenet
 .. automodule:: growbikenet.growbikenet
    :members:
 
+growbikenet.constants
+---------------------
+
+.. automodule:: growbikenet.constants
+   :members:
+   :private-members:
+
 growbikenet.functions
 ---------------------
 
@@ -16,4 +23,16 @@ growbikenet.functions
    :members:
    :private-members:
 
-   
+growbikenet.settings
+--------------------
+
+.. automodule:: growbikenet.settings
+   :members:
+   :private-members:
+
+growbikenet.visualization
+-------------------------
+
+.. automodule:: growbikenet.visualization
+   :members:
+   :private-members:
