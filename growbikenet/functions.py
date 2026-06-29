@@ -765,10 +765,6 @@ def get_principal_bearing(G):
         The principal bearing, precise to 5 degrees.
     """
 
-    bearingbins = (
-        72  # number of bins to determine bearing. e.g. 72 will create 5 degrees bins
-    )
-
     bearings = {}
     # weight bearings by length (meters)
     city_bearings = []
@@ -779,8 +775,8 @@ def get_principal_bearing(G):
             pass  # Bearings cannot be calculated in rare edge cases.
     b = pd.Series(city_bearings)
     bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop="True")
-    bins = np.arange(bearingbins + 1) * 360 / bearingbins
-    count = count_and_merge(bearingbins, bearings)
+    bins = np.arange(constants.BEARING_BINS + 1) * 360 / constants.BEARING_BINS
+    count = count_and_merge(constants.BEARING_BINS, bearings)
     principal_bearing = bins[np.where(count == max(count))][0]
 
     return principal_bearing
