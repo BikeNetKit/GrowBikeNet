@@ -31,11 +31,8 @@ def validate_parameters(
         export_plots,
         # export_video,
         allow_edge_overlaps,
-        city_boundary_file,
-        street_network_file,
-        seed_point_file,
+        import_files,
         seed_point_tags,
-        PRESET_TAGS
     ):
     """ Check if user parameter input is valid. If not, raise an exception or warning
     
@@ -67,9 +64,9 @@ def validate_parameters(
         raise TypeError("seed_point_grid_spacing must be 'auto' or an integer")
     if type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:
         raise ValueError("seed_point_grid_spacing must be a positive integer")
-    if seed_point_type == 'file' and type(seed_point_file) is None:
-        raise ValueError("With seed_point_type 'file', a seed_point_file must be provided")
-    if seed_point_type == 'tags' and type(seed_point_file) is None:
+    if seed_point_type == 'file' and type(seed_point) is None:
+        raise ValueError("With seed_point_type 'file', a seed_point must be provided")
+    if seed_point_type == 'tags' and type(seed_point) is None:
         raise ValueError("With seed_point_type 'tags', seed_point_tags must be provided")
     if type(seed_point_snap_distance) is not int and seed_point_snap_distance != 'auto':
         raise TypeError("seed_point_snap_distance must be 'auto' or an integer")
@@ -101,16 +98,21 @@ def validate_parameters(
         raise TypeError("export_plots must be a boolean")
     # if type(export_video) is not bool:
     #     raise TypeError("export_video must be a boolean")
-    if city_boundary_file is not None and type(city_boundary_file) is not str:
-        raise TypeError("city_boundary_file must be None or a string")
-    if type(city_boundary_file) is str and not os.path.isfile(city_boundary_file):
-        raise FileNotFoundError("city_boundary_file not found")
-    if city_boundary_file is not None and street_network_file is not None:
-        raise ValueError("city_boundary_file and street_network_file cannot both be set")
-    if type(street_network_file) is str and not os.path.isfile(street_network_file):
-        raise FileNotFoundError("street_network_file not found")
-    if type(seed_point_file) is str and not os.path.isfile(seed_point_file):
-        raise FileNotFoundError("seed_point_file not found")
+
+    # Import files
+    if type(import_files) is not dict and not set(import_files.keys()) <= set(['city_boundary','street_network','bike_network','seed_point']): # Keys must be a subset of those
+        raise TypeError("bike_network must be a dict with possible keys 'city_boundary','street_network','bike_network','seed_point'")
+    if import_files['city_boundary'] is not None and type(import_files['city_boundary']) is not str:
+        raise TypeError("city_boundary must be None or a string")
+    if type(import_files['city_boundary']) is str and not os.path.isfile(import_files['city_boundary']):
+        raise FileNotFoundError("city_boundary not found")
+    if import_files['city_boundary'] is not None and import_files['street_network'] is not None:
+        raise ValueError("city_boundary and street_network cannot both be set")
+    if type(import_files['street_network']) is str and not os.path.isfile(import_files['street_network']):
+        raise FileNotFoundError("street_network not found")
+    if type(import_files['seed_point']) is str and not os.path.isfile(import_files['seed_point']):
+        raise FileNotFoundError("seed_point not found")
+        
     if seed_point_tags is not None and type(seed_point_tags) is not dict:
         raise TypeError("seed_point_tags must be None or a dictionary")
     if seed_point_tags is not None and seed_point_type!="tags":
@@ -218,12 +220,12 @@ def resolve_auto_parameters(
 
     return seed_point_type, seed_point_grid_spacing, seed_point_snap_distance, seed_point_linking, existing_network_spacing
 
-def import_network(street_network_file, crs_projected):
+def import_network(street_network, crs_projected):
     """Import and project a street network from gpkg file
 
     Parameters
     ----------
-    street_network_file : str
+    street_network : str
         The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
         >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg")
@@ -242,8 +244,8 @@ def import_network(street_network_file, crs_projected):
         Convex hull of the street network
     """
 
-    nodes = gpd.read_file(street_network_file, layer='nodes')
-    edges = gpd.read_file(street_network_file, layer='edges')
+    nodes = gpd.read_file(street_network, layer='nodes')
+    edges = gpd.read_file(street_network, layer='edges')
 
     # Set indices as required by osmnx.convert.graph_from_gdfs
     # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
@@ -331,7 +333,7 @@ def download_network(city_name, crs_projected, network_type='drive', custom_filt
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file or street_network_file is set.
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary or street_network is set.
     crs_projected : str
         Coordinate reference system that is used to project osm data.
     network_type : {'all', 'all_public', 'bike', 'drive', 'drive_service', 'walk'} 
