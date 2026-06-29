@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 
 def create_plots(
-    routed_edges_gdf, seed_points_snapped, streetcolor, edgecolor, seedcolor, lws, ranking
+    routed_edges_gdf, seed_points_snapped, ranking
 ):
 
     for ordering in tqdm(
@@ -26,15 +26,15 @@ def create_plots(
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
         # first, plot street network as "base line"
-        routed_edges_gdf.plot(ax=ax, color=streetcolor, lw=lws["street"], zorder=0)
+        routed_edges_gdf.plot(ax=ax, color=settings.viz.color['street'], lw=settings.viz.line_width['street'], zorder=0)
 
         # plot all edges up to current rank
 
         routed_edges_gdf[routed_edges_gdf["ordering_"+ranking] <= ordering].plot(
-            ax=ax, color=edgecolor, lw=lws["bike"], zorder=1
+            ax=ax, color=settings.viz.color['edge'], lw=settings.viz.line_width['bike'], zorder=1
         )
 
-        seed_points_snapped.plot(ax=ax, color=seedcolor, zorder=2)
+        seed_points_snapped.plot(ax=ax, color=settings.viz.color['seed_point'], zorder=2)
 
         ax.set_axis_off()
 

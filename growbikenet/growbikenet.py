@@ -438,22 +438,10 @@ def growbikenet(
         # Read in file to plot
         routed_edges_gdf = gpd.read_file(settings.export_path['results']+export_data_filename, layer="Grown bike network")
 
-        # Viz/plot settings (move to config file later)
-        # Define color palette (from Michael's project: https://github.com/mszell/bikenwgrowth/blob/main/parameters/parameters.py)
-        streetcolor = "#999999"
-        edgecolor = "#0EB6D2"
-        seedcolor = "#ff7338"
-        # Define linewidths
-        lws = {"street": 0.75, "bike": 2}
-
         os.makedirs(settings.export_path['plots']+"ordering_"+ranking+"/", exist_ok=True)
         create_plots(
             routed_edges_gdf,
             seed_points_snapped_filtered,
-            streetcolor,
-            edgecolor,
-            seedcolor,
-            lws,
             ranking,
         )
 

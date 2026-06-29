@@ -13,6 +13,8 @@ seed_point_snap_distance : 'auto' | int, default 'auto'
     Auto-value is ceil(seed_point_grid_spacing*constants.SEED_POINT_SNAP_DISTANCE_FACTOR). If integer, must be positive.
 random_seed : int
     Random number generator seed for reproducibility
+viz : dict
+    Dictionary of visualization settings
 """
 
 export_path = {
@@ -25,3 +27,16 @@ crs_projected = '3857'
 export_file_format = 'gpkg'
 seed_point_snap_distance = 'auto'
 random_seed = 42
+
+# Viz/plot settings
+viz = {
+    "color":{
+        "street":"#999999",
+        "edge":"#0EB6D2",
+        "seed_point":"#FF7338"
+    },
+    "line_width":{
+        "street": 0.75,
+        "bike": 2
+    },
+}
