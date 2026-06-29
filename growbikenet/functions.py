@@ -33,7 +33,11 @@ def validate_settings():
         raise TypeError("settings.crs_projected must be a string")
     if settings.export_file_format != "geojson" and settings.export_file_format != "gpkg":
         raise ValueError("settings.export_file_format must be 'geojson' or 'gpkg'")
-    # to do: check export_path
+    # To do: check export_path
+    if type(settings.seed_point_snap_distance) is not int and settings.seed_point_snap_distance != 'auto':
+        raise TypeError("settings.seed_point_snap_distance must be 'auto' or an integer")
+    if type(settings.seed_point_snap_distance) is int and settings.seed_point_snap_distance <= 0:
+        raise ValueError("settings.seed_point_snap_distance must be a positive integer")
     return True
 
 
@@ -42,7 +46,6 @@ def validate_parameters(
         ranking,
         seed_point_type,
         seed_point_grid_spacing,
-        seed_point_snap_distance,
         seed_point_linking,
         existing_network_spacing,
         export_data,
@@ -85,10 +88,6 @@ def validate_parameters(
         raise ValueError("With seed_point_type 'file', a seed_point must be provided")
     if seed_point_type == 'tags' and type(seed_point) is None:
         raise ValueError("With seed_point_type 'tags', seed_point_tags must be provided")
-    if type(seed_point_snap_distance) is not int and seed_point_snap_distance != 'auto':
-        raise TypeError("seed_point_snap_distance must be 'auto' or an integer")
-    if type(seed_point_snap_distance) is int and seed_point_snap_distance <= 0:
-        raise ValueError("seed_point_snap_distance must be a positive integer")
     if seed_point_linking not in ['auto', 'triangulate_delaunay', 'quadrangulate']:    
         raise ValueError("seed_point_linking must be 'auto' or 'triangulate_delaunay' or 'quadrangulate'")
     if seed_point_linking == 'quadrangulate' and (seed_point_type != 'grid_square' or existing_network_spacing is not None):
@@ -158,7 +157,6 @@ def slugify(s):
 def resolve_auto_parameters(
         seed_point_type,
         seed_point_grid_spacing,
-        seed_point_snap_distance,
         seed_point_linking,
         existing_network_spacing,
         phi,
@@ -227,13 +225,13 @@ def resolve_auto_parameters(
         else:
             seed_point_grid_spacing = 1707
 
-    if seed_point_snap_distance == 'auto':
-        seed_point_snap_distance = int(np.ceil(seed_point_grid_spacing/4))
+    if settings.seed_point_snap_distance == 'auto':
+        settings.seed_point_snap_distance = int(np.ceil(seed_point_grid_spacing*constants.SEED_POINT_SNAP_DISTANCE_FACTOR))
 
     if existing_network_spacing == 'auto':
-        existing_network_spacing = int(np.ceil(seed_point_grid_spacing/2))
+        existing_network_spacing = int(np.ceil(seed_point_grid_spacing*constants.EXISTING_NETWORK_SPACING_FACTOR))
 
-    return seed_point_type, seed_point_grid_spacing, seed_point_snap_distance, seed_point_linking, existing_network_spacing
+    return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
 
 def import_network(street_network):
     """Import and project a street network from gpkg file
@@ -269,7 +267,7 @@ def import_network(street_network):
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     city_boundary_gdf = gpd.GeoDataFrame(gpd.GeoSeries(nodes.union_all().convex_hull), geometry=0, crs=nodes.crs) # We do this before the projection of nodes below
-    # To do: To be super-correct, the hull should be buffered by seed_point_snap_distance (in degrees due to being unprojected)
+    # To do: To be super-correct, the hull should be buffered by settings.seed_point_snap_distance (in degrees due to being unprojected)
 
     nodes, edges = prepare_nodes_edges(nodes, edges)
 
@@ -881,19 +879,17 @@ def snap_seed_points(seed_points, nodes):
     return seed_points_snapped
 
 
-def filter_seed_points(seed_points_snapped, seed_point_snap_distance):
+def filter_seed_points(seed_points_snapped):
     """Remove seed_points that are further than the snap distance away from an actual osm node
 
     Parameters
     ----------
     seed_points_snapped: geopandas.geodataframe.GeoDataFrame
         seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
-    seed_point_snap_distance: int
-        maximum distance a seed_point may be removed from an actual osm node
 
     Returns
     -------
-    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
+    seed_points_snapped_filtered: geopandas.geodataframe.GeoDataFrame
         seed_points within snap distance away from an actual osm node, only columns are osmid and the associated osm geometry
     """
     gdf = seed_points_snapped.copy()
@@ -902,7 +898,7 @@ def filter_seed_points(seed_points_snapped, seed_point_snap_distance):
     gdf["snap_dist"] = gdf.geometry_generated.distance(gdf.geometry_osm)
 
     # Filter by threshold
-    gdf = gdf[gdf["snap_dist"] <= seed_point_snap_distance].copy()
+    gdf = gdf[gdf["snap_dist"] <= settings.seed_point_snap_distance].copy()
 
     # Drop duplicates: one row per osmid
     gdf = gdf.sort_values("snap_dist").drop_duplicates("osmid")
@@ -914,9 +910,9 @@ def filter_seed_points(seed_points_snapped, seed_point_snap_distance):
     gdf = gdf.set_geometry("geometry")
     gdf = gdf.set_index("osmid", drop=False)
 
-    seed_points_snapped = gdf.copy()
+    seed_points_snapped_filtered = gdf.copy()
 
-    return seed_points_snapped
+    return seed_points_snapped_filtered
 
 
 def create_delaunay_edges(nodes_gdf):

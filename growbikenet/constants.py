@@ -10,6 +10,10 @@ PHI_LIMITS : list[float]
     We aimed to use the tercile limits from the paper [3]_ (Fig 2), but the values here are lower for unknown reasons, also with the unweighted version. Also, it was aimed to have Barcelona in the grid category. For these reasons, the limits were lowered.
 EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH : int
     Minimum length a bike network component needs to have for seed points to snap, in meters
+SEED_POINT_SNAP_DISTANCE_FACTOR : float
+    Factor to multiply seed_point_grid_spacing with, to determine auto value of seed_point_snap_distance
+EXISTING_NETWORK_SPACING_FACTOR : float
+    Factor to multiply seed_point_grid_spacing with, to determine auto value of existing_network_spacing
 """
 
 PBI_CUSTOM_FILTER = ['["cycleway"~"track"]',
@@ -39,3 +43,7 @@ PRESET_TAGS = {
 PHI_LIMITS = [0.02, 0.08] # Tercile limits in the paper: 0.033, 0.161
 
 EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH = 100 
+
+SEED_POINT_SNAP_DISTANCE_FACTOR = 0.25
+
+EXISTING_NETWORK_SPACING_FACTOR = 0.5

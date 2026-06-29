@@ -42,7 +42,6 @@ def growbikenet(
     ranking='betweenness_centrality',
     seed_point_type='auto',
     seed_point_grid_spacing='auto',
-    seed_point_snap_distance='auto',
     seed_point_linking='auto',
     existing_network_spacing=None,
     export_data=True,
@@ -79,9 +78,6 @@ def growbikenet(
         Auto-value for seed_point_type 'grid_triangle': 1154
         Auto-value otherwise: 1707
         These values ensure that any point in the city is always within 500m of the network (under perfect conditions). For case 1707, see [1]_.
-    seed_point_snap_distance : 'auto' | int, default 'auto'
-        Maximum distance between raw seed points and osm nodes for snapping, in meters.
-        Auto-value is round(seed_point_grid_spacing/4). If integer, must be positive.
     seed_point_linking : str ('auto' | 'triangulate_delaunay' | 'quadrangulate'), default 'auto'
         The algorithm for linking up the seed points into an unrouted, abstract network.
         If set to 'auto', selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
@@ -157,7 +153,6 @@ def growbikenet(
         ranking,
         seed_point_type,
         seed_point_grid_spacing,
-        seed_point_snap_distance,
         seed_point_linking,
         existing_network_spacing,
         export_data,
@@ -217,10 +212,9 @@ def growbikenet(
     # Now that the graph is ready, decide auto values
     ox.bearing.add_edge_bearings(g_undir)
     phi = orientation_order(g_undir)
-    seed_point_type, seed_point_grid_spacing, seed_point_snap_distance, seed_point_linking, existing_network_spacing = resolve_auto_parameters(
+    seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = resolve_auto_parameters(
         seed_point_type,
         seed_point_grid_spacing,
-        seed_point_snap_distance,
         seed_point_linking,
         existing_network_spacing,
         phi,
@@ -261,7 +255,7 @@ def growbikenet(
         mapping = {row.geometry_generated: row.osmid for row in seed_points_snapped.itertuples()}
         nx.relabel_nodes(seed_network, mapping, copy=False)
     progress_bar.update(1)
-    seed_points_snapped_filtered = filter_seed_points(seed_points_snapped, seed_point_snap_distance)
+    seed_points_snapped_filtered = filter_seed_points(seed_points_snapped)
     if seed_point_linking == 'quadrangulate': # Remove all filtered out nodes
         filtered_nodes = set(seed_points_snapped.osmid) - set(seed_points_snapped_filtered.osmid)
         seed_network.remove_nodes_from(filtered_nodes)

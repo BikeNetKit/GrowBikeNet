@@ -1,3 +1,5 @@
+from growbikenet import constants
+from growbikenet import settings
 import pytest
 import osmnx as ox
 import pandas as pd
@@ -58,11 +60,6 @@ def test_rank_df(test_data_rank, method, validation_data_rank):
 
 
 @pytest.fixture
-def seed_point_snap_distance():
-    return 500
-
-
-@pytest.fixture
 def snapped_seed_points():
     d = {
         "osmid": ["1", "2", "3"],
@@ -86,10 +83,12 @@ def filtered_seed_points():
 
 
 def test_filter_seed_points(
-    snapped_seed_points, filtered_seed_points, seed_point_snap_distance
+    snapped_seed_points, filtered_seed_points
 ):
+    settings.seed_point_snap_distance = 500
+    constants.SEED_POINT_GRID_SPACING_FACTOR = 0.25
     assert_frame_equal(
-        filter_seed_points(snapped_seed_points, seed_point_snap_distance),
+        filter_seed_points(snapped_seed_points),
         filtered_seed_points,
         check_dtype=False,
     )
