@@ -108,7 +108,7 @@ def growbikenet(
     street_network_file : str | None, default None
         If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
-        >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg").
+        >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg").
         city_boundary_file and street_network_file cannot both be set.
     seed_point_file : str | None, default None
         If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.

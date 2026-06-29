@@ -226,7 +226,7 @@ def import_network(street_network_file, crs_projected):
     street_network_file : str
         The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
-        >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg")
+        >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg")
     crs_projected : str
         Coordinate reference system that is used to project osm data.
 
