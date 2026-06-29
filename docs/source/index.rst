@@ -70,5 +70,4 @@ Documentation contents
    usage
    reference_user
    reference_developer
-   references
    changelog

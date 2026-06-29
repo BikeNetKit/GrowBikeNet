@@ -33,7 +33,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.linkcode",
-    "sphinxcontrib.bibtex",
     "sphinx.ext.mathjax",
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
@@ -46,6 +45,7 @@ extensions = [
     "sphinx_copybutton",
 ]
 
+nbsphinx_allow_errors = True # Remove once growbikenet is v1
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 

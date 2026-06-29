@@ -22,8 +22,8 @@ Overview of GrowBikeNet
 GrowBikeNet is built on top of `OSMnx`_ and `GeoPandas`_. It takes one mandatory parameter, the city name, which it passes via `OSMnx`_ to `Nominatim`_, to download a city's street network. GrowBikeNet then runs the following operations:
 
 * Optional, also download the city's existing bicycle network.
-* Create seed points following :cite:t:`szell2022gub`. By default this is a grid (square or triangular), but it can also be set to the city's rail stations, schools, parks, or arbitrary custom points of interest. If the city's existing bicycle network is used, the seed points are first selected on the bicycle network following :cite:t:`folco2023dmn`.
-* The seed points are linked (triangulated or quadrangulated). If triangulated, by default via Delaunay triangulation (different to the original minimum weight triangulation of :cite:t:`szell2022gub`, but results are in practice identical). The triangulation or quadrangulation is calculated for the abstract unrouted network with seed point nodes for which egde lengths are taken from the routed street network.
+* Create seed points following [1]_. By default this is a grid (square or triangular), but it can also be set to the city's rail stations, schools, parks, or arbitrary custom points of interest. If the city's existing bicycle network is used, the seed points are first selected on the bicycle network following [2]_.
+* The seed points are linked (triangulated or quadrangulated). If triangulated, by default via Delaunay triangulation (different to the original minimum weight triangulation of [1]_, but results are in practice identical). The triangulation or quadrangulation is calculated for the abstract unrouted network with seed point nodes for which egde lengths are taken from the routed street network.
 * The edges which link the seed points are routed on the street network.
 * A metric is computed for all edges. By default this is betweenness centrality. 
 * The edges are ranked by this metric, denoting the importance and order of links to build.
@@ -44,3 +44,5 @@ To try it out, run the:
 .. _GeoPandas: https://geopandas.org
 .. _OSMnx: https://osmnx.readthedocs.io
 .. _Nominatim: https://nominatim.openstreetmap.org
+.. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
+.. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
