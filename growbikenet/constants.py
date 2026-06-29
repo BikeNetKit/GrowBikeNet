@@ -1,17 +1,16 @@
-'''
-Global constants for growbikenet that can be tweaked during development, but should not be changed later by the user.
+"""Global constants for growbikenet that can be tweaked during development, but should not be changed later by the user.
 
-PBI_CUSTOM_FILTER : list
+PBI_CUSTOM_FILTER : list[str]
     Custom filter for protected bicycle infrastructure (pbi)
 PRESET_TAGS : dict
     Pre-defined tags to select tags as seed points
-PHI_LIMITS : list
+PHI_LIMITS : list[float]
     Two orientation order limits between street networks with:
     1) negligible grid elements, 2) some grid elements, 3) grid.
     We aimed to use the tercile limits from the paper [3]_ (Fig 2), but the values here are lower for unknown reasons, also with the unweighted version. Also, it was aimed to have Barcelona in the grid category. For these reasons, the limits were lowered.
 EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH : int
-    Minimum length a bike network component needs to have for seed points to snap
-'''
+    Minimum length a bike network component needs to have for seed points to snap, in meters
+"""
 
 
 PBI_CUSTOM_FILTER = ['["cycleway"~"track"]',

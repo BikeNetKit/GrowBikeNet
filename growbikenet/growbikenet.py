@@ -1,4 +1,4 @@
-from growbikenet.constants import *
+from . import constants
 from . import settings
 import os
 import numpy as np
@@ -247,13 +247,13 @@ def growbikenet(
         seed_points, seed_network = get_grid_seed_points(
             edges, seed_point_grid_spacing, principal_bearing, seed_point_type
         ) # The seed_network is only relevant for quadrangulation
-    elif seed_point_type in PRESET_TAGS:
-        seed_point_tags = PRESET_TAGS[seed_point_type]
+    elif seed_point_type in constants.PRESET_TAGS:
+        seed_point_tags = constants.PRESET_TAGS[seed_point_type]
     elif seed_point_type == 'file':
         seed_points = gpd.read_file(settings.import_path+import_files['seed_points'])
         seed_points = prepare_seed_points(seed_points)
 
-    if seed_point_type == 'tags' or seed_point_type in PRESET_TAGS:
+    if seed_point_type == 'tags' or seed_point_type in constants.PRESET_TAGS:
         seed_points = get_tags_seed_points(city_name, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
     progress_bar.update(1)
 

@@ -1,6 +1,6 @@
 """Utility functions for growbikenet."""
 
-from growbikenet.constants import *
+from . import constants
 from . import settings
 import os
 import re
@@ -40,7 +40,7 @@ def validate_parameters(
     ----------
     Same as growbikenet.growbikenet()
     Additionally:
-    PRESET_TAGS : dict
+    constants.PRESET_TAGS : dict
         Dictionary of preset seed point tags.
 
     Returns
@@ -167,18 +167,18 @@ def resolve_auto_parameters(
         seed_point_linking = 'triangulate_delaunay' 
 
     if seed_point_type == 'auto':
-        if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+        if phi>constants.PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
             seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'quadrangulate'
                 if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
                     existing_network_spacing = None
                     warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-        elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+        elif phi<=constants.PHI_LIMITS[1] and phi>constants.PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
             seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
-        elif phi<=PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
+        elif phi<=constants.PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
             seed_point_type = 'grid_triangle'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
@@ -190,12 +190,12 @@ def resolve_auto_parameters(
             if seed_point_type != 'grid_square': # Everything is triangulated, but the grid could also be quadrangulated
                 seed_point_linking = 'triangulate_delaunay'
             else:
-                if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+                if phi>constants.PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
                     seed_point_linking = 'quadrangulate'
                     if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
                         existing_network_spacing = None
                         warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-                elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+                elif phi<=constants.PHI_LIMITS[1] and phi>constants.PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
                     seed_point_linking = 'triangulate_delaunay'
 
     if seed_point_grid_spacing == 'auto': 
@@ -490,7 +490,7 @@ def update_with_existing_bike_network(city_name, g_undir, import_files, city_bou
     else:
         # Fetch protected bike network data from osmnx
         # Due to retain_all=True, this fetches all the connected components
-        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, custom_filter=PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, custom_filter=constants.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
 
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
 
@@ -517,7 +517,7 @@ def update_with_existing_bike_network(city_name, g_undir, import_files, city_bou
 def filter_network_by_component_length(g_undir):
     """Filter a network to remove too short components
     
-    The application is that g_undir is all the components of the existing bicycle network, but we do not snap seed points to components shorter than EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH. So we create a new set of nodes where the nodes from the too small components are removed.
+    The application is that g_undir is all the components of the existing bicycle network, but we do not snap seed points to components shorter than constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH. So we create a new set of nodes where the nodes from the too small components are removed.
 
     Parameters
     ----------
@@ -537,7 +537,7 @@ def filter_network_by_component_length(g_undir):
     g_undir_filtered = nx.MultiGraph()
     components_by_length = [g_undir.subgraph(c).copy() for c in sorted(nx.connected_components(g_undir), key=lambda c: sum([l[-1] for l in g_undir.subgraph(c).copy().edges.data('length')]), reverse=True)]
     for c in components_by_length: # Create the union of long enough components. Probably there is a way to do this faster/vectorized.
-        if c.number_of_edges() and sum([l[-1] for l in c.edges.data('length')]) >= EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH: # no matter the min length, remove isolated nodes
+        if c.number_of_edges() and sum([l[-1] for l in c.edges.data('length')]) >= constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH: # no matter the min length, remove isolated nodes
             g_undir_filtered = nx.union(g_undir_filtered, c)
         else:
             break
@@ -563,7 +563,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     seed_points_snapped : geopandas.geodataframe.GeoDataFrame
         Snapped seed points on the street network, constructed with seed_point_grid_spacing
     nodes_exnw : geopandas.geodataframe.GeoDataFrame
-        Nodes of the existing bike network, after shortest components below EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH have been filtered out
+        Nodes of the existing bike network, after shortest components below constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH have been filtered out
     existing_network_spacing : int
         Positive integer denoting spacing between seed points, in meters, only on the existing bicycle network.
 
