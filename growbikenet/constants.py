@@ -20,6 +20,8 @@ GRID_SPACING_QUADRANGULATE : int
     Grid spacing in meters for quadrangulation that ensures that any point in the city is always within buffer distance b=500m of the network (if seed points snap perfectly).
 GRID_SPACING_TRIANGLE : int
     Grid spacing in meters for triangle grid that ensures that any point in the city is always within buffer distance b=500m of the network (if seed points snap perfectly).
+BUFFER_SEED_POINTS_EXNW_FACTOR : float
+    Factor to multiply existing_network_spacing with, to determine which previously determined seed points (grid or rail) to drop that are too close to the extra existing network points
 """
 
 PBI_CUSTOM_FILTER = ['["cycleway"~"track"]',
@@ -58,3 +60,4 @@ GRID_SPACING_TRIANGULATE = 1707 # a=2b/(2-sqrt(2))
 GRID_SPACING_QUADRANGULATE = 1000 # a=2b
 GRID_SPACING_TRIANGLE = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
 
+BUFFER_SEED_POINTS_EXNW_FACTOR = 0.5
