@@ -31,11 +31,8 @@ def validate_parameters(
         export_plots,
         # export_video,
         allow_edge_overlaps,
-        city_boundary_file,
-        street_network_file,
-        seed_point_file,
+        import_files,
         seed_point_tags,
-        PRESET_TAGS
     ):
     """ Check if user parameter input is valid. If not, raise an exception or warning
     
@@ -67,9 +64,9 @@ def validate_parameters(
         raise TypeError("seed_point_grid_spacing must be 'auto' or an integer")
     if type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:
         raise ValueError("seed_point_grid_spacing must be a positive integer")
-    if seed_point_type == 'file' and type(seed_point_file) is None:
-        raise ValueError("With seed_point_type 'file', a seed_point_file must be provided")
-    if seed_point_type == 'tags' and type(seed_point_file) is None:
+    if seed_point_type == 'file' and type(seed_point) is None:
+        raise ValueError("With seed_point_type 'file', a seed_point must be provided")
+    if seed_point_type == 'tags' and type(seed_point) is None:
         raise ValueError("With seed_point_type 'tags', seed_point_tags must be provided")
     if type(seed_point_snap_distance) is not int and seed_point_snap_distance != 'auto':
         raise TypeError("seed_point_snap_distance must be 'auto' or an integer")
@@ -101,16 +98,19 @@ def validate_parameters(
         raise TypeError("export_plots must be a boolean")
     # if type(export_video) is not bool:
     #     raise TypeError("export_video must be a boolean")
-    if city_boundary_file is not None and type(city_boundary_file) is not str:
-        raise TypeError("city_boundary_file must be None or a string")
-    if type(city_boundary_file) is str and not os.path.isfile(city_boundary_file):
-        raise FileNotFoundError("city_boundary_file not found")
-    if city_boundary_file is not None and street_network_file is not None:
-        raise ValueError("city_boundary_file and street_network_file cannot both be set")
-    if type(street_network_file) is str and not os.path.isfile(street_network_file):
-        raise FileNotFoundError("street_network_file not found")
-    if type(seed_point_file) is str and not os.path.isfile(seed_point_file):
-        raise FileNotFoundError("seed_point_file not found")
+
+    # Import files
+    if type(import_files) is not dict and not set(import_files.keys()) <= set(['city_boundary','street_network','bike_network','seed_points']): # Keys must be a subset of those
+        raise TypeError("bike_network must be a dict with possible keys 'city_boundary','street_network','bike_network','seed_points'")
+    if import_files['city_boundary'] is not None and type(import_files['city_boundary']) is not str:
+        raise TypeError("city_boundary must be None or a string")
+    if type(import_files['city_boundary']) is str and not os.path.isfile(import_files['city_boundary']):
+        raise FileNotFoundError("city_boundary not found")
+    if type(import_files['street_network']) is str and not os.path.isfile(import_files['street_network']):
+        raise FileNotFoundError("street_network not found")
+    if type(import_files['seed_points']) is str and not os.path.isfile(import_files['seed_points']):
+        raise FileNotFoundError("seed_points not found")
+        
     if seed_point_tags is not None and type(seed_point_tags) is not dict:
         raise TypeError("seed_point_tags must be None or a dictionary")
     if seed_point_tags is not None and seed_point_type!="tags":
@@ -147,25 +147,27 @@ def resolve_auto_parameters(
         seed_point_linking,
         existing_network_spacing,
         phi,
-        PHI_LIMITS
+        import_files,
     ):
     """Resolve auto parameters and parameter inconsistencies
     
     Parameters
     ----------
-    seed_point_* and existing_network_spacing from growbikenet.growbikenet()
+    seed_point_* and existing_network_spacing and import_files from growbikenet.growbikenet()
     
     Additionally:
     phi : float
         Weighted orientation order
-    PHI_LIMITS : list
-        Limits for phi between seed point type categories
 
     Returns
     -------
     seed_point_* and existing_network_spacing from growbikenet.growbikenet()
     """
     
+    if import_files['seed_points']:
+        seed_point_type = 'file'
+        seed_point_linking = 'triangulate_delaunay' 
+
     if seed_point_type == 'auto':
         if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
             seed_point_type = 'grid_square'
@@ -218,15 +220,15 @@ def resolve_auto_parameters(
 
     return seed_point_type, seed_point_grid_spacing, seed_point_snap_distance, seed_point_linking, existing_network_spacing
 
-def import_network(street_network_file, crs_projected):
+def import_network(street_network, crs_projected):
     """Import and project a street network from gpkg file
 
     Parameters
     ----------
-    street_network_file : str
+    street_network : str
         The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
-        >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg")
+        >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg")
     crs_projected : str
         Coordinate reference system that is used to project osm data.
 
@@ -242,8 +244,8 @@ def import_network(street_network_file, crs_projected):
         Convex hull of the street network
     """
 
-    nodes = gpd.read_file(street_network_file, layer='nodes')
-    edges = gpd.read_file(street_network_file, layer='edges')
+    nodes = gpd.read_file(street_network, layer='nodes')
+    edges = gpd.read_file(street_network, layer='edges')
 
     # Set indices as required by osmnx.convert.graph_from_gdfs
     # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
@@ -331,7 +333,7 @@ def download_network(city_name, crs_projected, network_type='drive', custom_filt
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file or street_network_file is set.
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary or street_network is set.
     crs_projected : str
         Coordinate reference system that is used to project osm data.
     network_type : {'all', 'all_public', 'bike', 'drive', 'drive_service', 'walk'} 
@@ -463,10 +465,10 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     return seed_points_exnw
 
 
-def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=None):
+def update_with_existing_bike_network(city_name, crs_projected, g_undir, import_files, city_boundary_geometry=None):
     """Update street network with existing bike network
 
-    Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir.
+    Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir, or imports it from a local file.
     
     Parameters
     ----------
@@ -476,6 +478,8 @@ def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_bo
         Coordinate reference system that is used to project osm data.
     g_undir : networkx.classes.multigraph.MultiGraph
         Street network networkX graph, undirected
+    import_files : dict
+        Dictionary containing the key "bike_network" and value None or a string with the path of a bicycle network to import. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
     city_boundary_geometry : (shapely Polygon | shapely MultiPolygon | None), default None
         If not set to None, the study area will be selected from this geometry.
 
@@ -492,24 +496,14 @@ def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_bo
     edges_exnw : geopandas.geodataframe.GeoDataFrame
         OSM edges of the corresponding bike network, projected
     """
-    cf = ['["cycleway"~"track"]',
-          '["highway"~"cycleway"]',
-          '["highway"~"path"]["bicycle"~"designated"]',
-          '["cycleway:right"~"track"]',
-          '["cycleway:left"~"track"]',
-          '["cycleway:both"~"track"]',
-          '["cycleway:right"~"opposite_track"]', # deprecated, but could still exist
-          '["cycleway:left"~"opposite_track"]', # deprecated, but could still exist
-          '["cycleway:both"~"opposite_track"]', # deprecated, but could still exist
-          '["cyclestreet"]',
-          '["highway"~"living_street"]'
-        ]
-    for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cycleway:both", "cyclestreet"]:
-        if custom_tag not in ox.settings.useful_tags_way:
-            ox.settings.useful_tags_way.extend(custom_tag)
-    # Fetch protected bike network data from osmnx
-    # Due to retain_all=True, this fetches all the connected components
-    nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, crs_projected, custom_filter=cf, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+    if import_files['bike_network'] is not None:
+        # Import and preprocess data from file
+        nodes_exnw, edges_exnw, g_undir_exnw, _ = import_network(import_files['bike_network'], crs_projected)
+    else:
+        # Fetch protected bike network data from osmnx
+        # Due to retain_all=True, this fetches all the connected components
+        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, crs_projected, custom_filter=PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
 
     # Intermezzo: Get filtered existing network by component length

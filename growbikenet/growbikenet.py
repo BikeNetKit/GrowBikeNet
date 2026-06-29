@@ -50,9 +50,7 @@ def growbikenet(
     export_plots=False,
     # export_video=False,
     allow_edge_overlaps=False,
-    city_boundary_file=None,
-    street_network_file=None,
-    seed_point_file=None,
+    import_files=None,
     seed_point_tags=None,
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
@@ -62,7 +60,7 @@ def growbikenet(
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled for data fetching if city_boundary_file or street_network_file is set.
+        Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled for data fetching if city_boundary or street_network is set.
     crs_projected : str, default '3857'
         EPSG code of the coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
@@ -74,7 +72,7 @@ def growbikenet(
         If set to 'rail', uses railway stations and halts.
         If set to 'school', uses kindergartens, schools, colleges, and universities.
         If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
-        If set to 'file', imports seed_point_file.
+        If set to 'file', imports seed_point.
         If set to 'tags', uses geocodable seed_point_tags, see [4]_. 
     seed_point_grid_spacing : 'auto' | int, default 'auto'
         If seed_point_type is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters.
@@ -103,17 +101,19 @@ def growbikenet(
         If set to True, plots are saved to files, overwriting existing ones.
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages and deletes growth stages that do not add anything new.
-    city_boundary_file : str | None, default None
-        If not set to None, the study area will be selected from the (Multi)Polygon provided in the city_boundary_file shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary_file and street_network_file cannot both be set.
-    street_network_file : str | None, default None
-        If not set to None, the street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
-        >>> g = ox.graph_from_place("Barcelona", network_type='drive')
-        >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg").
-        city_boundary_file and street_network_file cannot both be set.
-    seed_point_file : str | None, default None
-        If not set to None, the seed points will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
+    import_files: None | dict with the specified key:value entries (all or just some - missing ones are set to None), default None
+        "city_boundary" : str | None, default None
+            If not set to None, the study area is selected from the (Multi)Polygon provided in the city_boundary shape or gpkg file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen_city_boundary.shp".
+        "street_network" : str | None, default None
+            If not set to None, the street network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network g has after saved via ox.io.save_graph_geopackage(). For example:
+            >>> g = ox.graph_from_place("Barcelona", network_type='drive')
+            >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg").
+        "bike_network" : str | None, default None
+            If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
+        "seed_points" : str | None, default None
+            If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
-        If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
+        If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} retrieves exactly the same as seed_point_type='rail'.
 
     Returns
     -------
@@ -128,15 +128,15 @@ def growbikenet(
 
     Grow a bicycle network from scratch in Copenhagen, providing a study area polygon to include also Frederiksberg and Amager.
 
-    >>> edges_ranked = growbikenet("Copenhagen", city_boundary_file="./tests/test_data/copenhagen.shp") 
+    >>> edges_ranked = growbikenet("Copenhagen", import_files={'city_boundary':"./tests/test_data/copenhagen_city_boundary.shp"}) 
 
     Expand the existing bicycle network of Lyon, connecting all educational institutions.
 
-    >>> edges_ranked = growbikenet("Lyon", seed_point_type='school', existing_network_spacing=500) 
+    >>> edges_ranked = growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
 
     Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
 
-    >>> edges_ranked = growbikenet("Oelde", street_network_file="./tests/test_data/oelde_streets.gpkg", seed_point_type='file', seed_point_file="./tests/test_data/oelde_seed_points.gpkg")
+    >>> edges_ranked = growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_streets.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
 
     References
     ----------
@@ -148,8 +148,13 @@ def growbikenet(
     """
     starttime = time.time()
 
-    
-    
+    # Prepare special case import_files which can be None. Turn it into a dict with all necessary keys.
+    if import_files is None:
+        import_files = {}
+    for k in ['city_boundary','street_network','bike_network','seed_points']:
+        if k not in import_files:
+            import_files[k] = None
+
     validate_parameters(
         city_name,
         crs_projected,
@@ -164,13 +169,10 @@ def growbikenet(
         export_data_slug,
         export_plots,
         allow_edge_overlaps,
-        city_boundary_file,
-        street_network_file,
-        seed_point_file,
+        import_files,
         seed_point_tags,
-        PRESET_TAGS
     )
-
+    
     np.random.seed(42)  # Set random number generator seed for reproducibility
 
     print("==============================================")
@@ -178,7 +180,7 @@ def growbikenet(
     print(ranking + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
     print("----------------------------------------------╮")
     
-    if street_network_file is not None:
+    if import_files['street_network'] is not None:
         ### Import and preprocess data from file
         city_boundary_exists = True
         progress_bar = tqdm(
@@ -187,7 +189,7 @@ def growbikenet(
             unit="network",
             bar_format='{l_bar}{bar:16}{r_bar}',
         )
-        nodes, edges, g_undir, city_boundary_gdf = import_network(street_network_file, crs_projected)
+        nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['street_network'], crs_projected)
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         progress_bar.update(1)
     else:
@@ -200,8 +202,8 @@ def growbikenet(
             bar_format='{l_bar}{bar:16}{r_bar}',
         )
         # Get city boundary 
-        if city_boundary_file:
-            city_boundary_shp = gpd.read_file(city_boundary_file)
+        if import_files['city_boundary']:
+            city_boundary_shp = gpd.read_file(import_files['city_boundary'])
             city_boundary_gdf = city_boundary_shp.iloc[[0]]    
         else:
             city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_name)
@@ -212,7 +214,7 @@ def growbikenet(
         progress_bar.update(1)
 
     if existing_network_spacing is not None: # update g_undir: add the existing bike network
-        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_name, crs_projected, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
     progress_bar.close()
 
@@ -227,7 +229,7 @@ def growbikenet(
         seed_point_linking,
         existing_network_spacing,
         phi,
-        PHI_LIMITS
+        import_files,
     )
     # At this point no value should be on 'auto' any longer and inconsistencies should be resolved.
 
@@ -250,22 +252,22 @@ def growbikenet(
         ) # The seed_network is only relevant for quadrangulation
     elif seed_point_type in PRESET_TAGS:
         seed_point_tags = PRESET_TAGS[seed_point_type]
-    elif seed_point_type == "file":
-        seed_points = gpd.read_file(seed_point_file)
+    elif seed_point_type == 'file':
+        seed_points = gpd.read_file(import_files['seed_points'])
         seed_points = prepare_seed_points(seed_points, crs_projected)
 
-    if seed_point_type == "tags" or seed_point_type in PRESET_TAGS:
+    if seed_point_type == 'tags' or seed_point_type in PRESET_TAGS:
         seed_points = get_tags_seed_points(city_name, crs_projected=crs_projected, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
     progress_bar.update(1)
 
     # Snap seed points to OSM nodes
     seed_points_snapped = snap_seed_points(seed_points, nodes)
-    if seed_point_linking == "quadrangulate": # Map geometry to osmid
+    if seed_point_linking == 'quadrangulate': # Map geometry to osmid
         mapping = {row.geometry_generated: row.osmid for row in seed_points_snapped.itertuples()}
         nx.relabel_nodes(seed_network, mapping, copy=False)
     progress_bar.update(1)
     seed_points_snapped_filtered = filter_seed_points(seed_points_snapped, seed_point_snap_distance)
-    if seed_point_linking == "quadrangulate": # Remove all filtered out nodes
+    if seed_point_linking == 'quadrangulate': # Remove all filtered out nodes
         filtered_nodes = set(seed_points_snapped.osmid) - set(seed_points_snapped_filtered.osmid)
         seed_network.remove_nodes_from(filtered_nodes)
         seed_network = seed_network.subgraph(sorted(nx.connected_components(seed_network), key=len, reverse=True)[0]) # Keep only the largest connected component (the network might have fallen apart)
@@ -281,7 +283,7 @@ def growbikenet(
     if len(seed_points_snapped_filtered) < 3:
         raise RuntimeError("Found less than 3 seed points, but more are needed.")
 
-    if seed_point_linking != "quadrangulate":
+    if seed_point_linking != 'quadrangulate':
         ### Triangulate
         # Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
         progress_bar = tqdm(

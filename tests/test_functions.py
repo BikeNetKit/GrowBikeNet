@@ -98,10 +98,10 @@ def test_filter_seed_points(
 @pytest.fixture
 def validation_streets():
     streets_nodes = gpd.read_file(
-        "./tests/test_data/oelde_streets.gpkg", layer="nodes"
+        "./tests/test_data/oelde_street_network.gpkg", layer="nodes"
     ).set_index("osmid")
     streets_edges = gpd.read_file(
-        "./tests/test_data/oelde_streets.gpkg", layer="edges"
+        "./tests/test_data/oelde_street_network.gpkg", layer="edges"
     ).set_index(["u", "v", "key"])
     streets = ox.convert.graph_from_gdfs(streets_nodes, streets_edges)
     return streets
