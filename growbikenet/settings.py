@@ -11,6 +11,8 @@ export_file_format : str ('geojson' | 'gpkg'), default 'gpkg'
 seed_point_snap_distance : 'auto' | int, default 'auto'
     Maximum distance between raw seed points and osm nodes for snapping, in meters.
     Auto-value is ceil(seed_point_grid_spacing*constants.SEED_POINT_SNAP_DISTANCE_FACTOR). If integer, must be positive.
+random_seed : int
+    Random number generator seed for reproducibility
 """
 
 export_path = {
@@ -22,3 +24,4 @@ import_path = "./"
 crs_projected = '3857'
 export_file_format = 'gpkg'
 seed_point_snap_distance = 'auto'
+random_seed = 42

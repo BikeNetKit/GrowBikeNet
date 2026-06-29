@@ -163,7 +163,7 @@ def growbikenet(
         seed_point_tags,
     )
     
-    np.random.seed(42)  # Set random number generator seed for reproducibility
+    np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
 
     print("==============================================")
     print("RUNNING GROWBIKENET FOR CITY: " + city_name)
