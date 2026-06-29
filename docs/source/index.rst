@@ -71,3 +71,4 @@ Documentation contents
    reference_user
    reference_developer
    references
+   changelog
