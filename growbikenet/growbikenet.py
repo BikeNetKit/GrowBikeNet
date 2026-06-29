@@ -132,7 +132,7 @@ def growbikenet(
 
     Expand the existing bicycle network of Lyon, connecting all educational institutions.
 
-    >>> edges_ranked = growbikenet("Lyon", seed_point_type='school', existing_network_spacing=500) 
+    >>> edges_ranked = growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
 
     Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
 

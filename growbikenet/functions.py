@@ -496,7 +496,7 @@ def update_with_existing_bike_network(city_name, crs_projected, g_undir, import_
     """
     if import_files['bike_network'] is not None:
         # Import and preprocess data from file
-        nodes_exnw, edges_exnw, g_undir_exnw = import_network(import_files['bike_network'], crs_projected)
+        nodes_exnw, edges_exnw, g_undir_exnw, _ = import_network(import_files['bike_network'], crs_projected)
     else:
         # Fetch protected bike network data from osmnx
         # Due to retain_all=True, this fetches all the connected components

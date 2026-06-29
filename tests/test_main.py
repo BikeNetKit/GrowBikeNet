@@ -48,6 +48,7 @@ def test_growbikenet_case_success_offline2(create_validation_gdf_athens):
             crs_projected="3857",
             ranking="betweenness_centrality",
             export_data=False,
+            existing_network_spacing='auto',
             import_files={
                 "city_boundary":"./tests/test_data/athens_city_boundary.gpkg",
                 "street_network":"./tests/test_data/athens_street_network.gpkg",
