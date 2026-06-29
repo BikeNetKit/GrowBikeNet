@@ -14,6 +14,12 @@ SEED_POINT_SNAP_DISTANCE_FACTOR : float
     Factor to multiply seed_point_grid_spacing with, to determine auto value of seed_point_snap_distance
 EXISTING_NETWORK_SPACING_FACTOR : float
     Factor to multiply seed_point_grid_spacing with, to determine auto value of existing_network_spacing
+GRID_SPACING_TRIANGULATE : int
+    Grid spacing in meters for grid triangulation that ensures that any point in the city is always within buffer distance b=500m of the network (if seed points snap perfectly).
+GRID_SPACING_QUADRANGULATE : int
+    Grid spacing in meters for quadrangulation that ensures that any point in the city is always within buffer distance b=500m of the network (if seed points snap perfectly).
+GRID_SPACING_TRIANGLE : int
+    Grid spacing in meters for triangle grid that ensures that any point in the city is always within buffer distance b=500m of the network (if seed points snap perfectly).
 """
 
 PBI_CUSTOM_FILTER = ['["cycleway"~"track"]',
@@ -47,3 +53,8 @@ EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH = 100
 SEED_POINT_SNAP_DISTANCE_FACTOR = 0.25
 
 EXISTING_NETWORK_SPACING_FACTOR = 0.5
+
+GRID_SPACING_TRIANGULATE = 1707 # a=2b/(2-sqrt(2))
+GRID_SPACING_QUADRANGULATE = 1000 # a=2b
+GRID_SPACING_TRIANGLE = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
+

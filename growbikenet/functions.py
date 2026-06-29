@@ -217,13 +217,13 @@ def resolve_auto_parameters(
         # These values ensure that any point in the city is always within b=500m of the network (if seed points snap perfectly).
         # In comments, general equations for arbitrary buffer distance b
         if seed_point_type == 'grid_square' and seed_point_linking == 'triangulate_delaunay':
-            seed_point_grid_spacing = 1707 # a=2b/(2-sqrt(2))
+            seed_point_grid_spacing = constants.GRID_SPACING_TRIANGULATE # a=2b/(2-sqrt(2))
         elif seed_point_type == 'grid_square' and seed_point_linking == 'quadrangulate':
-            seed_point_grid_spacing = 1000 # a=2b
+            seed_point_grid_spacing = constants.GRID_SPACING_QUADRANGULATE # a=2b
         elif seed_point_type == 'grid_triangle':
-            seed_point_grid_spacing = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
+            seed_point_grid_spacing = constants.GRID_SPACING_TRIANGLE # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
         else:
-            seed_point_grid_spacing = 1707
+            seed_point_grid_spacing = constants.GRID_SPACING_TRIANGULATE
 
     if settings.seed_point_snap_distance == 'auto':
         settings.seed_point_snap_distance = int(np.ceil(seed_point_grid_spacing*constants.SEED_POINT_SNAP_DISTANCE_FACTOR))
