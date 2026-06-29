@@ -147,24 +147,27 @@ def resolve_auto_parameters(
         seed_point_linking,
         existing_network_spacing,
         phi,
+        import_files,
     ):
     """Resolve auto parameters and parameter inconsistencies
     
     Parameters
     ----------
-    seed_point_* and existing_network_spacing from growbikenet.growbikenet()
+    seed_point_* and existing_network_spacing and import_files from growbikenet.growbikenet()
     
     Additionally:
     phi : float
         Weighted orientation order
-    PHI_LIMITS : list
-        Limits for phi between seed point type categories
 
     Returns
     -------
     seed_point_* and existing_network_spacing from growbikenet.growbikenet()
     """
     
+    if import_files['seed_points']:
+        seed_point_type = 'file'
+        seed_point_linking = 'triangulate_delaunay' 
+
     if seed_point_type == 'auto':
         if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
             seed_point_type = 'grid_square'
