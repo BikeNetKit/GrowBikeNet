@@ -103,16 +103,16 @@ def growbikenet(
         If set to False, removes edge overlaps in consecutive growth stages and deletes growth stages that do not add anything new.
     import_files: None | dict with the specified key:value entries (all or just some - missing ones are set to None), default None
         "city_boundary" : str | None, default None
-            If not set to None, the study area is selected from the (Multi)Polygon provided in the city_boundary shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary and street_network or bike_network cannot both be set.
+            If not set to None, the study area is selected from the (Multi)Polygon provided in the city_boundary shape file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen.shp". city_boundary and street_network/bike_network cannot both be set.
         "street_network" : str | None, default None
             If not set to None, the street network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network g has after saved via ox.io.save_graph_geopackage(). For example:
             >>> g = ox.graph_from_place("Barcelona", network_type='drive')
             >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg").
             city_boundary and street_network cannot both be set.
         "bike_network" : str | None, default None
-            If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network g has after saved via ox.io.save_graph_geopackage().
+            If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
             city_boundary and bike_network cannot both be set.
-        "seed_point" : str | None, default None
+        "seed_points" : str | None, default None
             If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} retrieves exactly the same as seed_point_type='rail'.
@@ -138,7 +138,7 @@ def growbikenet(
 
     Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
 
-    >>> edges_ranked = growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_streets.gpkg", 'seed_point':"./tests/test_data/oelde_seed_points.gpkg"})
+    >>> edges_ranked = growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_streets.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
 
     References
     ----------
@@ -153,7 +153,7 @@ def growbikenet(
     # Prepare special case import_files which can be None. Turn it into a dict with all necessary keys.
     if import_files is None:
         import_files = {}
-    for k in ['city_boundary','street_network','bike_network','seed_point']:
+    for k in ['city_boundary','street_network','bike_network','seed_points']:
         if k not in import_files:
             import_files[k] = None
 
@@ -216,7 +216,7 @@ def growbikenet(
         progress_bar.update(1)
 
     if existing_network_spacing is not None: # update g_undir: add the existing bike network
-        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_name, crs_projected, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
     progress_bar.close()
 
@@ -255,7 +255,7 @@ def growbikenet(
     elif seed_point_type in PRESET_TAGS:
         seed_point_tags = PRESET_TAGS[seed_point_type]
     elif seed_point_type == "file":
-        seed_points = gpd.read_file(import_files['seed_point'])
+        seed_points = gpd.read_file(import_files['seed_points'])
         seed_points = prepare_seed_points(seed_points, crs_projected)
 
     if seed_point_type == "tags" or seed_point_type in PRESET_TAGS:
