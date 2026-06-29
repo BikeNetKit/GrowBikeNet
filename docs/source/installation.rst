@@ -9,7 +9,7 @@ The currently default way to install GrowBikeNet is using `conda <https://docs.c
 
 ::
 
-   conda install -c conda-forge growbikenet
+   conda install growbikenet -c conda-forge
 
 For more installation options, see below.
 
