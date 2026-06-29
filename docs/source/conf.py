@@ -18,7 +18,7 @@ import sys  # noqa
 from pathlib import Path  # noqa
 from tomllib import load as toml_load  # noqa
 
-sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../.."))
 import growbikenet  # noqa
 
 # dynamically load version
