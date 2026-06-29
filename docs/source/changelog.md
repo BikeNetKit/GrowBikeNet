@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 0.11.0 (2026-06-29)
+- ✨ Implemented bike network import
+- ✨ Added minimum component length filter for bike net seed points
+- ♻️ Refactored all imported files into one dict parameter
+- ♻️ Refactored settings and constants into their own modules
+- ✨ Added auto option for existing_network_spacing
+- 📝 Added changelog to docs
+- 📝 Deployed docs on new custom URL
+
 ## Version 0.10.3 (2026-06-17)
 
 - ➖ Removed unneeded dependencies
