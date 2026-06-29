@@ -2,7 +2,7 @@
   "packages": {
     ".": {
       "release-type": "python",
-      "changelog-path": "docs/changelog.md",
+      "changelog-path": "docs/source/changelog.md",
       "extra-files": [
         "growbikenet/_version.py",
         "docs/conf.py"

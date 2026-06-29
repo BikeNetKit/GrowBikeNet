@@ -43,7 +43,7 @@ Homepage = "https://bikenetkit.org/"
 Documentation = "https://docs.bikenetkit.org/GrowBikeNet/"
 Repository = "https://github.com/BikeNetKit/GrowBikeNet"
 Issues = "https://github.com/BikeNetKit/GrowBikeNet/issues"
-Changelog = "https://github.com/BikeNetKit/GrowBikeNet/blob/main/docs/changelog.md"
+Changelog = "https://docs.bikenetkit.org/GrowBikeNet/changelog/"
 
 [project.optional-dependencies]
 test = ["pytest"]
