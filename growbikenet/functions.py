@@ -17,6 +17,26 @@ from shapely.affinity import rotate
 from tqdm import tqdm
 
 
+def validate_settings():
+    """ Check if user settings input is valid. If not, raise an exception or warning
+    
+    Parameters
+    ----------
+    See settings
+
+    Returns
+    -------
+    True
+    """
+
+    if type(settings.crs_projected) is not str:
+        raise TypeError("settings.crs_projected must be a string")
+    if settings.export_file_format != "geojson" and settings.export_file_format != "gpkg":
+        raise ValueError("settings.export_file_format must be 'geojson' or 'gpkg'")
+    # to do: check export_path
+    return True
+
+
 def validate_parameters(
         city_name,
         ranking,
@@ -26,7 +46,6 @@ def validate_parameters(
         seed_point_linking,
         existing_network_spacing,
         export_data,
-        export_file_format,
         export_data_slug,
         export_plots,
         # export_video,
@@ -90,8 +109,6 @@ def validate_parameters(
         raise ValueError(
             "export_data_slug must contain at least one non-special character"
         )
-    if export_file_format != "geojson" and export_file_format != "gpkg":
-        raise ValueError("export_file_format must be 'geojson' or 'gpkg'")
     if type(export_plots) is not bool:
         raise TypeError("export_plots must be a boolean")
     # if type(export_video) is not bool:

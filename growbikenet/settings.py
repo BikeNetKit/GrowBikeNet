@@ -6,8 +6,9 @@ import_path : str | Path
     Path to import files (as defined in growbikenet's import_files parameter).
 crs_projected : str, default '3857'
     EPSG code of the coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
+export_file_format : str ('geojson' | 'gpkg'), default 'gpkg'
+    File format for the data export, relevant if export_data set to True. If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
 """
-
 
 export_path = {
     "results":"./results/",
@@ -16,3 +17,4 @@ export_path = {
 }
 import_path = "./"
 crs_projected = '3857'
+export_file_format = 'gpkg'

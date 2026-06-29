@@ -12,7 +12,6 @@ EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH : int
     Minimum length a bike network component needs to have for seed points to snap, in meters
 """
 
-
 PBI_CUSTOM_FILTER = ['["cycleway"~"track"]',
           '["highway"~"cycleway"]',
           '["highway"~"path"]["bicycle"~"designated"]',

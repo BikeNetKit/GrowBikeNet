@@ -11,6 +11,7 @@ from tqdm import tqdm
 import time
 import datetime
 from growbikenet.functions import (
+    validate_settings,
     validate_parameters,
     orientation_order,
     resolve_auto_parameters,
@@ -45,7 +46,6 @@ def growbikenet(
     seed_point_linking='auto',
     existing_network_spacing=None,
     export_data=True,
-    export_file_format='geojson',
     export_data_slug=None,
     export_plots=False,
     # export_video=False,
@@ -90,9 +90,7 @@ def growbikenet(
     existing_network_spacing : None | 'auto' | int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
     export_data : bool, default True
-        If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
-    export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
-        File format for the data export, relevant if export_data set to True. Default 'geojson', also possible 'gpkg'. If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
+        If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[settings.export_file_format], where slug is a string id made out of city_name.
     export_data_slug : str | None, default None
         If not set to None, the city_name will be slugified and used as the slug in the filename of the data export.
     export_plots : bool, default False
@@ -153,6 +151,7 @@ def growbikenet(
         if k not in import_files:
             import_files[k] = None
 
+    validate_settings()
     validate_parameters(
         city_name,
         ranking,
@@ -162,7 +161,6 @@ def growbikenet(
         seed_point_linking,
         existing_network_spacing,
         export_data,
-        export_file_format,
         export_data_slug,
         export_plots,
         allow_edge_overlaps,
@@ -406,7 +404,7 @@ def growbikenet(
         else:
             exnw_string = ""
         export_data_filename = (
-            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + export_file_format
+            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + settings.export_file_format
         )
 
     ### Export data
@@ -425,11 +423,11 @@ def growbikenet(
             city_boundary_gdf.geometry = city_boundary_gdf.geometry.set_precision(grid_size=1) 
         seed_points_snapped_filtered.geometry = seed_points_snapped_filtered.geometry.set_precision(grid_size=1)
         edges_ranked.geometry = edges_ranked.geometry.set_precision(grid_size=1)
-        if export_file_format == "geojson":
+        if settings.export_file_format == "geojson":
             edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
             seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
             if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
-        elif export_file_format == "gpkg":
+        elif settings.export_file_format == "gpkg":
             if existing_network_spacing:
                 edges_ranked.iloc[[0]].to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Existing bike network")
                 edges_ranked.iloc[1:-1].to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
