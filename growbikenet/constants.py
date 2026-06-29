@@ -1,4 +1,7 @@
-'''Constants for growbikenet.'''
+'''
+Global constants for growbikenet that can be tweaked during development, but should not be changed later by the user.
+
+'''
 
 
 # Custom filter for protected bicycle infrastructure (pbi)

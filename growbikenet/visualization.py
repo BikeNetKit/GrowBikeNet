@@ -1,3 +1,5 @@
+from growbikenet.constants import *
+from . import settings
 import os
 import glob
 import re
@@ -36,6 +38,6 @@ def create_plots(
 
         plot_id = "{:03d}".format(int(ordering))  # format plot ID with leading zeros
 
-        fig.savefig(f"./results/plots/ordering_{ranking}/{plot_id}.png", dpi=150, bbox_inches='tight')
+        fig.savefig(settings.export_path['plots']+f"ordering_{ranking}/{plot_id}.png", dpi=150, bbox_inches='tight')
 
         plt.close()
