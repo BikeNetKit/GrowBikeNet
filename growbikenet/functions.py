@@ -147,7 +147,6 @@ def resolve_auto_parameters(
         seed_point_linking,
         existing_network_spacing,
         phi,
-        PHI_LIMITS
     ):
     """Resolve auto parameters and parameter inconsistencies
     

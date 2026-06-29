@@ -229,7 +229,6 @@ def growbikenet(
         seed_point_linking,
         existing_network_spacing,
         phi,
-        PHI_LIMITS
     )
     # At this point no value should be on 'auto' any longer and inconsistencies should be resolved.
 
