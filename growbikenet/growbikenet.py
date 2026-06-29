@@ -1,4 +1,5 @@
-from growbikenet.constants import *
+from . import constants
+from . import settings
 import os
 import numpy as np
 import networkx as nx
@@ -10,6 +11,7 @@ from tqdm import tqdm
 import time
 import datetime
 from growbikenet.functions import (
+    validate_settings,
     validate_parameters,
     orientation_order,
     resolve_auto_parameters,
@@ -37,15 +39,12 @@ from growbikenet.visualization import create_plots
 
 def growbikenet(
     city_name,
-    crs_projected='3857',
     ranking='betweenness_centrality',
     seed_point_type='auto',
     seed_point_grid_spacing='auto',
-    seed_point_snap_distance='auto',
     seed_point_linking='auto',
     existing_network_spacing=None,
     export_data=True,
-    export_file_format='geojson',
     export_data_slug=None,
     export_plots=False,
     # export_video=False,
@@ -61,8 +60,6 @@ def growbikenet(
     ----------
     city_name : str
         Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled for data fetching if city_boundary or street_network is set.
-    crs_projected : str, default '3857'
-        EPSG code of the coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
@@ -81,9 +78,6 @@ def growbikenet(
         Auto-value for seed_point_type 'grid_triangle': 1154
         Auto-value otherwise: 1707
         These values ensure that any point in the city is always within 500m of the network (under perfect conditions). For case 1707, see [1]_.
-    seed_point_snap_distance : 'auto' | int, default 'auto'
-        Maximum distance between raw seed points and osm nodes for snapping, in meters.
-        Auto-value is round(seed_point_grid_spacing/4). If integer, must be positive.
     seed_point_linking : str ('auto' | 'triangulate_delaunay' | 'quadrangulate'), default 'auto'
         The algorithm for linking up the seed points into an unrouted, abstract network.
         If set to 'auto', selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
@@ -92,9 +86,7 @@ def growbikenet(
     existing_network_spacing : None | 'auto' | int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
     export_data : bool, default True
-        If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[export_file_format], where slug is a string id made out of city_name.
-    export_file_format : str ('geojson' | 'gpkg'), default 'geojson'
-        File format for the data export, relevant if export_data set to True. Default 'geojson', also possible 'gpkg'. If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
+        If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[settings.export_file_format], where slug is a string id made out of city_name.
     export_data_slug : str | None, default None
         If not set to None, the city_name will be slugified and used as the slug in the filename of the data export.
     export_plots : bool, default False
@@ -155,17 +147,15 @@ def growbikenet(
         if k not in import_files:
             import_files[k] = None
 
+    validate_settings()
     validate_parameters(
         city_name,
-        crs_projected,
         ranking,
         seed_point_type,
         seed_point_grid_spacing,
-        seed_point_snap_distance,
         seed_point_linking,
         existing_network_spacing,
         export_data,
-        export_file_format,
         export_data_slug,
         export_plots,
         allow_edge_overlaps,
@@ -173,7 +163,7 @@ def growbikenet(
         seed_point_tags,
     )
     
-    np.random.seed(42)  # Set random number generator seed for reproducibility
+    np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
 
     print("==============================================")
     print("RUNNING GROWBIKENET FOR CITY: " + city_name)
@@ -189,7 +179,7 @@ def growbikenet(
             unit="network",
             bar_format='{l_bar}{bar:16}{r_bar}',
         )
-        nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['street_network'], crs_projected)
+        nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['street_network'])
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         progress_bar.update(1)
     else:
@@ -203,18 +193,18 @@ def growbikenet(
         )
         # Get city boundary 
         if import_files['city_boundary']:
-            city_boundary_shp = gpd.read_file(import_files['city_boundary'])
+            city_boundary_shp = gpd.read_file(settings.import_path+import_files['city_boundary'])
             city_boundary_gdf = city_boundary_shp.iloc[[0]]    
         else:
             city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_name)
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         # Fetch street network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = download_network(city_name, crs_projected, network_type='drive', retain_all=False, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir = download_network(city_name, network_type='drive', retain_all=False, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
 
     if existing_network_spacing is not None: # update g_undir: add the existing bike network
-        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_name, crs_projected, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_name, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
     progress_bar.close()
 
@@ -222,10 +212,9 @@ def growbikenet(
     # Now that the graph is ready, decide auto values
     ox.bearing.add_edge_bearings(g_undir)
     phi = orientation_order(g_undir)
-    seed_point_type, seed_point_grid_spacing, seed_point_snap_distance, seed_point_linking, existing_network_spacing = resolve_auto_parameters(
+    seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = resolve_auto_parameters(
         seed_point_type,
         seed_point_grid_spacing,
-        seed_point_snap_distance,
         seed_point_linking,
         existing_network_spacing,
         phi,
@@ -250,14 +239,14 @@ def growbikenet(
         seed_points, seed_network = get_grid_seed_points(
             edges, seed_point_grid_spacing, principal_bearing, seed_point_type
         ) # The seed_network is only relevant for quadrangulation
-    elif seed_point_type in PRESET_TAGS:
-        seed_point_tags = PRESET_TAGS[seed_point_type]
+    elif seed_point_type in constants.PRESET_TAGS:
+        seed_point_tags = constants.PRESET_TAGS[seed_point_type]
     elif seed_point_type == 'file':
-        seed_points = gpd.read_file(import_files['seed_points'])
-        seed_points = prepare_seed_points(seed_points, crs_projected)
+        seed_points = gpd.read_file(settings.import_path+import_files['seed_points'])
+        seed_points = prepare_seed_points(seed_points)
 
-    if seed_point_type == 'tags' or seed_point_type in PRESET_TAGS:
-        seed_points = get_tags_seed_points(city_name, crs_projected=crs_projected, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
+    if seed_point_type == 'tags' or seed_point_type in constants.PRESET_TAGS:
+        seed_points = get_tags_seed_points(city_name, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
     progress_bar.update(1)
 
     # Snap seed points to OSM nodes
@@ -266,7 +255,7 @@ def growbikenet(
         mapping = {row.geometry_generated: row.osmid for row in seed_points_snapped.itertuples()}
         nx.relabel_nodes(seed_network, mapping, copy=False)
     progress_bar.update(1)
-    seed_points_snapped_filtered = filter_seed_points(seed_points_snapped, seed_point_snap_distance)
+    seed_points_snapped_filtered = filter_seed_points(seed_points_snapped)
     if seed_point_linking == 'quadrangulate': # Remove all filtered out nodes
         filtered_nodes = set(seed_points_snapped.osmid) - set(seed_points_snapped_filtered.osmid)
         seed_network.remove_nodes_from(filtered_nodes)
@@ -274,7 +263,7 @@ def growbikenet(
     progress_bar.update(1)
 
     if existing_network_spacing is not None:
-        seed_points_snapped_filtered = update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing, crs_projected)
+        seed_points_snapped_filtered = update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing)
         progress_bar.update(1)
     progress_bar.close()
 
@@ -372,16 +361,16 @@ def growbikenet(
     # Rank edges by specified method
     edges_ranked = rank_df(edges_ranked, ranking)
 
-    edges_ranked = gpd.GeoDataFrame(edges_ranked, crs=crs_projected, geometry="geometry")
+    edges_ranked = gpd.GeoDataFrame(edges_ranked, crs=settings.crs_projected, geometry="geometry")
 
     # Add existing bike network on top, https://stackoverflow.com/a/43408736
     if existing_network_spacing:
-        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ranked.columns}, index=[-1], crs=crs_projected)
+        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ranked.columns}, index=[-1], crs=settings.crs_projected)
         existing_bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
         edges_ranked.loc[-1] = existing_bikenet.loc[-1]
         edges_ranked.index = edges_ranked.index+1
         edges_ranked.sort_index(inplace=True)
-        edges_ranked.crs = crs_projected
+        edges_ranked.crs = settings.crs_projected
     progress_bar.update(1)
     progress_bar.close()
 
@@ -399,7 +388,7 @@ def growbikenet(
 
     # Generate export data filename
     if export_data or export_plots:# or export_video:
-        os.makedirs("./results/", exist_ok=True)
+        os.makedirs(settings.export_path['results'], exist_ok=True)
         if export_data_slug is None:
             city_string = city_name
         else:
@@ -409,7 +398,7 @@ def growbikenet(
         else:
             exnw_string = ""
         export_data_filename = (
-            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + export_file_format
+            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + settings.export_file_format
         )
 
     ### Export data
@@ -424,22 +413,22 @@ def growbikenet(
         # We have meter precision, so rounding to integers is fine. Better would be to 
         # change dtypes to int, but this does not seem possible without manual looping.
         if city_boundary_exists:
-            city_boundary_gdf.to_crs(epsg=crs_projected, inplace=True)
+            city_boundary_gdf.to_crs(epsg=settings.crs_projected, inplace=True)
             city_boundary_gdf.geometry = city_boundary_gdf.geometry.set_precision(grid_size=1) 
         seed_points_snapped_filtered.geometry = seed_points_snapped_filtered.geometry.set_precision(grid_size=1)
         edges_ranked.geometry = edges_ranked.geometry.set_precision(grid_size=1)
-        if export_file_format == "geojson":
-            edges_ranked.to_file("./results/"+export_data_filename, driver="GeoJSON")
-            seed_points_snapped_filtered.to_file("./results/"+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
-            if city_boundary_exists: city_boundary_gdf.to_file("./results/"+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
-        elif export_file_format == "gpkg":
+        if settings.export_file_format == "geojson":
+            edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
+            seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
+            if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
+        elif settings.export_file_format == "gpkg":
             if existing_network_spacing:
-                edges_ranked.iloc[[0]].to_file("./results/"+export_data_filename, driver="GPKG", layer="Existing bike network")
-                edges_ranked.iloc[1:-1].to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
+                edges_ranked.iloc[[0]].to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Existing bike network")
+                edges_ranked.iloc[1:-1].to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
             else:
-                edges_ranked.to_file("./results/"+export_data_filename, driver="GPKG", layer="Grown bike network")
-            seed_points_snapped_filtered.to_file("./results/"+export_data_filename, driver="GPKG", layer="Seed points", append=True)
-            if city_boundary_exists: city_boundary_gdf.to_file("./results/"+export_data_filename, driver="GPKG", layer="City boundary", append=True)
+                edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Grown bike network")
+            seed_points_snapped_filtered.to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Seed points", append=True)
+            if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="City boundary", append=True)
         progress_bar.update(1)
         progress_bar.close()
 
@@ -447,38 +436,26 @@ def growbikenet(
         ### Visualize
 
         # Read in file to plot
-        routed_edges_gdf = gpd.read_file("./results/"+export_data_filename, layer="Grown bike network")
+        routed_edges_gdf = gpd.read_file(settings.export_path['results']+export_data_filename, layer="Grown bike network")
 
-        # Viz/plot settings (move to config file later)
-        # Define color palette (from Michael's project: https://github.com/mszell/bikenwgrowth/blob/main/parameters/parameters.py)
-        streetcolor = "#999999"
-        edgecolor = "#0EB6D2"
-        seedcolor = "#ff7338"
-        # Define linewidths
-        lws = {"street": 0.75, "bike": 2}
-
-        os.makedirs("./results/plots/ordering_"+ranking+"/", exist_ok=True)
+        os.makedirs(settings.export_path['plots']+"ordering_"+ranking+"/", exist_ok=True)
         create_plots(
             routed_edges_gdf,
             seed_points_snapped_filtered,
-            streetcolor,
-            edgecolor,
-            seedcolor,
-            lws,
             ranking,
         )
 
         # if export_video:
-        #     os.makedirs("./results/plots/ordering_"+ranking+"/video/", exist_ok=True)
-        #     make_video(img_folder_name="./results/plots/ordering_"+ranking+"/", fps=5)
+        #     os.makedirs(settings.export_path['videos']+"/ordering_"+ranking+"/", exist_ok=True)
+        #     make_video(img_folder_name=settings.export_path['videos']+"ordering_"+ranking+"/", fps=5)
 
     print("----------------------------------------------╯")
     if export_data:
-        print("Data exported to results/")
+        print("Data exported to "+settings.export_path['results'])
     if export_plots:
-        print("Plots exported to results/plots/")
+        print("Plots exported to "+settings.export_path['plots'])
     # if export_video:
-    #     print("Video exported to results/plots/")
+    #     print("Video exported to "+settings.export_path['videos'])
     if export_data or export_plots:# or export_video:
         print("----------------------------------------------")
 

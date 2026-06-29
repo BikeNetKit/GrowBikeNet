@@ -20,7 +20,6 @@ def test_growbikenet_case_success_online(create_validation_gdf_oelde):
     create_validation_gdf_oelde.equals(
         growbikenet(
             city_name="Oelde",
-            crs_projected="3857",
             ranking="betweenness_centrality",
             export_data=False,
         )
@@ -32,7 +31,6 @@ def test_growbikenet_case_success_offline1(create_validation_gdf_oelde):
     create_validation_gdf_oelde.equals(
         growbikenet(
             city_name="Oelde",
-            crs_projected="3857",
             ranking="betweenness_centrality",
             export_data=False,
             import_files={"street_network":"./tests/test_data/oelde_street_network.gpkg"},
@@ -45,7 +43,6 @@ def test_growbikenet_case_success_offline2(create_validation_gdf_athens):
     create_validation_gdf_athens.equals(
         growbikenet(
             city_name="Municipality of Athens",
-            crs_projected="3857",
             ranking="betweenness_centrality",
             export_data=False,
             existing_network_spacing='auto',
