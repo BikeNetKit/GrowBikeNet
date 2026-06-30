@@ -49,7 +49,7 @@ def growbikenet(
     export_plots=False,
     # export_video=False,
     allow_edge_overlaps=False,
-    import_files=None,
+    import_files={},
     seed_point_tags=None,
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
@@ -93,17 +93,18 @@ def growbikenet(
         If set to True, plots are saved to files, overwriting existing ones.
     allow_edge_overlaps : bool, default False
         If set to False, removes edge overlaps in consecutive growth stages and deletes growth stages that do not add anything new.
-    import_files: None | dict with the specified key:value entries (all or just some - missing ones are set to None), default None
-        "city_boundary" : str | None, default None
-            If not set to None, the study area is selected from the (Multi)Polygon provided in the city_boundary shape or gpkg file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen_city_boundary.shp".
-        "street_network" : str | None, default None
-            If not set to None, the street network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network g has after saved via ox.io.save_graph_geopackage(). For example:
-            >>> g = ox.graph_from_place("Barcelona", network_type='drive')
-            >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg").
-        "bike_network" : str | None, default None
-            If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
-        "seed_points" : str | None, default None
-            If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
+    import_files: dict, default {}
+        The following key:value entries can be set:
+            "city_boundary" : str | None, default None
+                If not set to None, the study area is selected from the (Multi)Polygon provided in the city_boundary shape or gpkg file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen_city_boundary.shp".
+            "street_network" : str | None, default None
+                If not set to None, the street network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network g has after saved via ox.io.save_graph_geopackage(). For example:
+                >>> g = ox.graph_from_place("Barcelona", network_type='drive')
+                >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg").
+            "bike_network" : str | None, default None
+                If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
+            "seed_points" : str | None, default None
+                If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} retrieves exactly the same as seed_point_type='rail'.
 
@@ -140,15 +141,8 @@ def growbikenet(
     """
     starttime = time.time()
 
-    # Prepare special case import_files which can be None. Turn it into a dict with all necessary keys.
-    if import_files is None:
-        import_files = {}
-    for k in ['city_boundary','street_network','bike_network','seed_points']:
-        if k not in import_files:
-            import_files[k] = None
-
     validate_settings()
-    validate_parameters(
+    import_files = validate_parameters(
         city_name,
         ranking,
         seed_point_type,

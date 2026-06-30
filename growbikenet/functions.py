@@ -3,6 +3,7 @@
 from . import constants
 from . import settings
 import os
+from collections import defaultdict
 import re
 import numpy as np
 import pandas as pd
@@ -84,6 +85,10 @@ def validate_parameters(
         raise TypeError("seed_point_grid_spacing must be 'auto' or an integer")
     if type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:
         raise ValueError("seed_point_grid_spacing must be a positive integer")
+    if type(import_files) is not dict:
+        raise TypeError("import_files must be a dictionary")
+    # Prepare special case import_files. Turn it into a defaultdict where missing keys are None.
+    import_files = defaultdict(lambda: None, import_files)
     if seed_point_type == 'file' and import_files['seed_points'] is None:
         raise ValueError("With seed_point_type 'file', a seed_points file must be provided")
     if seed_point_type == 'tags' and seed_point_tags is None:
@@ -114,10 +119,6 @@ def validate_parameters(
     #     raise TypeError("export_video must be a boolean")
 
     # Import files
-    if type(import_files) is not dict and not set(import_files.keys()) <= set(['city_boundary','street_network','bike_network','seed_points']): # Keys must be a subset of those
-        raise TypeError("import_files must be a dict with possible keys 'city_boundary','street_network','bike_network','seed_points'")
-    if import_files['city_boundary'] is not None and type(import_files['city_boundary']) is not str:
-        raise TypeError("city_boundary must be None or a string")
     for filename in ['city_boundary','street_network','bike_network','seed_points']:
         if type(import_files[filename]) is str and not os.path.isfile(settings.import_path+import_files[filename]):
             raise FileNotFoundError(filename+" not found")
@@ -125,7 +126,7 @@ def validate_parameters(
     if seed_point_tags is not None and type(seed_point_tags) is not dict:
         raise TypeError("seed_point_tags must be None or a dictionary")
 
-    return True
+    return import_files
 
 
 def slugify(s): 
