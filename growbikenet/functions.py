@@ -271,6 +271,11 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
         num = nums[point_idx]
         edges_with_data.at[nearest_edge_idx, "num_points"] += num
 
+    # Move the 'geometry' column to the end of the GeoDataFrame
+    # Necessary for testing the function
+    cols = [c for c in edges_with_data.columns if c != 'geometry'] + ['geometry']
+    edges_with_data = edges_with_data[cols]
+
     return edges_with_data
 
 def import_network(street_network_file, crs_projected):
