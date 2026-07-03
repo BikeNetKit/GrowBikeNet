@@ -194,7 +194,7 @@ def routed_edges():
     return graph
 
 @pytest.fixture
-def accidents_data():
+def crashes_data():
     # Points from crashes data          In ESPG:3857
     I = Point(0.009432,0.007519)        # (1050,837)
     J = Point(0.012011,0.013888)        # (1337,1546)
@@ -266,9 +266,9 @@ def routed_edges_with_data():
 
     return graph
     
-def test_add_point_data_to_net(routed_edges, accidents_data, routed_edges_with_data):
+def test_add_point_data_to_net_case_success_simple(routed_edges, crashes_data, routed_edges_with_data):
     assert_frame_equal(
-        add_point_data_to_net(accidents_data, routed_edges, '3857'),
+        add_point_data_to_net(crashes_data, routed_edges, '3857'),
         routed_edges_with_data,
         check_dtype=False,
     )
