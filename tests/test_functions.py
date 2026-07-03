@@ -10,6 +10,7 @@ from growbikenet.functions import (
     rank_df,
     # intersects_properly,
     remove_edge_overlaps,
+    add_point_data_to_net
 )
 from shapely.geometry import Point, LineString, MultiLineString
 
@@ -157,5 +158,117 @@ def test_remove_edge_overlaps(ordered_edges, ordered_edges_without_overlaps):
     assert_frame_equal(
         remove_edge_overlaps(ordered_edges),
         ordered_edges_without_overlaps,
+        check_dtype=False,
+    )
+
+@pytest.fixture
+def routed_edges():
+    # Nodes of the graph
+    A = (800,1800)
+    B = (1300,1800)
+    C = (1800,1800)
+    D = (800,1300)
+    E = (1300,1300)
+    F = (1800,1300)
+    G = (800,800)
+    H = (1300,800)
+    Z = (1150,1100)
+
+    g = {
+        'geometry': [
+            LineString([A,B]),
+            LineString([A,D]),
+            LineString([B,C]),
+            LineString([B,E]),
+            LineString([C,F]),
+            LineString([D,E]),
+            LineString([D,G]),
+            LineString([E,F]),
+            MultiLineString([(E,Z),(Z,H)]),
+            LineString([F,H]),
+            LineString([G,H]),
+        ]
+    }
+    graph = gpd.GeoDataFrame(g, geometry="geometry", crs = "EPSG:3857")
+
+    return graph
+
+@pytest.fixture
+def accidents_data():
+    # Points from crashes data          In ESPG:3857
+    I = Point(0.009432,0.007519)        # (1050,837)
+    J = Point(0.012011,0.013888)        # (1337,1546)
+    K = Point(0.007744,0.013376)        # (862,1489)
+    L = Point(0.006558,0.011768)        # (730,1310)
+    M = Point(0.006576, 0.01325)        # (732,1475)
+    N = Point(0.009549, 0.013906)       # (1063,1548)
+    O = Point(0.015981, 0.0023)         # (1779,256)
+    P = Point(0.014624, 0.012019)       # (1628,1338)
+    Q = Point(0.007537, 0.00928)        # (839,1033)
+    R = Point(0.009388, 0.009675)       # (1045,1077)
+    S = Point(0.014499, 0.022)          # (1614,2449)
+    T = Point(0.016969, 0.015074)       # (1889,1678)
+    U = Point(0.010034, 0.006728)       # (1117,749)
+    V = Point(0.009226, 0.016502)       # (1027,1837)
+    W = Point(0.015891, 0.009459)       # (1769,1053)
+
+    c = {
+        'geometry': [I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W],
+        'num': [1,1,2,3,1,1,1,3,5,1,1,1,1,2,1]
+    }
+    crashes = gpd.GeoDataFrame(c, geometry="geometry", crs = "EPSG:4326")
+
+    return crashes
+
+
+@pytest.fixture
+def routed_edges_with_data():
+    # Nodes of the graph
+    A = (800,1800)
+    B = (1300,1800)
+    C = (1800,1800)
+    D = (800,1300)
+    E = (1300,1300)
+    F = (1800,1300)
+    G = (800,800)
+    H = (1300,800)
+    Z = (1150,1100)
+
+    g = {
+        'geometry': [
+            LineString([A,B]),
+            LineString([A,D]),
+            LineString([B,C]),
+            LineString([B,E]),
+            LineString([C,F]),
+            LineString([D,E]),
+            LineString([D,G]),
+            LineString([E,F]),
+            MultiLineString([(E,Z),(Z,H)]),
+            LineString([F,H]),
+            LineString([G,H]),
+        ],
+        'num_points': [
+            2,  #[A,B]
+            6,  #[A,D]
+            0,  #[B,C]
+            2,  #[B,E]
+            1,  #[C,F]
+            0,  #[D,E]
+            5,  #[D,G]
+            3,  #[E,F]
+            1,  #[E,Z,H]
+            1,  #[F,H]
+            2,  #[G,H]
+        ]
+    }
+    graph = gpd.GeoDataFrame(g, geometry="geometry", crs = "EPSG:3857")
+
+    return graph
+    
+def test_add_point_data_to_net(routed_edges, accidents_data, routed_edges_with_data):
+    assert_frame_equal(
+        add_point_data_to_net(accidents_data, routed_edges, '3857'),
+        routed_edges_with_data,
         check_dtype=False,
     )

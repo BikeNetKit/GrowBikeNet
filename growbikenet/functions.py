@@ -9,7 +9,7 @@ import networkx as nx
 import osmnx as ox
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
-from shapely.geometry import Point, MultiLineString
+from shapely.geometry import Point, LineString, MultiLineString
 from shapely.affinity import rotate
 from shapely.strtree import STRtree
 from tqdm import tqdm
