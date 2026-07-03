@@ -235,19 +235,6 @@ def routed_edges_with_data():
     Z = (1150,1100)
 
     g = {
-        'geometry': [
-            LineString([A,B]),
-            LineString([A,D]),
-            LineString([B,C]),
-            LineString([B,E]),
-            LineString([C,F]),
-            LineString([D,E]),
-            LineString([D,G]),
-            LineString([E,F]),
-            MultiLineString([(E,Z),(Z,H)]),
-            LineString([F,H]),
-            LineString([G,H]),
-        ],
         'num_points': [
             2,  #[A,B]
             6,  #[A,D]
@@ -260,6 +247,19 @@ def routed_edges_with_data():
             1,  #[E,Z,H]
             1,  #[F,H]
             2,  #[G,H]
+        ],
+        'geometry': [
+            LineString([A,B]),
+            LineString([A,D]),
+            LineString([B,C]),
+            LineString([B,E]),
+            LineString([C,F]),
+            LineString([D,E]),
+            LineString([D,G]),
+            LineString([E,F]),
+            MultiLineString([(E,Z),(Z,H)]),
+            LineString([F,H]),
+            LineString([G,H]),
         ]
     }
     graph = gpd.GeoDataFrame(g, geometry="geometry", crs = "EPSG:3857")
@@ -270,5 +270,27 @@ def test_add_point_data_to_net_case_success_simple(routed_edges, crashes_data, r
     assert_frame_equal(
         add_point_data_to_net(crashes_data, routed_edges, '3857'),
         routed_edges_with_data,
+        check_dtype=False,
+    )
+
+@pytest.fixture
+def turin_routed_edges():
+    g = gpd.read_file("./tests/test_data/turin_edges.gpkg")
+    return g
+
+@pytest.fixture
+def turin_accidents_data():
+    c = gpd.read_file("./tests/test_data/turin_crashes.gpkg")
+    return c
+
+@pytest.fixture
+def turin_routed_edges_with_data():
+    g = gpd.read_file("./tests/test_data/turin_edges_with_data.gpkg")
+    return g
+
+def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_routed_edges, turin_routed_edges_with_data):
+    assert_frame_equal(
+        add_point_data_to_net(turin_accidents_data, turin_routed_edges, '3857'),
+        turin_routed_edges_with_data,
         check_dtype=False,
     )
