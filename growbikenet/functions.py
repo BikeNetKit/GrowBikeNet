@@ -251,7 +251,7 @@ def add_trip_data_to_net(trips, nodes, edges, crs_projected, matching_distance=5
 
     edges_with_data = gpd.GeoDataFrame(edges)
 
-    transformer = Transformer.from_crs("EPSG:4326", crs_projected always_xy=True)
+    transformer = Transformer.from_crs("EPSG:4326", crs_projected, always_xy=True)
     
     # If column "num" is not provided assume 1 trip per origin-destination (OD) pair
     if 'num' in trips.columns:
