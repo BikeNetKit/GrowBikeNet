@@ -37,6 +37,7 @@ def validate_parameters(
         seed_point_file,
         seed_point_tags,
         point_data_file,
+        trip_data_file,
         PRESET_TAGS
     ):
     """ Check if user parameter input is valid. If not, raise an exception or warning
@@ -121,6 +122,10 @@ def validate_parameters(
         raise TypeError("point_data_file must be None or a string")
     if type(point_data_file) is str and not os.path.isfile(point_data_file):
         raise FileNotFoundError("point_data_file not found")
+    if trip_data_file is not None and type(trip_data_file) is not str:
+        raise TypeError("trip_data_file must be None or a string")
+    if type(trip_data_file) is str and not os.path.isfile(trip_data_file):
+        raise FileNotFoundError("trip_data_file not found")
     return True
 
 
