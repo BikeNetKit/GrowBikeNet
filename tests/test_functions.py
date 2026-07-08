@@ -166,16 +166,16 @@ def test_remove_edge_overlaps(ordered_edges, ordered_edges_without_overlaps):
 def node_seed_points():
     # Nodes of the graph
     A = (800,1800)
-    B = (1300,1800)
+    B = (1300,2000)
     C = (1800,1800)
-    D = (800,1300)
+    D = (900,1400)
     E = (1300,1300)
-    F = (1800,1300)
+    F = (1800,1200)
     G = (800,800)
     H = (1300,800)
 
     d = {
-        'osmid': [1, 2, 3, 4, 5, 6, 7, 8],
+        'osmid': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
         'geometry':[Point(A), Point(B), Point(C), Point(D), Point(E), Point(F), Point(G), Point(H)]
     }
 
@@ -185,62 +185,59 @@ def node_seed_points():
     return nodes
 
 @pytest.fixture
-def routed_edges():
+def routed_edges_v2():
     # Nodes of the graph
     A = (800,1800)
-    B = (1300,1800)
+    B = (1300,2000)
     C = (1800,1800)
-    D = (800,1300)
+    D = (900,1400)
     E = (1300,1300)
-    F = (1800,1300)
+    F = (1800,1200)
     G = (800,800)
     H = (1300,800)
 
     # Auxiliary nodes
-    I = (1050,1950)
-    J = (1340,1700)
-    K = (900,1250)
-    L = (1500,1250)
-    M = (1150,1100)
+    Z = (1150,1100)
 
-    e = {
-        'pair': [(1,2), (1,4), (2,3), (2,5), (3,6), (4,5), (4,7), (5,6), (5,8), (6,8), (7,8)],
-        'dist': [583.10, 500, 500, 509.70, 500, 514.92, 500, 510.29, 585.41, 707.11, 500],
+    g = {
+        'pair': [('A','B'), ('A','D'), ('B','C'), ('B','E'), ('C','F'), ('D','E'), ('D','G'), ('E','F'), ('E','H'), ('F','H'), ('G','H')],
+        'dist': [538.52, 412.31, 538.52, 700, 600, 412.32, 608.28, 509.92, 585.41, 640.31, 500],
         'geometry': [
-            LineString([A,I,B]),
+            LineString([A,B]),
             LineString([A,D]),
             LineString([B,C]),
-            LineString([B,J,E]),
+            LineString([B,E]),
             LineString([C,F]),
-            LineString([D,K,E]),
+            LineString([D,E]),
             LineString([D,G]),
-            LineString([E,L,F]),
-            LineString([E,M,H]),
+            LineString([E,F]),
+            LineString([E,Z,H]),
             LineString([F,H]),
-            LineString([G,H]),
+            LineString([G,H])
         ]
     }
-    edges = gpd.GeoDataFrame(e, geometry="geometry", crs = "EPSG:3857")
+    graph = gpd.GeoDataFrame(g, geometry="geometry", crs = "EPSG:3857")
 
-    return edges
+    return graph
 
 @pytest.fixture
 def trips_data():
-    # Points from trips data          In ESPG:3857
-    O0 = Point(0.014499, 0.022)          # (1614,2449)
-    D0 = Point(0.016969, 0.015074)       # (1889,1678)
-    O1 = Point(0.015891, 0.009459)       # (1769,1053)
-    D1 = Point(0.009226, 0.016502)       # (1027,1837)
-    O2 = Point(0.007744,0.013376)        # (862,1489)
-    D2 = Point(0.006558,0.011768)        # (730,1310)
-    O3 = Point(0.014624, 0.012019)       # (1628,1338)
-    D3 = Point(0.006576, 0.01325)        # (732,1475)
-    O4 = Point(0.009549, 0.013906)       # (1063,1548)
-    D4 = Point(0.010034, 0.006728)       # (1117,749)
-    O5 = Point(0.009388, 0.009675)       # (1045,1077)
-    D5 = Point(0.009432,0.007519)        # (1050,837)
-    O6 = Point(0.007537, 0.00928)        # (839,1033)
-    D6 = Point(0.012011,0.013888)        # (1337,1546)
+    # Points from crashes data          In ESPG:3857
+    D5 = Point(0.0089832,0.0080848)      # (1000,900)
+    D6 = Point(0.0125764,0.014373)       # (1400,1600)
+    O2 = Point(0.0080848,0.0134747)      # (900,1500)
+    D2 = Point(0.0071865,0.0116781)      # (800,1300)
+    D3 = Point(0.0062882,0.0134747)      # (700,1500)
+    O4 = Point(0.0098815,0.0134747)      # (1100,1500)
+    #O = Point(0.0161697,0.0026949)      # (1800,300)
+    O3 = Point(0.014373,0.0116781)       # (1600,1300)
+    O6 = Point(0.0071865,0.0089832)      # (800,1000)
+    O5 = Point(0.0098815,0.0098815)      # (1100,1100)
+    O0 = Point(0.014373,0.0215596)       # (1600,2400)
+    D0 = Point(0.017068,0.0152714)       # (1900,1700)
+    D4 = Point(0.0107798,0.0062882)      # (1200,700)
+    D1 = Point(0.0089832,0.0161697)      # (1000,1800)
+    O1 = Point(0.0161697,0.0098815)      # (1800,1100)
         
 
     t = {
@@ -256,52 +253,49 @@ def trips_data():
     return trips
 
 @pytest.fixture
-def routed_edges_with_data():
+def routed_edges_with_data_v2():
     # Nodes of the graph
     A = (800,1800)
-    B = (1300,1800)
+    B = (1300,2000)
     C = (1800,1800)
-    D = (800,1300)
+    D = (900,1400)
     E = (1300,1300)
-    F = (1800,1300)
+    F = (1800,1200)
     G = (800,800)
     H = (1300,800)
 
-    I = (1050,1950)
-    J = (1340,1700)
-    K = (900,1250)
-    L = (1500,1250)
-    M = (1150,1100)
+    # Auxiliary nodes
+    Z = (1150,1100)
 
     e = {
-        'pair': [(1,2), (1,4), (2,3), (2,5), (3,6), (4,5), (4,7), (5,6), (5,8), (6,8), (7,8)],
-        'dist': [583.10, 500, 500, 509.70, 500, 514.92, 500, 510.29, 585.41, 707.11, 500],
-        'num_trips': [0, 1, 0, 0, 0, 4, 2, 3, 1, 0, 0],
+        'pair': [('A','B'), ('A','D'), ('B','C'), ('B','E'), ('C','F'), ('D','E'), ('D','G'), ('E','F'), ('E','H'), ('F','H'), ('G','H')],
+        'dist': [538.52, 412.31, 538.52, 700, 600, 412.32, 608.28, 509.92, 585.41, 640.31, 500],
+        'num_trips': [0, 1, 0, 0, 0, 6, 2, 3, 1, 0, 0],
         'geometry': [
-            LineString([A,I,B]),
+            LineString([A,B]),
             LineString([A,D]),
             LineString([B,C]),
-            LineString([B,J,E]),
+            LineString([B,E]),
             LineString([C,F]),
-            LineString([D,K,E]),
+            LineString([D,E]),
             LineString([D,G]),
-            LineString([E,L,F]),
-            LineString([E,M,H]),
+            LineString([E,F]),
+            LineString([E,Z,H]),
             LineString([F,H]),
-            LineString([G,H]),
+            LineString([G,H])
         ]
     }
-    edges = gpd.GeoDataFrame(e, geometry="geometry", crs = "EPSG:3857")
+    graph = gpd.GeoDataFrame(e, geometry="geometry", crs = "EPSG:3857")
 
-    return edges
+    return graph
 
-def test_add_trip_data_to_net_case_success_simple(trips_data, node_seed_points, routed_edges, routed_edges_with_data):
+def test_add_trip_data_to_net_case_success_simple(trips_data, node_seed_points, routed_edges_v2, routed_edges_with_data_v2):
     assert_frame_equal(
         add_trip_data_to_net(
             trips_data, 
             node_seed_points,
-            routed_edges,
+            routed_edges_v2,
             '3857'
         ),
-        routed_edges_with_data
+        routed_edges_with_data_v2
     )
