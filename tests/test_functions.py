@@ -165,13 +165,15 @@ def test_remove_edge_overlaps(ordered_edges, ordered_edges_without_overlaps):
 def routed_edges():
     # Nodes of the graph
     A = (800,1800)
-    B = (1300,1800)
+    B = (1300,2000)
     C = (1800,1800)
-    D = (800,1300)
+    D = (900,1400)
     E = (1300,1300)
-    F = (1800,1300)
+    F = (1800,1200)
     G = (800,800)
     H = (1300,800)
+
+    # Auxiliary nodes
     Z = (1150,1100)
 
     g = {
@@ -184,9 +186,9 @@ def routed_edges():
             LineString([D,E]),
             LineString([D,G]),
             LineString([E,F]),
-            MultiLineString([(E,Z),(Z,H)]),
+            LineString([E,Z,H]),
             LineString([F,H]),
-            LineString([G,H]),
+            LineString([G,H])
         ]
     }
     graph = gpd.GeoDataFrame(g, geometry="geometry", crs = "EPSG:3857")
@@ -196,21 +198,21 @@ def routed_edges():
 @pytest.fixture
 def crashes_data():
     # Points from crashes data          In ESPG:3857
-    I = Point(0.009432,0.007519)        # (1050,837)
-    J = Point(0.012011,0.013888)        # (1337,1546)
-    K = Point(0.007744,0.013376)        # (862,1489)
-    L = Point(0.006558,0.011768)        # (730,1310)
-    M = Point(0.006576, 0.01325)        # (732,1475)
-    N = Point(0.009549, 0.013906)       # (1063,1548)
-    O = Point(0.015981, 0.0023)         # (1779,256)
-    P = Point(0.014624, 0.012019)       # (1628,1338)
-    Q = Point(0.007537, 0.00928)        # (839,1033)
-    R = Point(0.009388, 0.009675)       # (1045,1077)
-    S = Point(0.014499, 0.022)          # (1614,2449)
-    T = Point(0.016969, 0.015074)       # (1889,1678)
-    U = Point(0.010034, 0.006728)       # (1117,749)
-    V = Point(0.009226, 0.016502)       # (1027,1837)
-    W = Point(0.015891, 0.009459)       # (1769,1053)
+    I = Point(0.0089832,0.0080848)      # (1000,900)
+    J = Point(0.0125764,0.014373)       # (1400,1600)
+    K = Point(0.0080848,0.0134747)      # (900,1500)
+    L = Point(0.0071865,0.0116781)      # (800,1300)
+    M = Point(0.0062882,0.0134747)      # (700,1500)
+    N = Point(0.0098815,0.0134747)      # (1100,1500)
+    O = Point(0.0161697,0.0026949)      # (1800,300)
+    P = Point(0.014373,0.0116781)       # (1600,1300)
+    Q = Point(0.0071865,0.0089832)      # (800,1000)
+    R = Point(0.0098815,0.0098815)      # (1100,1100)
+    S = Point(0.014373,0.0215596)       # (1600,2400)
+    T = Point(0.017068,0.0152714)       # (1900,1700)
+    U = Point(0.0107798,0.0062882)      # (1200,700)
+    V = Point(0.0089832,0.0161697)      # (1000,1800)
+    W = Point(0.0161697,0.0098815)      # (1800,1100)
 
     c = {
         'geometry': [I,J,K,L,M,N,O,P,Q,R,S,T,U,V,W],
@@ -225,24 +227,26 @@ def crashes_data():
 def routed_edges_with_data():
     # Nodes of the graph
     A = (800,1800)
-    B = (1300,1800)
+    B = (1300,2000)
     C = (1800,1800)
-    D = (800,1300)
+    D = (900,1400)
     E = (1300,1300)
-    F = (1800,1300)
+    F = (1800,1200)
     G = (800,800)
     H = (1300,800)
+
+    # Auxiliary nodes
     Z = (1150,1100)
 
     g = {
         'num_points': [
             2,  #[A,B]
-            6,  #[A,D]
-            0,  #[B,C]
-            2,  #[B,E]
+            3,  #[A,D]
+            1,  #[B,C]
+            1,  #[B,E]
             1,  #[C,F]
-            0,  #[D,E]
-            5,  #[D,G]
+            1,  #[D,E]
+            8,  #[D,G]
             3,  #[E,F]
             1,  #[E,Z,H]
             1,  #[F,H]
@@ -257,7 +261,7 @@ def routed_edges_with_data():
             LineString([D,E]),
             LineString([D,G]),
             LineString([E,F]),
-            MultiLineString([(E,Z),(Z,H)]),
+            LineString([E,Z,H]),
             LineString([F,H]),
             LineString([G,H]),
         ]
@@ -270,7 +274,7 @@ def test_add_point_data_to_net_case_success_simple(routed_edges, crashes_data, r
     assert_frame_equal(
         add_point_data_to_net(crashes_data, routed_edges, '3857'),
         routed_edges_with_data,
-        check_dtype=False,
+        check_dtype=False
     )
 
 @pytest.fixture
@@ -292,5 +296,5 @@ def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_ro
     assert_frame_equal(
         add_point_data_to_net(turin_accidents_data, turin_routed_edges, '3857'),
         turin_routed_edges_with_data,
-        check_dtype=False,
+        check_dtype=False
     )
