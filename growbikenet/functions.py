@@ -250,7 +250,7 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
     if 'num' in points_projected.columns:
         nums = points_projected['num']
     else:
-        num = [1] * len(points_projected)
+        nums = [1] * len(points_projected)
 
     # Reasoning copied from osmnx.distance.nearest_edges()
     edges_geoms = edges_with_data['geometry']                            
