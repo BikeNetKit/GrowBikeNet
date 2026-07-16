@@ -2,6 +2,7 @@ import pytest
 import osmnx as ox
 import pandas as pd
 import geopandas as gpd
+import ast
 from pandas.testing import assert_frame_equal
 from growbikenet.functions import (
     get_principal_bearing,
@@ -298,4 +299,44 @@ def test_add_trip_data_to_net_case_success_simple(trips_data, node_seed_points, 
             '3857'
         ),
         routed_edges_with_data_v2
+    )
+
+@pytest.fixture
+def turin_routed_edges_v2():
+    e = gpd.read_file("./tests/test_data/turin_edges_v2.gpkg")
+    # because the tuples and lists are saved as strings
+    e['pair'] = e['pair'].apply(ast.literal_eval)
+    e['path_nodes'] = e['path_nodes'].apply(ast.literal_eval)
+    e['path_edges'] = e['path_edges'].apply(ast.literal_eval)
+    return e
+
+@pytest.fixture
+def turin_seed_nodes():
+    n = gpd.read_file("./tests/test_data/turin_seed_points.gpkg")
+    n.set_index('osmid', drop = False, inplace = True)
+    return n
+
+@pytest.fixture
+def turin_trips_data():
+    t = pd.read_csv("./tests/test_data/turin_trips.csv")
+    return t
+
+@pytest.fixture
+def turin_routed_edges_with_trips():
+    e = gpd.read_file("./tests/test_data/turin_edges_with_trips.gpkg")
+    # because the tuples and lists are saved as strings
+    e['pair'] = e['pair'].apply(ast.literal_eval)
+    e['path_nodes'] = e['path_nodes'].apply(ast.literal_eval)
+    e['path_edges'] = e['path_edges'].apply(ast.literal_eval)
+    return e
+
+def test_add_trip_data_to_net_case_success_turin(turin_trips_data, turin_seed_nodes, turin_routed_edges_v2, turin_routed_edges_with_trips):
+    assert_frame_equal(
+        add_trip_data_to_net(
+            turin_trips_data, 
+            turin_seed_nodes,
+            turin_routed_edges_v2,
+            '3857'
+        ),
+        turin_routed_edges_with_trips
     )
