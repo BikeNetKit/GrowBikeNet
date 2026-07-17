@@ -1,6 +1,12 @@
 # Changelog
 
+## Version 0.11.1 (2026-07-17)
+
+- 🐛 Fixed validate seed point bug
+- ♻️ Refactored import_files via defaultdict
+
 ## Version 0.11.0 (2026-06-29)
+
 - ✨ Implemented bike network import
 - ✨ Added minimum component length filter for bike net seed points
 - ♻️ Refactored all imported files into one dict parameter
