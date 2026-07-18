@@ -5,7 +5,7 @@ Installation
 The easy way
 ~~~~~~~~~~~~
 
-The currently default way to install GrowBikeNet is using `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`__ (or the faster `mamba <https://mamba.readthedocs.io/en/latest/index.html>`__) via the `conda-forge` channel:
+The recommended way to install GrowBikeNet is using `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`__ (or the faster `mamba <https://mamba.readthedocs.io/en/latest/index.html>`__) via the `conda-forge` channel:
 
 ::
 
@@ -15,6 +15,7 @@ For more installation options, see below.
 
 With pip
 ~~~~~~~~
+
 GrowBikeNet can also be installed with pip, if all dependencies can be installed as well:
 
 ::
@@ -24,6 +25,7 @@ GrowBikeNet can also be installed with pip, if all dependencies can be installed
 .. warning::
 
     We do not recommend using pip, because you need to make sure that all dependencies of growbikenet are installed correctly. Using conda (see above) avoids the need to compile the dependencies yourself.
+
 
 Environment installations
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -46,6 +48,25 @@ Installation with `conda <https://docs.conda.io/projects/conda/en/latest/index.h
    conda config --env --set channel_priority strict
    conda install python=3 growbikenet
 
+With Pixi
+^^^^^^^^^
+
+The fastest and cleanest way to install GrowBikeNet is via `Pixi <https://pixi.prefix.dev/latest/#installation>`__:
+
+::
+
+   pixi init
+   pixi add growbikenet
+
+Then use the Pixi environment as so:
+
+::
+
+   pixi shell
+
+.. note::
+
+    The first time you run code with Pixi, it might take a minute longer, as Pixi resolves the environment’s dependencies only at this point.
 
 
 Run growbikenet in Jupyter lab
@@ -70,6 +91,15 @@ Using `conda <https://docs.conda.io/projects/conda/en/latest/index.html>`__ (or 
 Once Jupyter lab opens, switch the kernel (Kernel > Change Kernel >
 gbnenv)
 
+With Pixi
+^^^^^^^^^
+
+Once you are in the Pixi shell, see above, simply run jupyter lab:
+
+::
+
+   jupyter lab
+
 With pip
 ^^^^^^^^
 
@@ -83,7 +113,6 @@ Using pip, run:
 
 Once Jupyter lab opens, switch the kernel (Kernel > Change Kernel >
 gbnenv)
-
 
 Development installation
 ~~~~~~~~~~~~~~~~~~~~~~~~
