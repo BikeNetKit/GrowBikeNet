@@ -24,7 +24,7 @@ GrowBikeNet can also be installed with pip, if all dependencies can be installed
 
 .. warning::
 
-    We do not recommend using pip, because you need to make sure that all dependencies of growbikenet are installed correctly. Using conda (see above) avoids the need to compile the dependencies yourself.
+    We do not recommend using pip, because you need to make sure that all dependencies of growbikenet are installed correctly. Using conda, see `above <#the-easy-way>`__, avoids the need to compile the dependencies yourself.
 
 
 Environment installations
@@ -72,7 +72,7 @@ Then use the Pixi environment as so:
 Run growbikenet in Jupyter lab
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-After having set up the environment above, if you wish to run
+After having set up the environment `above <#environment-installations>`__, if you wish to run
 growbikenet via `JupyterLab <https://pypi.org/project/jupyterlab/>`__,
 follow the corresponding instructions below.
 
@@ -94,7 +94,7 @@ gbnenv)
 With Pixi
 ^^^^^^^^^
 
-Once you are in the Pixi shell, see above, simply run jupyter lab:
+Once you are in the Pixi shell, see `above <#with-pixi>`__, simply run jupyter lab:
 
 ::
 
