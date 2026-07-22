@@ -14,7 +14,6 @@ from shapely.affinity import rotate
 from shapely.strtree import STRtree
 from tqdm import tqdm
 
-np.random.seed(42)  # Set random number generator seed for reproducibility
 
 
 def validate_parameters(
@@ -238,6 +237,8 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
     edges_with_data : geopandas.geodataframe.GeoDataFrame
         The same spatial network edges, but with a new int column "num_points" populated with the summed up "num" values of all points, matched to the closest links if within matching_distance. 
     """
+
+    np.random.seed(42)  # Set random number generator seed for reproducibility
 
     edges_with_data = edges.copy()
 
