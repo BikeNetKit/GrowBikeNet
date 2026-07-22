@@ -278,8 +278,8 @@ def test_add_point_data_to_net_case_success_simple(routed_edges_crashes, crashes
     )
 
 @pytest.fixture
-def turin_routed_edges():
-    g = gpd.read_file("./tests/test_data/turin_edges.gpkg")
+def turin_routed_edges_crashes():
+    g = gpd.read_file("./tests/test_data/turin_edges_gdf.gpkg")
     return g
 
 @pytest.fixture
@@ -288,8 +288,8 @@ def turin_accidents_data():
     return c
 
 @pytest.fixture
-def turin_routed_edges_with_data():
-    g = gpd.read_file("./tests/test_data/turin_edges_with_data.gpkg")
+def turin_routed_edges_with_crashes_data():
+    g = gpd.read_file("./tests/test_data/turin_edges_gdf_with_crashes.gpkg")
     return g
 
 def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_routed_edges_crashes, turin_routed_edges_with_crashes_data):
