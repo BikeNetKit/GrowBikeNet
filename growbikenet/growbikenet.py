@@ -34,6 +34,7 @@ from growbikenet.functions import (
 )
 from growbikenet.visualization import create_plots
 
+np.random.seed(42)  # Set random number generator seed for reproducibility
 
 def growbikenet(
     city_name,
