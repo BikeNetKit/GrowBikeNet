@@ -14,6 +14,8 @@ from shapely.affinity import rotate
 from shapely.strtree import STRtree
 from tqdm import tqdm
 
+np.random.seed(42)  # Set random number generator seed for reproducibility
+
 
 def validate_parameters(
         city_name,
