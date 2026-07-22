@@ -34,7 +34,6 @@ def validate_parameters(
         street_network_file,
         seed_point_file,
         seed_point_tags,
-        point_data_file,
         PRESET_TAGS
     ):
     """ Check if user parameter input is valid. If not, raise an exception or warning
