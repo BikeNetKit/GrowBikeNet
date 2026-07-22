@@ -162,7 +162,7 @@ def test_remove_edge_overlaps(ordered_edges, ordered_edges_without_overlaps):
     )
 
 @pytest.fixture
-def routed_edges():
+def routed_edges_crashes():
     # Nodes of the graph
     A = (800,1800)
     B = (1300,2000)
@@ -224,7 +224,7 @@ def crashes_data():
 
 
 @pytest.fixture
-def routed_edges_with_data():
+def routed_edges_with_crashes_data():
     # Nodes of the graph
     A = (800,1800)
     B = (1300,2000)
@@ -270,10 +270,10 @@ def routed_edges_with_data():
 
     return graph
     
-def test_add_point_data_to_net_case_success_simple(routed_edges, crashes_data, routed_edges_with_data):
+def test_add_point_data_to_net_case_success_simple(routed_edges_crashes, crashes_data, routed_edges_with_crashes_data):
     assert_frame_equal(
-        add_point_data_to_net(crashes_data, routed_edges, '3857'),
-        routed_edges_with_data,
+        add_point_data_to_net(crashes_data, routed_edges_crashes, '3857'),
+        routed_edges_with_crashes_data,
         check_dtype=False
     )
 
@@ -292,9 +292,9 @@ def turin_routed_edges_with_data():
     g = gpd.read_file("./tests/test_data/turin_edges_with_data.gpkg")
     return g
 
-def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_routed_edges, turin_routed_edges_with_data):
+def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_routed_edges_crashes, turin_routed_edges_with_crashes_data):
     assert_frame_equal(
-        add_point_data_to_net(turin_accidents_data, turin_routed_edges, '3857'),
-        turin_routed_edges_with_data,
+        add_point_data_to_net(turin_accidents_data, turin_routed_edges_crashes, '3857'),
+        turin_routed_edges_with_crashes_data,
         check_dtype=False
     )
