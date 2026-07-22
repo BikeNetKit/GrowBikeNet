@@ -183,7 +183,6 @@ def growbikenet(
         street_network_file,
         seed_point_file,
         seed_point_tags,
-        point_data_file,
         PRESET_TAGS
     )
 
@@ -338,6 +337,7 @@ def growbikenet(
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
 
+    # Apply add_point_data_to_net() from here
 
     # Add distances between source and target from geometry
     grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
