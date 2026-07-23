@@ -293,6 +293,15 @@ def turin_routed_edges_with_crashes_data():
     return g
 
 def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_routed_edges_crashes, turin_routed_edges_with_crashes_data):
+    result = add_point_data_to_net(turin_accidents_data, turin_routed_edges_crashes, '3857')
+
+    diff_mask = result['num_points'] != turin_routed_edges_with_crashes_data['num_points']
+    if diff_mask.any():
+        print("\n\nDifferences found:")
+        print(result.loc[diff_mask, ['num_points']])
+        print("\nExpected:")
+        print(turin_routed_edges_with_crashes_data.loc[diff_mask, ['num_points']])
+    
     assert_frame_equal(
         add_point_data_to_net(turin_accidents_data, turin_routed_edges_crashes, '3857'),
         turin_routed_edges_with_crashes_data,
