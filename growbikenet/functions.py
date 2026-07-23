@@ -238,8 +238,6 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
         The same spatial network edges, but with a new int column "num_points" populated with the summed up "num" values of all points, matched to the closest links if within matching_distance. 
     """
 
-    np.random.seed(42)  # Set random number generator seed for reproducibility
-
     edges_with_data = edges.copy()
 
     points_projected = points.to_crs(crs_projected)
@@ -265,9 +263,26 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
     edges_with_data['num_points'] = 0 * len(edges_with_data)
 
     # Add the number of events at each point to its nearest edge
-    for point_idx, nearest_edge_idx in zip(pos[0], pos[1]):
-        num = nums[point_idx]
-        edges_with_data.at[nearest_edge_idx, "num_points"] += num
+    for point in points_geoms.index:
+        num = nums[point]
+
+        # Check the number of closest edges
+        nearest_edges_ids = np.where(pos[0] == point)[0]
+
+        # If no edge is <500m distance, continue
+        if len(nearest_edges_ids) == 0:
+            continue
+
+        # If there is only one edge which is the closest
+        elif len(nearest_edges_ids) == 1:
+            edge = pos[1][nearest_edges_ids[0]]
+            edges_with_data.at[edge, "num_points"] += num
+
+
+        # If there is more than one edge equidistant to the point, pick the one with the lowest index
+        elif len(nearest_edges_ids) > 1:
+            edge = np.sort(pos[1][nearest_edges_ids])[0]
+            edges_with_data.at[edge, "num_points"] += num
 
     # Move the 'geometry' column to the end of the GeoDataFrame
     # Necessary for testing the function
