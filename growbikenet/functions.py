@@ -284,6 +284,11 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
             edge = np.sort(pos[1][nearest_edges_ids])[0]
             edges_with_data.at[edge, "num_points"] += num
 
+    # Checks for pytest
+    print(f"Nearest edges to point 31: {rtree.query_nearest(points_geoms[31])}")
+    print(f"Nearest edges to point 33: {rtree.query_nearest(points_geoms[33])}")
+    print(f"Nearest edges to point 332: {rtree.query_nearest(points_geoms[332])}")
+
     # Move the 'geometry' column to the end of the GeoDataFrame
     # Necessary for testing the function
     cols = [c for c in edges_with_data.columns if c != 'geometry'] + ['geometry']
