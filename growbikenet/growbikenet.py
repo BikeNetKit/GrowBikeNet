@@ -345,6 +345,8 @@ def growbikenet(
     # Add distances between source and target from geometry
     grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
 
+    node_lon = seed_points_snapped_filtered.geometry.x # Needed for add_trip_data_to_net()
+    node_lat = seed_points_snapped_filtered.geometry.y # Needed for add_trip_data_to_net()
     edge_list = grown_bikenet_edges["pair"]
     dist_list = grown_bikenet_edges["dist"]
     dist_dict = dict(zip(edge_list, dist_list))
@@ -353,9 +355,15 @@ def growbikenet(
     # Make graph object from edge list
     B = nx.Graph() # B like bike network
     B.add_nodes_from(seed_points_snapped_filtered.index)
+    nx.set_node_attributes(B, node_lon, "x") # Needed for add_trip_data_to_net()
+    nx.set_node_attributes(B, node_lat, "y") # Needed for add_trip_data_to_net()
     B.add_edges_from(edge_list)
     nx.set_edge_attributes(B, dist_dict, "distance")
     nx.set_edge_attributes(B, geom_dict, "geometry")
+    B.graph["crs"] = crs_projected # Needed for add_trip_data_to_net()
+
+    # Add add_trip_data_to_net() from here
+
 
     progress_bar.update(1)
     progress_bar.close()
