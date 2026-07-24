@@ -359,7 +359,7 @@ def turin_trips_data():
     return t
 
 @pytest.fixture
-def triangulation_graph_with_trips_data():
+def turin_triangulation_graph_with_trips_data():
     nodes = pd.read_csv(f"./tests/test_data/turin_triangulation_nodes_with_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
 
     edges_gdf = gpd.read_file(f"./tests/test_data/turin_triangulation_edges_with_trips.gpkg")
@@ -379,13 +379,13 @@ def triangulation_graph_with_trips_data():
 
     return graph
 
-def test_add_trip_data_to_net_case_success_simple(turin_trips_data, turin_triangulation_graph_trips, triangulation_graph_with_trips_data):
+def test_add_trip_data_to_net_case_success_turin(turin_trips_data, turin_triangulation_graph_trips, turin_triangulation_graph_with_trips_data):
     result = add_trip_data_to_net(
                 turin_trips_data, 
                 turin_triangulation_graph_trips,
                 '3857'
             )
-    expected = triangulation_graph_with_trips_data
+    expected = turin_triangulation_graph_with_trips_data
 
     assert result.nodes == expected.nodes, "Nodes are not the same"
     assert result.adj == expected.adj, "Edges are not the same"
