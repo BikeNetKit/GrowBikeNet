@@ -343,14 +343,9 @@ def growbikenet(
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
 
-    if point_data_file is not None:
-        grown_bikenet_edges = add_point_data_to_net(point_data_file, grown_bikenet_edges, crs_projected)
 
     # Add distances between source and target from geometry
     grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
-
-    if trip_data_file is not None:
-        grown_bikenet_edges = add_trip_data_to_net(trip_data_file, seed_points_snapped_filtered, grown_bikenet_edges, crs_projected)
 
     edge_list = grown_bikenet_edges["pair"]
     dist_list = grown_bikenet_edges["dist"]
