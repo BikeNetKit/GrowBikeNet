@@ -14,6 +14,7 @@ from growbikenet.functions import (
     add_trip_data_to_net
 )
 from shapely.geometry import Point, LineString, MultiLineString
+import networkx as nx
 
 
 # @pytest.fixture
@@ -164,7 +165,7 @@ def test_remove_edge_overlaps(ordered_edges, ordered_edges_without_overlaps):
 
 
 @pytest.fixture
-def node_seed_points():
+def triangulation_graph_trips():
     # Nodes of the graph
     A = (800,1800)
     B = (1300,2000)
@@ -175,49 +176,53 @@ def node_seed_points():
     G = (800,800)
     H = (1300,800)
 
-    d = {
-        'osmid': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-        'geometry':[Point(A), Point(B), Point(C), Point(D), Point(E), Point(F), Point(G), Point(H)]
-    }
-
-    nodes = gpd.GeoDataFrame(d, geometry='geometry', crs = "EPSG:3857")
-    nodes = nodes.set_index('osmid')
-
-    return nodes
-
-@pytest.fixture
-def routed_edges_v2():
-    # Nodes of the graph
-    A = (800,1800)
-    B = (1300,2000)
-    C = (1800,1800)
-    D = (900,1400)
-    E = (1300,1300)
-    F = (1800,1200)
-    G = (800,800)
-    H = (1300,800)
-
-    # Auxiliary nodes
     Z = (1150,1100)
 
-    g = {
-        'pair': [('A','B'), ('A','D'), ('B','C'), ('B','E'), ('C','F'), ('D','E'), ('D','G'), ('E','F'), ('E','H'), ('F','H'), ('G','H')],
-        'dist': [538.52, 412.31, 538.52, 700, 600, 412.32, 608.28, 509.92, 585.41, 640.31, 500],
-        'geometry': [
-            LineString([A,B]),
-            LineString([A,D]),
-            LineString([B,C]),
-            LineString([B,E]),
-            LineString([C,F]),
-            LineString([D,E]),
-            LineString([D,G]),
-            LineString([E,F]),
-            LineString([E,Z,H]),
-            LineString([F,H]),
-            LineString([G,H])
-        ]
+    nodes = {
+        'A': {'x': 800, 'y': 1800},
+        'B': {'x': 1300, 'y': 2000},
+        'C': {'x': 1800, 'y': 1800},
+        'D': {'x': 900, 'y': 1400},
+        'E': {'x': 1300, 'y': 1300},
+        'F': {'x': 1800, 'y': 1200},
+        'G': {'x': 800, 'y': 800},
+        'H': {'x': 1300, 'y': 800}
     }
-    graph = gpd.GeoDataFrame(g, geometry="geometry", crs = "EPSG:3857")
+
+    AB = LineString([A, B])
+    AD = LineString([A, D])
+    BC = LineString([B, C])
+    BE = LineString([B, E])
+    CF = LineString([C, F])
+    DE = LineString([D, E])
+    DG = LineString([D, G])
+    EF = LineString([E, F])
+    EH = LineString([E, Z, H])
+    FH = LineString([F, H])
+    GH = LineString([G, H])
+
+    edges = {
+        ('A','B'): {'distance': AB.length, 'geometry': AB},
+        ('A','D'): {'distance': AD.length, 'geometry': AD},
+        ('B','C'): {'distance': BC.length, 'geometry': BC},
+        ('B','E'): {'distance': BE.length, 'geometry': BE},
+        ('C','F'): {'distance': CF.length, 'geometry': CF},
+        ('D','E'): {'distance': DE.length, 'geometry': DE},
+        ('D','G'): {'distance': DG.length, 'geometry': DG},
+        ('E','F'): {'distance': EF.length, 'geometry': EF},
+        ('E','H'): {'distance': EH.length, 'geometry': EH},
+        ('F','H'): {'distance': FH.length, 'geometry': FH},
+        ('G','H'): {'distance': GH.length, 'geometry': GH}
+    }
+
+    graph = nx.Graph()
+    graph.add_nodes_from(nodes.keys())
+    nx.set_node_attributes(graph, nodes)
+
+    graph.add_edges_from(edges.keys())
+    nx.set_edge_attributes(graph, edges)
+
+    graph.graph["crs"] = '3857'
 
     return graph
 
@@ -254,7 +259,7 @@ def trips_data():
     return trips
 
 @pytest.fixture
-def routed_edges_with_data_v2():
+def triangulation_graph_with_trips_data():
     # Nodes of the graph
     A = (800,1800)
     B = (1300,2000)
@@ -265,41 +270,67 @@ def routed_edges_with_data_v2():
     G = (800,800)
     H = (1300,800)
 
-    # Auxiliary nodes
     Z = (1150,1100)
 
-    e = {
-        'pair': [('A','B'), ('A','D'), ('B','C'), ('B','E'), ('C','F'), ('D','E'), ('D','G'), ('E','F'), ('E','H'), ('F','H'), ('G','H')],
-        'dist': [538.52, 412.31, 538.52, 700, 600, 412.32, 608.28, 509.92, 585.41, 640.31, 500],
-        'num_trips': [0, 1, 0, 0, 0, 6, 2, 3, 1, 0, 0],
-        'geometry': [
-            LineString([A,B]),
-            LineString([A,D]),
-            LineString([B,C]),
-            LineString([B,E]),
-            LineString([C,F]),
-            LineString([D,E]),
-            LineString([D,G]),
-            LineString([E,F]),
-            LineString([E,Z,H]),
-            LineString([F,H]),
-            LineString([G,H])
-        ]
+    nodes = {
+        'A': {'x': 800, 'y': 1800},
+        'B': {'x': 1300, 'y': 2000},
+        'C': {'x': 1800, 'y': 1800},
+        'D': {'x': 900, 'y': 1400},
+        'E': {'x': 1300, 'y': 1300},
+        'F': {'x': 1800, 'y': 1200},
+        'G': {'x': 800, 'y': 800},
+        'H': {'x': 1300, 'y': 800}
     }
-    graph = gpd.GeoDataFrame(e, geometry="geometry", crs = "EPSG:3857")
+
+    AB = LineString([A, B])
+    AD = LineString([A, D])
+    BC = LineString([B, C])
+    BE = LineString([B, E])
+    CF = LineString([C, F])
+    DE = LineString([D, E])
+    DG = LineString([D, G])
+    EF = LineString([E, F])
+    EH = LineString([E, Z, H])
+    FH = LineString([F, H])
+    GH = LineString([G, H])
+
+    edges = {
+        ('A','B'): {'distance': AB.length, 'geometry': AB, 'num_trips': 0},
+        ('A','D'): {'distance': AD.length, 'geometry': AD, 'num_trips': 1},
+        ('B','C'): {'distance': BC.length, 'geometry': BC, 'num_trips': 0},
+        ('B','E'): {'distance': BE.length, 'geometry': BE, 'num_trips': 0},
+        ('C','F'): {'distance': CF.length, 'geometry': CF, 'num_trips': 0},
+        ('D','E'): {'distance': DE.length, 'geometry': DE, 'num_trips': 6},
+        ('D','G'): {'distance': DG.length, 'geometry': DG, 'num_trips': 2},
+        ('E','F'): {'distance': EF.length, 'geometry': EF, 'num_trips': 3},
+        ('E','H'): {'distance': EH.length, 'geometry': EH, 'num_trips': 1},
+        ('F','H'): {'distance': FH.length, 'geometry': FH, 'num_trips': 0},
+        ('G','H'): {'distance': GH.length, 'geometry': GH, 'num_trips': 0}
+    }
+
+    graph = nx.Graph()
+    graph.add_nodes_from(nodes.keys())
+    nx.set_node_attributes(graph, nodes)
+
+    graph.add_edges_from(edges.keys())
+    nx.set_edge_attributes(graph, edges)
+
+    graph.graph["crs"] = '3857'
 
     return graph
 
-def test_add_trip_data_to_net_case_success_simple(trips_data, node_seed_points, routed_edges_v2, routed_edges_with_data_v2):
-    assert_frame_equal(
-        add_trip_data_to_net(
-            trips_data, 
-            node_seed_points,
-            routed_edges_v2,
-            '3857'
-        ),
-        routed_edges_with_data_v2
-    )
+def test_add_trip_data_to_net_case_success_simple(trips_data, triangulation_graph_trips, triangulation_graph_with_trips_data):
+    result = add_trip_data_to_net(
+                trips_data, 
+                triangulation_graph_trips,
+                '3857'
+            )
+    expected = triangulation_graph_with_trips_data
+
+    assert result.nodes == expected.nodes, "Nodes are not the same"
+    assert result.adj == expected.adj, "Edges are not the same"
+    assert result.graph == expected.graph, "Graphs are not the same"
 
 @pytest.fixture
 def turin_routed_edges_v2():
