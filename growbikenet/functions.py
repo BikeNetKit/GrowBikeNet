@@ -220,7 +220,7 @@ def resolve_auto_parameters(
     return seed_point_type, seed_point_grid_spacing, seed_point_delta, seed_point_linking, existing_network_spacing
 
 
-def add_trip_data_to_net(trips, nodes, edges, crs_projected, matching_distance=500):
+def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
     """Match trip data to network edges
 
     First, match origin and destination points given in trips to the nodes. Only consider trips where both origins and nodes are matched within matching_distance. Then, for each trip, find the shortest path over the edges from matched origin node to matched destination node, and add 1 (or optionally "num" if column provided in trips) to the affected edges.
@@ -228,90 +228,7 @@ def add_trip_data_to_net(trips, nodes, edges, crs_projected, matching_distance=5
     Parameters
     ----------
     trips : pandas DataFrame
-        A df of unprojected origin-destination coordinates (columns: origin, destination), with each row encoding a trip. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
-    nodes : geopandas.geodataframe.GeoDataFrame
-        A gdf of projected spatial network nodes. This network is the abstract, unrouted network of seed points.
-    edges : geopandas.geodataframe.GeoDataFrame
-        A gdf of projected spatial network edges. This network is the abstract, unrouted network of seed points.
-    crs_projected : str
-        Coordinate reference system that is used to project spatial data.
-    matching_distance : int
-        Matching distance in meters
-
-    Returns
-    -------
-    edges_with_data : geopandas.geodataframe.GeoDataFrame
-        The same projected spatial network edges, but with a new int column "num_trips" populated with the summed up "num" values of all trips where both origins and destinations could be matched to the closest network nodes within matching_distance. 
-    """
-
-    edges_with_data = gpd.GeoDataFrame(edges)
-
-    transformer = Transformer.from_crs("EPSG:4326", crs_projected, always_xy=True)
-    
-    # If column "num" is not provided assume 1 trip per origin-destination (OD) pair
-    if 'num' in trips.columns:
-        nums = trips['num']
-    else:
-        nums = [1] * len(trips)
-    
-    # Project trip data and extract coordinates
-    origins = np.array(list(zip(*transformer.transform(trips['o_lon'], trips['o_lat']))))
-    destinations = np.array(list(zip(*transformer.transform(trips['d_lon'], trips['d_lat']))))
-
-    
-    # Reasoning copied from osmnx.distance.nearest_nodes()
-    # Since graph is projected, it uses a k-d tree for Euclidean nearest neighbour search
-    nodes_xy = gpd.GeoDataFrame()
-    nodes_xy['x'] = nodes.geometry.x
-    nodes_xy['y'] = nodes.geometry.y
-
-
-    # Match given origins and destinations to the closest nodes in the network
-    o_dist, o_pos = scipy.spatial.cKDTree(nodes_xy).query(origins, k=1)
-    d_dist, d_pos = scipy.spatial.cKDTree(nodes_xy).query(destinations, k=1)
-
-    o_nodes = nodes.index[o_pos].to_numpy()
-    d_nodes = nodes.index[d_pos].to_numpy()
-
-    edge_list = edges['pair']
-    dist_list = edges["dist"]
-    dist_dict = dict(zip(edge_list, dist_list))
-    graph = nx.Graph() # B like bike network
-    graph.add_nodes_from(nodes.index)
-    graph.add_edges_from(edge_list)
-    nx.set_edge_attributes(graph, dist_dict, "distance")
-
-    edge_dict = dict(zip(edge_list, edges.index))
-    edges_with_data['num_trips'] = 0 * len(edges_with_data)
-    for o_node, o_distance, d_node, d_distance, num in zip(o_nodes, o_dist, d_nodes, d_dist, nums):
-        if o_distance > matching_distance or d_distance > matching_distance or o_node == d_node:
-            continue  
-
-        path = nx.shortest_path(graph, source=o_node, target=d_node, weight="distance")
-
-        for i, node in enumerate(path):
-            if i == len(path) - 1:
-                break
-            edge_id = edge_dict.get((node, path[i+1])) or edge_dict.get((path[i+1], node))
-            edges_with_data.at[edge_id, "num_trips"] += num
-
-    # Move the 'geometry' column to the end of the GeoDataFrame
-    # Necessary for testing the function
-    cols = [c for c in edges_with_data.columns if c != 'geometry'] + ['geometry']
-    edges_with_data = edges_with_data[cols]
-
-    return edges_with_data
-
-
-def add_trip_data_to_net_v2(trips, A, crs_projected, matching_distance=500):
-    """Match trip data to network edges
-
-    First, match origin and destination points given in trips to the nodes. Only consider trips where both origins and nodes are matched within matching_distance. Then, for each trip, find the shortest path over the edges from matched origin node to matched destination node, and add 1 (or optionally "num" if column provided in trips) to the affected edges.
-
-    Parameters
-    ----------
-    trips : pandas DataFrame
-        A df of unprojected origin-destination coordinates (columns: origin, destination), with each row encoding a trip. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
+        A df of unprojected origin-destination coordinates (columns: o_lat, o_lon, d_lat, d_lon), with each row encoding a trip. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
     A: networkx.graph
         Graph created from triangulation edge list
     crs_projected : str
@@ -350,12 +267,22 @@ def add_trip_data_to_net_v2(trips, A, crs_projected, matching_distance=500):
     trip_dict = dict(zip(graph_with_data.edges, [0] * len(graph_with_data.edges)))
 
     for o_node, o_distance, d_node, d_distance, num in zip(o_nodes, o_distances, d_nodes, d_distances, nums):
+
+        # If:
+        #   - origin and destination are snapped to the same node, or
+        #   - origin is >500m away from the snapped node, or
+        #   - destination is >500m away from the snapped node
+        # no trips are added
         if o_node == d_node or o_distance > matching_distance or d_distance > matching_distance:
             continue  
 
+
+        # Get shortest path between the snapped orgin and destination nodes
         path = nx.shortest_path(graph_with_data, source=o_node, target=d_node, weight="distance")
         path_edges = list(zip(path[:-1], path[1:]))
 
+
+        # Add the number of trips to each edge of the shortest path
         for i, edge_id in enumerate(path_edges):
             if edge_id in trip_dict.keys():
                 trip_dict[edge_id] += num
