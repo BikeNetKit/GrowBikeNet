@@ -333,19 +333,25 @@ def test_add_trip_data_to_net_case_success_simple(trips_data, triangulation_grap
     assert result.graph == expected.graph, "Graphs are not the same"
 
 @pytest.fixture
-def turin_routed_edges_v2():
-    e = gpd.read_file("./tests/test_data/turin_edges_v2.gpkg")
-    # because the tuples and lists are saved as strings
-    e['pair'] = e['pair'].apply(ast.literal_eval)
-    e['path_nodes'] = e['path_nodes'].apply(ast.literal_eval)
-    e['path_edges'] = e['path_edges'].apply(ast.literal_eval)
-    return e
+def turin_triangulation_graph_trips():
+    nodes = pd.read_csv(f"./tests/test_data/turin_triangulation_nodes_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
 
-@pytest.fixture
-def turin_seed_nodes():
-    n = gpd.read_file("./tests/test_data/turin_seed_points.gpkg")
-    n.set_index('osmid', drop = False, inplace = True)
-    return n
+    edges_gdf = gpd.read_file(f"./tests/test_data/turin_triangulation_edges_trips.gpkg")
+    edges_gdf.set_index(['u', 'v'], inplace=True)
+    edges = edges_gdf.to_dict(orient='index')
+
+    graph_att = pd.read_csv(f"./tests/test_data/turin_triangulation_graph_trips.csv").loc[0,:].to_dict()
+
+    graph = nx.Graph()
+    graph.add_nodes_from(nodes.keys())
+    nx.set_node_attributes(graph, nodes)
+
+    graph.add_edges_from(edges.keys())
+    nx.set_edge_attributes(graph, edges)
+
+    graph.graph = graph_att
+
+    return graph
 
 @pytest.fixture
 def turin_trips_data():
@@ -353,21 +359,34 @@ def turin_trips_data():
     return t
 
 @pytest.fixture
-def turin_routed_edges_with_trips():
-    e = gpd.read_file("./tests/test_data/turin_edges_with_trips.gpkg")
-    # because the tuples and lists are saved as strings
-    e['pair'] = e['pair'].apply(ast.literal_eval)
-    e['path_nodes'] = e['path_nodes'].apply(ast.literal_eval)
-    e['path_edges'] = e['path_edges'].apply(ast.literal_eval)
-    return e
+def triangulation_graph_with_trips_data():
+    nodes = pd.read_csv(f"./tests/test_data/turin_triangulation_nodes_with_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
 
-def test_add_trip_data_to_net_case_success_turin(turin_trips_data, turin_seed_nodes, turin_routed_edges_v2, turin_routed_edges_with_trips):
-    assert_frame_equal(
-        add_trip_data_to_net(
-            turin_trips_data, 
-            turin_seed_nodes,
-            turin_routed_edges_v2,
-            '3857'
-        ),
-        turin_routed_edges_with_trips
-    )
+    edges_gdf = gpd.read_file(f"./tests/test_data/turin_triangulation_edges_with_trips.gpkg")
+    edges_gdf.set_index(['u', 'v'], inplace=True)
+    edges = edges_gdf.to_dict(orient='index')
+
+    graph_att = pd.read_csv(f"./tests/test_data/turin_triangulation_graph_with_trips.csv").loc[0,:].to_dict()
+
+    graph = nx.Graph()
+    graph.add_nodes_from(nodes.keys())
+    nx.set_node_attributes(graph, nodes)
+
+    graph.add_edges_from(edges.keys())
+    nx.set_edge_attributes(graph, edges)
+
+    graph.graph = graph_att
+
+    return graph
+
+def test_add_trip_data_to_net_case_success_simple(turin_trips_data, turin_triangulation_graph_trips, triangulation_graph_with_trips_data):
+    result = add_trip_data_to_net(
+                turin_trips_data, 
+                turin_triangulation_graph_trips,
+                '3857'
+            )
+    expected = triangulation_graph_with_trips_data
+
+    assert result.nodes == expected.nodes, "Nodes are not the same"
+    assert result.adj == expected.adj, "Edges are not the same"
+    assert result.graph == expected.graph, "Graphs are not the same"
