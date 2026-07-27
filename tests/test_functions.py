@@ -15,6 +15,7 @@ from growbikenet.functions import (
     create_gdf_with_geoms
 )
 from shapely.geometry import Point, LineString, MultiLineString
+import ast
 
 
 # @pytest.fixture
@@ -262,4 +263,44 @@ def test_create_gdf_with_geoms_case_success_simple(routed_triangulation, network
             network_edges
         ),
         routed_triangulation_with_geoms
+    )
+
+@pytest.fixture
+def turin_routed_triangulation():
+    df = pd.read_csv("./tests/test_data/turin_routed_triangulation_wout_geoms.csv",
+                     sep = ";"
+                     )
+    df['pair'] = df['pair'].apply(ast.literal_eval)
+    df['path_nodes'] = df['path_nodes'].apply(ast.literal_eval)
+    df['path_edges'] = df['path_edges'].apply(ast.literal_eval)
+    
+    return df
+
+@pytest.fixture
+def turin_network_edges():
+    gdf = gpd.read_file(
+        "./tests/test_data/turin_edges.gpkg"
+    )
+    gdf.set_index(['u','v'], inplace=True)
+
+    return gdf
+
+@pytest.fixture
+def turin_routed_triangulation_with_geoms():
+    gdf = gpd.read_file(
+        "./tests/test_data/turin_routed_triangulation_w_geoms.gpkg"
+    )
+    gdf['pair'] = gdf['pair'].apply(ast.literal_eval)
+    gdf['path_nodes'] = gdf['path_nodes'].apply(ast.literal_eval)
+    gdf['path_edges'] = gdf['path_edges'].apply(ast.literal_eval)
+    
+    return gdf
+
+def test_create_gdf_with_geoms_case_success_turin(turin_routed_triangulation, turin_network_edges, turin_routed_triangulation_with_geoms):
+    assert_frame_equal(
+        create_gdf_with_geoms(
+            turin_routed_triangulation, 
+            turin_network_edges
+        ),
+        turin_routed_triangulation_with_geoms
     )
