@@ -26,10 +26,18 @@ def create_plots(edges_ranked, seed_points_snapped, ranking, with_existing_bike_
         Method used to rank edges.
     with_existing_bike_network : bool
         Boolean deciding whether the plot is with or without existing bike network.
+
+    Returns
+    -------
+    figs : list
+        List of figure handles
     """
 
+    n = len(edges_ranked)+int(not with_existing_bike_network)
+    figs = [0]*n
+
     for ordering in tqdm(
-        list(range(len(edges_ranked)+int(not with_existing_bike_network))), # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
+        list(range(n)), # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
         desc="{:<23}".format("Generating plots"),
         leave=True,
         unit="plot",
@@ -57,8 +65,10 @@ def create_plots(edges_ranked, seed_points_snapped, ranking, with_existing_bike_
 
         ax.set_axis_off()
 
-        plot_id = "{:04d}".format(int(ordering))  # format plot ID with leading zeros
+        plot_id = "{:04d}".format(ordering)  # format plot ID with leading zeros
 
         fig.savefig(settings.export_path['plots']+f"ordering_{ranking}/{plot_id}.png", dpi=settings.viz['dpi'], bbox_inches='tight')
-
+        figs[ordering] = fig
         plt.close()
+        
+    return figs

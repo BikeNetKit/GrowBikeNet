@@ -56,7 +56,7 @@ jobs:
         submodule:
           - { name: "Main", pytest_args: "tests/test_main.py" }
           - { name: "Functions", pytest_args: "tests/test_functions.py" }
-          - { name: "Visualization", pytest_args: "tests/test_visualization.py" }
+          - { name: "Visualization", pytest_args: "tests/test_visualization.py --mpl" }
       fail-fast: false
 
     name: ${{ matrix.submodule.name }} (${{ matrix.python-version }} on ${{ matrix.os }})
