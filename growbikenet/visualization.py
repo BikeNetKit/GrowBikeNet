@@ -12,11 +12,11 @@ from tqdm import tqdm
 
 
 def create_plots(
-    routed_edges_gdf, seed_points_snapped, ranking
+    edges_ranked, seed_points_snapped, ranking
 ):
 
     for ordering in tqdm(
-        sorted(list(routed_edges_gdf.index)),
+        sorted(list(edges_ranked.index)),
         desc="{:<23}".format("Generating plots"),
         leave=True,
         unit="plot",
@@ -26,11 +26,11 @@ def create_plots(
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
         # first, plot street network as "base line"
-        routed_edges_gdf.plot(ax=ax, color=settings.viz['color']['street'], lw=settings.viz['line_width']['street'], zorder=0)
+        edges_ranked.plot(ax=ax, color=settings.viz['color']['street'], lw=settings.viz['line_width']['street'], zorder=0)
 
         # plot all edges up to current rank
 
-        routed_edges_gdf[routed_edges_gdf.index <= ordering].plot(
+        edges_ranked[edges_ranked.index <= ordering].plot(
             ax=ax, color=settings.viz['color']['edge'], lw=settings.viz['line_width']['bike'], zorder=1
         )
 

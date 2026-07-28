@@ -433,12 +433,9 @@ def growbikenet(
     if export_plots:# or export_video:
         ### Visualize
 
-        # Read in file to plot
-        routed_edges_gdf = gpd.read_file(settings.export_path['results']+export_data_filename, layer="Grown bike network")
-
         os.makedirs(settings.export_path['plots']+"ordering_"+ranking+"/", exist_ok=True)
         create_plots(
-            routed_edges_gdf,
+            edges_ranked,
             seed_points_snapped_filtered,
             ranking,
         )
