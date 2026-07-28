@@ -16,7 +16,7 @@ def create_plots(
 ):
 
     for ordering in tqdm(
-        sorted(routed_edges_gdf["ordering_"+ranking].unique()),
+        sorted(routed_edges_gdf['rank'].unique()),
         desc="{:<23}".format("Generating plots"),
         leave=True,
         unit="plot",
@@ -26,20 +26,20 @@ def create_plots(
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
         # first, plot street network as "base line"
-        routed_edges_gdf.plot(ax=ax, color=settings.viz.color['street'], lw=settings.viz.line_width['street'], zorder=0)
+        routed_edges_gdf.plot(ax=ax, color=settings.viz['color']['street'], lw=settings.viz['line_width']['street'], zorder=0)
 
         # plot all edges up to current rank
 
-        routed_edges_gdf[routed_edges_gdf["ordering_"+ranking] <= ordering].plot(
-            ax=ax, color=settings.viz.color['edge'], lw=settings.viz.line_width['bike'], zorder=1
+        routed_edges_gdf[routed_edges_gdf['rank'] <= ordering].plot(
+            ax=ax, color=settings.viz['color']['edge'], lw=settings.viz['line_width']['bike'], zorder=1
         )
 
-        seed_points_snapped.plot(ax=ax, color=settings.viz.color['seed_point'], zorder=2)
+        seed_points_snapped.plot(ax=ax, color=settings.viz['color']['seed_point'], zorder=2)
 
         ax.set_axis_off()
 
-        plot_id = "{:03d}".format(int(ordering))  # format plot ID with leading zeros
+        plot_id = "{:04d}".format(int(ordering))  # format plot ID with leading zeros
 
-        fig.savefig(settings.export_path['plots']+f"ordering_{ranking}/{plot_id}.png", dpi=150, bbox_inches='tight')
+        fig.savefig(settings.export_path['plots']+f"ordering_{ranking}/{plot_id}.png", dpi=settings.viz['dpi'], bbox_inches='tight')
 
         plt.close()
