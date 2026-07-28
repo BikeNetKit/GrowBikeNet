@@ -411,32 +411,34 @@ def growbikenet(
             city_boundary_gdf.geometry = city_boundary_gdf.geometry.set_precision(grid_size=1) 
         seed_points_snapped_filtered.geometry = seed_points_snapped_filtered.geometry.set_precision(grid_size=1)
         edges_ranked.geometry = edges_ranked.geometry.set_precision(grid_size=1)
+
         if settings.export_file_format == "geojson":
             edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
             seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
             if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif settings.export_file_format == "gpkg":
+            f = settings.export_path['results']+export_data_filename
+            if os.path.exists(f):
+                os.remove(f) # mode="w" does not work for to_file with gpkg. It always appends. Therefore, existing file needs to be deleted.
             if existing_network_spacing:
-                edges_ranked.iloc[[0]].to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Existing bike network")
-                edges_ranked.iloc[1:-1].to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Grown bike network", append=True)
+                edges_ranked.iloc[[0]].to_file(f, driver="GPKG", layer="Existing bike network") 
+                edges_ranked.iloc[1:-1].to_file(f, driver="GPKG", layer="Grown bike network")
             else:
-                edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Grown bike network")
-            seed_points_snapped_filtered.to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="Seed points", append=True)
-            if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+export_data_filename, driver="GPKG", layer="City boundary", append=True)
+                edges_ranked.to_file(f, driver="GPKG", layer="Grown bike network")
+            seed_points_snapped_filtered.to_file(f, driver="GPKG", layer="Seed points")
+            if city_boundary_exists: city_boundary_gdf.to_file(f, driver="GPKG", layer="City boundary")
         progress_bar.update(1)
         progress_bar.close()
 
     if export_plots:# or export_video:
         ### Visualize
 
-        # Read in file to plot
-        routed_edges_gdf = gpd.read_file(settings.export_path['results']+export_data_filename, layer="Grown bike network")
-
         os.makedirs(settings.export_path['plots']+"ordering_"+ranking+"/", exist_ok=True)
         create_plots(
-            routed_edges_gdf,
+            edges_ranked,
             seed_points_snapped_filtered,
             ranking,
+            bool(existing_network_spacing),
         )
 
         # if export_video:

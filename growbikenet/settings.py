@@ -30,13 +30,22 @@ random_seed = 42
 
 # Viz/plot settings
 viz = {
-    "color":{
-        "street":"#999999",
-        "edge":"#0EB6D2",
-        "seed_point":"#FF7338"
+    "bike_to_grow":{
+        "color": "#999999",
+        "line_width": 0.75,
     },
-    "line_width":{
-        "street": 0.75,
-        "bike": 2
+    "bike_grown":{
+        "color": "#096a51",
+        "line_width": 3,
     },
+    "bike_existing":{
+        "color": "#9999cc",
+        "line_width": 2,
+    },
+    "seed_point":{
+        "color": "#000000",
+        "edgecolor": "#FFFFFF",
+        "markersize": 60,
+    },
+    "dpi": 150,
 }
