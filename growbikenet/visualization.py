@@ -29,7 +29,7 @@ def create_plots(edges_ranked, seed_points_snapped, ranking, with_existing_bike_
     """
 
     for ordering in tqdm(
-        list(range(len(edges_ranked)))[:-1] if with_existing_bike_network else list(range(len(edges_ranked)+1)), # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
+        list(range(len(edges_ranked)+int(not with_existing_bike_network))), # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
         desc="{:<23}".format("Generating plots"),
         leave=True,
         unit="plot",
