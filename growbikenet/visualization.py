@@ -11,9 +11,22 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-def create_plots(
-    edges_ranked, seed_points_snapped, ranking, with_existing_bike_network
-):
+def create_plots(edges_ranked, seed_points_snapped, ranking, with_existing_bike_network):
+    """Plot frames of a growing bicycle network 
+
+    Results are png files saved into settings.export_path['plots'].
+
+    Parameters
+    ----------
+    edges_ranked : geopandas.geodataframe.GeoDataFrame
+        Ordered geodataframe of all edges in street network, representing a growing bicycle network
+    seed_points_snapped : geopandas.geodataframe.GeoDataFrame
+        Set of seed points snapped to the street network, representing the growing bicycle network nodes
+    ranking : str
+        Method used to rank edges.
+    with_existing_bike_network : bool
+        Boolean deciding whether the plot is with or without existing bike network.
+    """
 
     for ordering in tqdm(
         list(range(len(edges_ranked)))[:-1] if with_existing_bike_network else list(range(len(edges_ranked)+1)), # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
