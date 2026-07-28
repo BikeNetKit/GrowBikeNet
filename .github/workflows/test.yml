@@ -54,8 +54,9 @@ jobs:
         python-version: ["3.12"]
         os: [ubuntu-latest]
         submodule:
-          - { name: "Functions", pytest_args: "tests/test_functions.py" }
           - { name: "Main", pytest_args: "tests/test_main.py" }
+          - { name: "Functions", pytest_args: "tests/test_functions.py" }
+          - { name: "Visualization", pytest_args: "tests/test_visualization.py" }
       fail-fast: false
 
     name: ${{ matrix.submodule.name }} (${{ matrix.python-version }} on ${{ matrix.os }})
