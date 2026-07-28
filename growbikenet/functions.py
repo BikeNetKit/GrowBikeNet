@@ -1146,7 +1146,7 @@ def create_gdf_with_geoms(df, edges):
         projected GeoDataFrame with path nodes and path edges and merged geometries
     """
     # Get geometry by merging all geoms from edge gdf
-    df["geometry"] = df.path_edges.apply(lambda x: edges.loc[x].geometry.union_all())
+    df["geometry"] = df.path_edges.apply(lambda x: MultiLineString(list(edges.loc[x].geometry)))
     # Convert edges into a gdf
     gdf = gpd.GeoDataFrame(df, crs=edges.crs, geometry="geometry")
     # Merge multilinestring into linestring where possible (should be possible everywhere)
