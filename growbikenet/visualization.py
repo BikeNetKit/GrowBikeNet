@@ -16,7 +16,7 @@ def create_plots(
 ):
 
     for ordering in tqdm(
-        sorted(routed_edges_gdf['rank'].unique()),
+        sorted(list(routed_edges_gdf.index)),
         desc="{:<23}".format("Generating plots"),
         leave=True,
         unit="plot",
@@ -30,7 +30,7 @@ def create_plots(
 
         # plot all edges up to current rank
 
-        routed_edges_gdf[routed_edges_gdf['rank'] <= ordering].plot(
+        routed_edges_gdf[routed_edges_gdf.index <= ordering].plot(
             ax=ax, color=settings.viz['color']['edge'], lw=settings.viz['line_width']['bike'], zorder=1
         )
 
