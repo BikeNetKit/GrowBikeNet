@@ -45,7 +45,7 @@ viz = {
     "seed_point":{
         "color": "#000000",
         "edgecolor": "#FFFFFF",
-        "markersize": 40,
+        "markersize": 60,
     },
     "dpi": 150,
 }

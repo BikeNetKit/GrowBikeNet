@@ -16,7 +16,7 @@ def create_plots(
 ):
 
     for ordering in tqdm(
-        list(edges_ranked.index)[:-1] if with_existing_bike_network else list(edges_ranked.index)+[len(edges_ranked.index)], # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
+        list(range(len(edges_ranked)))[:-1] if with_existing_bike_network else list(range(len(edges_ranked)+1)), # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
         desc="{:<23}".format("Generating plots"),
         leave=True,
         unit="plot",
