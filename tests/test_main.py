@@ -4,20 +4,25 @@ import osmnx as ox
 from growbikenet.growbikenet import growbikenet
 
 @pytest.fixture
-def create_validation_gdf_oelde():
+def validation_gdf_oelde():
     gdf = gpd.read_file("./tests/test_data/oelde_growbikenet.gpkg", layer='Grown bike network')
     return gdf
 
 @pytest.fixture
-def create_validation_gdf_athens():
+def validation_gdf_athens():
     gdf = gpd.read_file("./tests/test_data/athens_growbikenet_with-bikenw.gpkg", layer='Grown bike network')
     return gdf
 
-def test_growbikenet_case_success_online(create_validation_gdf_oelde):
+@pytest.fixture
+def validation_gdf_asti():
+    gdf = gpd.read_file("./tests/test_data/asti_growbikenet.gpkg", layer='Grown bike network')
+    return gdf
+
+def test_growbikenet_case_success_online(validation_gdf_oelde):
     """Verify that the online version of growbikenet works as intended.
     This test might brake whenever Oelde is changed too much on OSM!
     """
-    create_validation_gdf_oelde.equals(
+    validation_gdf_oelde.equals(
         growbikenet(
             city_name="Oelde",
             ranking="betweenness_centrality",
@@ -25,10 +30,10 @@ def test_growbikenet_case_success_online(create_validation_gdf_oelde):
         )
     )
 
-def test_growbikenet_case_success_offline1(create_validation_gdf_oelde):
+def test_growbikenet_case_success_offline1(validation_gdf_oelde):
     """Verify that the offline version of growbikenet works as intended.
     """
-    create_validation_gdf_oelde.equals(
+    validation_gdf_oelde.equals(
         growbikenet(
             city_name="Oelde",
             ranking="betweenness_centrality",
@@ -37,10 +42,10 @@ def test_growbikenet_case_success_offline1(create_validation_gdf_oelde):
         )
     )
 
-def test_growbikenet_case_success_offline2(create_validation_gdf_athens):
+def test_growbikenet_case_success_offline2(validation_gdf_athens):
     """Verify that the offline version of growbikenet works as intended, with existing bike network.
     """
-    create_validation_gdf_athens.equals(
+    validation_gdf_athens.equals(
         growbikenet(
             city_name="Municipality of Athens",
             ranking="betweenness_centrality",
@@ -51,6 +56,22 @@ def test_growbikenet_case_success_offline2(create_validation_gdf_athens):
                 "street_network":"./tests/test_data/athens_street_network.gpkg",
                 "bike_network":"./tests/test_data/athens_bike_network.gpkg",
             }
+        )
+    )
+
+def test_growbikenet_case_success_offline3(validation_gdf_asti):
+    """Verify that the offline version of growbikenet works as intended. 
+    Asti has previously caused a KeyError.
+    """
+    validation_gdf_asti.equals(
+        growbikenet(
+            city_name="Asti 16",
+            ranking="betweenness_centrality",
+            export_data=False,
+            import_files={
+                "city_boundary":"./tests/test_data/asti_city_boundary.gpkg",
+                "street_network":"./tests/test_data/asti_street_network.gpkg"
+            },
         )
     )
 
