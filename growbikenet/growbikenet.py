@@ -438,6 +438,7 @@ def growbikenet(
             edges_ranked,
             seed_points_snapped_filtered,
             ranking,
+            bool(existing_network_spacing),
         )
 
         # if export_video:

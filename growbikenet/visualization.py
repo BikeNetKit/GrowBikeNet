@@ -12,11 +12,11 @@ from tqdm import tqdm
 
 
 def create_plots(
-    edges_ranked, seed_points_snapped, ranking
+    edges_ranked, seed_points_snapped, ranking, with_existing_bike_network
 ):
 
     for ordering in tqdm(
-        sorted(list(edges_ranked.index)),
+        list(edges_ranked.index)[:-1] if with_existing_bike_network else list(edges_ranked.index)+[len(edges_ranked.index)], # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
         desc="{:<23}".format("Generating plots"),
         leave=True,
         unit="plot",
@@ -25,14 +25,20 @@ def create_plots(
 
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
-        # first, plot street network as "base line"
-        edges_ranked.plot(ax=ax, color=settings.viz['color']['street'], lw=settings.viz['line_width']['street'], zorder=0)
+        # Plot to grow network as base line
+        edges_ranked.plot(ax=ax, color=settings.viz['color']['bike_to_grow'], lw=settings.viz['line_width']['bike_to_grow'], zorder=0)
 
-        # plot all edges up to current rank
+        if with_existing_bike_network:
+            # Plot existing bike network
+            edges_ranked.iloc[[0]].plot(
+                ax=ax, color=settings.viz['color']['bike_existing'], lw=settings.viz['line_width']['bike_existing'], zorder=1
+            )
 
-        edges_ranked[edges_ranked.index <= ordering].plot(
-            ax=ax, color=settings.viz['color']['edge'], lw=settings.viz['line_width']['bike'], zorder=1
-        )
+        # Plot all edges up to current rank
+        if ordering >= 1:
+            edges_ranked.iloc[int(with_existing_bike_network):ordering+int(with_existing_bike_network)].plot(
+                ax=ax, color=settings.viz['color']['bike_grown'], lw=settings.viz['line_width']['bike_grown'], zorder=1
+            )
 
         seed_points_snapped.plot(ax=ax, color=settings.viz['color']['seed_point'], zorder=2)
 
