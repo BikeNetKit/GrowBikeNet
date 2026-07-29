@@ -12,6 +12,7 @@ dependencies:
   - ipykernel
   - pytest
   - pytest-mpl
+  - pytest-cov
   - sphinx
   - numpydoc
   - myst-nb
