@@ -349,10 +349,6 @@ def download_network(city_name, network_type='drive', custom_filter=None, retain
         city_boundary_geometry, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
         )
 
-    # # Convert from MultiDiGraph to Digraph. This drops multiedges, retaining only the shortest parallel edges.
-    # g = ox.convert.to_digraph(g)
-    # # Convert back from Digraph to MultiDiGraph, as osmnx only works with MultiGraphs or MultiDiGraphs. The edge keys are now all set to 0.
-    # g = nx.MultiDiGraph(g)
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     # Export osmnx data to gdfs
