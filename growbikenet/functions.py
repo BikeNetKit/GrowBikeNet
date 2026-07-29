@@ -233,11 +233,14 @@ def resolve_auto_parameters(
 def import_network(street_network):
     """Import and project a street network from gpkg file
 
+    For all edges between a pair of nodes u and v there must be one edge with key 0.
+
     Parameters
     ----------
     street_network : str
-        The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
+        The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saving its undirected version via ox.io.save_graph_geopackage(). For example:
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
+        >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
         >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg")
 
     Returns
@@ -271,35 +274,10 @@ def import_network(street_network):
     return nodes, edges, g_undir, city_boundary_gdf
 
 
-def orientation_order(g_undir):
-    """Calculate a graph's weighted orientation order phi, see [1]_
-
-    Whether phi is weighted or unweighted does not matter much, but for the purpose of growing bike networks, weighted seems more appropriate.
-    Note that the values here are lower than in the paper [1]_ for unknown reasons, also with the unweighted version.
-
-    Parameters
-    ----------
-    g_undir : networkx.classes.multigraph.MultiGraph
-        networkX street network, undirected, weighted with "length"
-
-    Returns
-    -------
-    phi : float
-        Weighted orientation order
-
-    References
-    ----------
-    .. [1] G. Boeing, "Urban spatial order: Street network orientation, configuration, and entropy", Applied Network Science 4, 67 (2019)
-    """
-    Hw = ox.bearing.orientation_entropy(g_undir, weight="length")
-    Hg = 1.386
-    Hmax = 3.584
-    phi = 1 - ((Hw-Hg)/(Hmax-Hg))**2
-    return phi
-
-
 def prepare_nodes_edges(nodes, edges):
     """Project and prepare nodes and edges for further use
+
+    For all edges between a pair of nodes u and v there must be one edge with key 0.
     
     Parameters
     ----------
@@ -316,13 +294,15 @@ def prepare_nodes_edges(nodes, edges):
         OSM edges, projected
     """
 
-    # Replace after dropping edges with key = 1
     if not edges.empty:
+        # Drop edges with key != 0, effectively making it a non-multigraph
         edges = edges.loc[:,:,0].copy()
-        # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
+        # This also means we are dropping the "key" level from the edge multiindex (u,v,key becomes u,v)
+        # To do: Instead of assuming key 0 edges exist (which is often not the case), only retain the shortest edges as in osmnx.convert.to_digraph(), independent of the key.
 
         # Project geometries of nodes, edges
         edges = edges.to_crs(settings.crs_projected)
+
     nodes = nodes.to_crs(settings.crs_projected)
 
     # Add osm ID as column to node gdf
@@ -369,6 +349,10 @@ def download_network(city_name, network_type='drive', custom_filter=None, retain
         city_boundary_geometry, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
         )
 
+    # # Convert from MultiDiGraph to Digraph. This drops multiedges, retaining only the shortest parallel edges.
+    # g = ox.convert.to_digraph(g)
+    # # Convert back from Digraph to MultiDiGraph, as osmnx only works with MultiGraphs or MultiDiGraphs. The edge keys are now all set to 0.
+    # g = nx.MultiDiGraph(g)
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     # Export osmnx data to gdfs
@@ -1152,3 +1136,30 @@ def create_gdf_with_geoms(df, edges):
     # Merge multilinestring into linestring where possible (should be possible everywhere)
     gdf["geometry"] = gdf.line_merge()
     return gdf
+
+
+def orientation_order(g_undir):
+    """Calculate a graph's weighted orientation order phi, see [1]_
+
+    Whether phi is weighted or unweighted does not matter much, but for the purpose of growing bike networks, weighted seems more appropriate.
+    Note that the values here are lower than in the paper [1]_ for unknown reasons, also with the unweighted version.
+
+    Parameters
+    ----------
+    g_undir : networkx.classes.multigraph.MultiGraph
+        networkX street network, undirected, weighted with "length"
+
+    Returns
+    -------
+    phi : float
+        Weighted orientation order
+
+    References
+    ----------
+    .. [1] G. Boeing, "Urban spatial order: Street network orientation, configuration, and entropy", Applied Network Science 4, 67 (2019)
+    """
+    Hw = ox.bearing.orientation_entropy(g_undir, weight="length")
+    Hg = 1.386
+    Hmax = 3.584
+    phi = 1 - ((Hw-Hg)/(Hmax-Hg))**2
+    return phi

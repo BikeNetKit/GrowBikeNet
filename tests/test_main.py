@@ -62,16 +62,19 @@ def test_growbikenet_case_success_offline2(validation_gdf_athens):
 def test_growbikenet_case_success_offline3(validation_gdf_asti):
     """Verify that the offline version of growbikenet works as intended. 
     Asti has previously caused a KeyError.
+
+    To get the correct asti_street_network.gpkg, run the following:
+    >>> city_boundary_gdf = ox.geocoder.geocode_to_gdf("Asti 16")
+    >>> g = ox.graph_from_polygon(city_boundary_gdf.geometry[0], network_type="drive")
+    >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
+    >>> ox.io.save_graph_geopackage(g, "asti_street_network.gpkg")
     """
     validation_gdf_asti.equals(
         growbikenet(
-            city_name="Asti 16",
+            city_name="Asti 16", # The 16 is needed to select the city, not the municipality (it doesn't matter here as the network is imported anyway, but it is important to know for exporting the street network asti_street_network.gpkg in the first place)
             ranking="betweenness_centrality",
             export_data=False,
-            import_files={
-                "city_boundary":"./tests/test_data/asti_city_boundary.gpkg",
-                "street_network":"./tests/test_data/asti_street_network.gpkg"
-            },
+            import_files={"street_network":"./tests/test_data/asti_street_network.gpkg"},
         )
     )
 
