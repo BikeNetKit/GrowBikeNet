@@ -1130,7 +1130,11 @@ def create_gdf_with_geoms(df, edges):
         projected GeoDataFrame with path nodes and path edges and merged geometries
     """
     # Get geometry by merging all geoms from edge gdf
-    df["geometry"] = df.path_edges.apply(lambda x: MultiLineString(list(edges.loc[x].geometry)))
+    try:
+        df["geometry"] = df.path_edges.apply(lambda x: MultiLineString(list(edges.loc[x].geometry)))
+    except KeyError as e:
+        e.add_note("NOTE: For all edges between a pair of nodes u and v there must be one edge with key 0. It is possible that this issue caused the KeyError.")
+        raise
     # Convert edges into a gdf
     gdf = gpd.GeoDataFrame(df, crs=edges.crs, geometry="geometry")
     # Merge multilinestring into linestring where possible (should be possible everywhere)
