@@ -100,6 +100,7 @@ def growbikenet(
             "street_network" : str | None, default None
                 If not set to None, the street network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network g has after saved via ox.io.save_graph_geopackage(). For example:
                 >>> g = ox.graph_from_place("Barcelona", network_type='drive')
+                >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
                 >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg").
             "bike_network" : str | None, default None
                 If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
