@@ -1,14 +1,14 @@
 # Bike Net Kit / Grow Bike Net
 
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/growbikenet?color=10d249)](https://anaconda.org/conda-forge/growbikenet)
-[![PyPI - Version](https://img.shields.io/pypi/v/growbikenet?color=10d249)](https://pypi.org/project/growbikenet/)
+[![PyPI Version](https://img.shields.io/pypi/v/growbikenet?color=10d249)](https://pypi.org/project/growbikenet/)
 [![Docs](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/docs.yml/badge.svg)](https://docs.bikenetkit.org/GrowBikeNet/)
 [![Test](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/BikeNetKit/GrowBikeNet/actions/workflows/test.yml)
 [![Code coverage](https://codecov.io/gh/BikeNetKit/GrowBikeNet/graph/badge.svg)](https://codecov.io/gh/BikeNetKit/GrowBikeNet)
 
-The Python package `growbikenet` grows an urban bicycle network from scratch or from an existing bicycle network. 
+The Python package `growbikenet` grows an urban bicycle network from scratch or from an existing bicycle network. You can download street and bike network data with a single line of code, simulate different bicycle network growth scenarios, and export and plot the resulting prioritized growth steps.
 
-The software downloads and pre-processes OpenStreetMap or local data, prepares seed points to connect, grows a network, ranks the edges, saves the results, creates plots and videos.
+GrowBikeNet is a decision support tool for urban planners based on the Dutch CROW Design manual for bicycle traffic, and useful for proactive citizens to create a compelling vision for urban cycling in their city. It also aims to foster research on bicycle networks. GrowBikeNet is fully customizable and data-driven allowing to explore different scenarios - for example, you can import custom data sets such as points of interest or limit network development to specific streets to adapt the software to your local needs.
 
 ## Installation
 
