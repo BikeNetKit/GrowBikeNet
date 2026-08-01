@@ -49,11 +49,6 @@ nbsphinx_allow_errors = True # Remove once growbikenet is v1
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# path to bib file with references
-bibtex_bibfiles = ["_static/references.bib"]
-bibtex_reference_style = "author_year"
-bibtex_default_style = 'plain'
-
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 html_static_path = ["_static"]
@@ -62,6 +57,11 @@ html_static_path = ["_static"]
 html_theme = "furo"
 
 html_theme_options = {
+    "source_repository": "https://github.com/BikeNetKit/GrowBikeNet/",
+    "source_branch": "main",
+    "source_directory": "docs/source/",
+    "top_of_page_buttons": ["view", "edit"],
+    "navigation_with_keys": True,
     "pygment_light_style": "tango",
     "logo": {
         "image_light": "logo.png",
