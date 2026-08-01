@@ -62,6 +62,7 @@ html_static_path = ["_static"]
 html_theme = "furo"
 
 html_theme_options = {
+    "top_of_page_buttons": ["view", "edit"],
     "pygment_light_style": "tango",
     "logo": {
         "image_light": "logo.png",
