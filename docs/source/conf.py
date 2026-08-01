@@ -63,6 +63,7 @@ html_theme = "furo"
 
 html_theme_options = {
     "top_of_page_buttons": ["view", "edit"],
+    "navigation_with_keys": True,
     "pygment_light_style": "tango",
     "logo": {
         "image_light": "logo.png",
