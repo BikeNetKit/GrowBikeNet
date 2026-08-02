@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.11.2](https://github.com/BikeNetKit/GrowBikeNet/compare/v0.11.1...v0.11.2) (2026-08-02)
+
+
+### Documentation
+
+* set nbsphinx_widgets_path for interactive Jupyter widgets ([8c29795](https://github.com/BikeNetKit/GrowBikeNet/commit/8c29795c710c069378102248b75c84d5b0a407fb))
+* set nbsphinx_widgets_path for interactive Jupyter widgets ([a18da7b](https://github.com/BikeNetKit/GrowBikeNet/commit/a18da7bf01977832435a62ae5e31332739c743fa))
+
+## Changelog
+
 ## Version 0.11.1 (2026-07-17)
 
 - 🐛 Fixed validate seed point bug
