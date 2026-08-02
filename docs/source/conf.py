@@ -46,6 +46,7 @@ extensions = [
 ]
 
 nbsphinx_allow_errors = True # Remove once growbikenet is v1
+nbsphinx_widgets_path = "_static/widgets"
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
