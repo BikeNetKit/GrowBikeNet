@@ -230,7 +230,7 @@ def resolve_auto_parameters(
 
     return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
 
-def import_network(street_network):
+def import_network(street_network, import_path=settings.import_path):
     """Import and project a street network from gpkg file
 
     For all edges between a pair of nodes u and v there must be one edge with key 0.
@@ -242,6 +242,8 @@ def import_network(street_network):
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
         >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
         >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg")
+    import_path : str, default settings.import_path
+        Path to import files.
 
     Returns
     -------
@@ -255,8 +257,8 @@ def import_network(street_network):
         Convex hull of the street network
     """
 
-    nodes = gpd.read_file(settings.import_path+street_network, layer='nodes')
-    edges = gpd.read_file(settings.import_path+street_network, layer='edges')
+    nodes = gpd.read_file(import_path+street_network, layer='nodes')
+    edges = gpd.read_file(import_path+street_network, layer='edges')
 
     # Set indices as required by osmnx.convert.graph_from_gdfs
     # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
