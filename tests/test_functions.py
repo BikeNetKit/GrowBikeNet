@@ -5,6 +5,7 @@ import osmnx as ox
 import networkx as nx
 import pandas as pd
 import geopandas as gpd
+from shapely.geometry import Point, LineString, MultiLineString
 import ast
 from pandas.testing import assert_frame_equal
 from growbikenet.functions import (
