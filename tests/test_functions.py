@@ -3,6 +3,8 @@ import osmnx as ox
 import pandas as pd
 import geopandas as gpd
 from pandas.testing import assert_frame_equal
+import shapely
+from shapely.geometry import Point, LineString, MultiLineString
 from growbikenet.functions import (
     get_principal_bearing,
     get_grid_seed_points,
@@ -12,7 +14,7 @@ from growbikenet.functions import (
     remove_edge_overlaps,
     add_point_data_to_net
 )
-from shapely.geometry import Point, LineString, MultiLineString
+
 
 
 # @pytest.fixture
