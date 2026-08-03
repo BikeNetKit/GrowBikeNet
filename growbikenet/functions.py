@@ -11,7 +11,7 @@ import geopandas as gpd
 import warnings
 import networkx as nx
 import osmnx as ox
-import scipy
+import scipy # scipy is needed by osmnx.distance.nearest_nodes()
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point, MultiLineString
