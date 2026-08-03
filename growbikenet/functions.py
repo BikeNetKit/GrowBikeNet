@@ -11,10 +11,13 @@ import geopandas as gpd
 import warnings
 import networkx as nx
 import osmnx as ox
+import scipy # scipy is needed by osmnx.distance.nearest_nodes()
 from scipy.spatial import Delaunay
 from shapely.prepared import prep
 from shapely.geometry import Point, MultiLineString
 from shapely.affinity import rotate
+from shapely.strtree import STRtree
+from pyproj import Transformer
 from tqdm import tqdm
 
 
@@ -229,6 +232,136 @@ def resolve_auto_parameters(
         existing_network_spacing = int(np.ceil(seed_point_grid_spacing*constants.EXISTING_NETWORK_SPACING_FACTOR))
 
     return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
+
+
+def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
+    """Match trip data to network edges
+
+    First, match origin and destination points given in trips to the nodes. Only consider trips where both origins and nodes are matched within matching_distance. Then, for each trip, find the shortest path over the edges from matched origin node to matched destination node, and add 1 (or optionally "num" if column provided in trips) to the affected edges.
+
+    Parameters
+    ----------
+    trips : pandas DataFrame
+        A df of unprojected origin-destination coordinates (columns: o_lat, o_lon, d_lat, d_lon), with each row encoding a trip. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
+    A: networkx.graph
+        Graph created from triangulation edge list
+    crs_projected : str
+        Coordinate reference system that is used to project spatial data.
+    matching_distance : int
+        Matching distance in meters
+
+    Returns
+    -------
+    graph_with_data : networkx.graph
+        The same graph created from triagulation edges list, but with a new edge attribute "num_trips" populated with the summed up "num" values of all trips where both origins and destinations could be matched to the closest network nodes within matching_distance. 
+    """
+
+    graph_with_data = A.copy()
+
+    transformer = Transformer.from_crs("EPSG:4326", crs_projected, always_xy=True)
+
+    # If column "num" is not provided assume 1 trip per origin-destination (OD) pair
+    if 'num' in trips.columns:
+        nums = trips['num']
+    else:
+        nums = [1] * len(trips)
+
+
+    # Project trip data
+    trips_projected = trips.copy()
+    trips_projected['o_lon'], trips_projected['o_lat'] = transformer.transform(trips['o_lon'], trips['o_lat'])
+    trips_projected['d_lon'], trips_projected['d_lat'] = transformer.transform(trips['d_lon'], trips['d_lat'])
+
+    # Match given origins and destinations to the closest nodes in the network
+    o_nodes, o_distances = ox.distance.nearest_nodes(graph_with_data, trips_projected['o_lon'], trips_projected['o_lat'], return_dist=True)
+    d_nodes, d_distances = ox.distance.nearest_nodes(graph_with_data, trips_projected['d_lon'], trips_projected['d_lat'], return_dist=True)
+
+
+    # Add number of trips to graph
+    trip_dict = dict(zip(graph_with_data.edges, [0] * len(graph_with_data.edges)))
+
+    for o_node, o_distance, d_node, d_distance, num in zip(o_nodes, o_distances, d_nodes, d_distances, nums):
+
+        # If:
+        #   - origin and destination are snapped to the same node, or
+        #   - origin is >500m away from the snapped node, or
+        #   - destination is >500m away from the snapped node
+        # no trips are added
+        if o_node == d_node or o_distance > matching_distance or d_distance > matching_distance:
+            continue  
+
+
+        # Get shortest path between the snapped orgin and destination nodes
+        path = nx.shortest_path(graph_with_data, source=o_node, target=d_node, weight="distance")
+        path_edges = list(zip(path[:-1], path[1:]))
+
+
+        # Add the number of trips to each edge of the shortest path
+        for i, edge_id in enumerate(path_edges):
+            if edge_id in trip_dict.keys():
+                trip_dict[edge_id] += num
+
+            else:
+                edge_id = (path[i + 1], path[i])  # Inverse node order
+                if edge_id in trip_dict.keys():
+                    trip_dict[edge_id] += num
+
+    nx.set_edge_attributes(graph_with_data, trip_dict, "num_trips")
+
+    return graph_with_data
+
+
+def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
+    """Match point data to network edges
+
+    Parameters
+    ----------
+    points : geopandas.geodataframe.GeoDataFrame
+        A gdf of unprojected point geometries, optional having a column "num" containing an integer. This could be (number of) point events like crashes or citizen feedback to improve bike infrastructure. If "num" column is not provided, assumes 1 per point.
+    edges : geopandas.geodataframe.GeoDataFrame
+        A gdf of projected spatial network edges. This is the routed network of seed points.
+    matching_distance : int
+        Matching distance in meters
+    crs_projected : str
+        Coordinate reference system that is used to project osm data.
+
+    Returns
+    -------
+    edges_with_data : geopandas.geodataframe.GeoDataFrame
+        The same spatial network edges, but with a new int column "num_points" populated with the summed up "num" values of all points, matched to the closest links if within matching_distance. 
+    """
+
+    edges_with_data = edges.copy()
+
+    points_projected = points.to_crs(crs_projected)
+
+    # If column "num" is not provided assume 1 event per point
+    if 'num' in points_projected.columns:
+        nums = points_projected['num']
+    else:
+        num = [1] * len(points_projected)
+
+    # Reasoning copied from osmnx.distance.nearest_edges()
+    edges_geoms = edges_with_data['geometry']                            
+    
+    # Build an r-tree spatial index by position for subsequent iloc
+    rtree = STRtree(edges_geoms)                              
+
+    points_geoms = points_projected['geometry']               
+    pos = rtree.query_nearest(                          
+        points_geoms, 
+        max_distance = matching_distance, 
+        all_matches=False)
+
+    edges_with_data['num_points'] = 0 * len(edges_with_data)
+
+    # Add the number of events at each point to its nearest edge
+    for point_idx, nearest_edge_idx in zip(pos[0], pos[1]):
+        num = nums[point_idx]
+        edges_with_data.at[nearest_edge_idx, "num_points"] += num
+
+    return edges_with_data
+
 
 def import_network(street_network, import_path=settings.import_path):
     """Import and project a street network from gpkg file

@@ -32,6 +32,8 @@ from growbikenet.functions import (
     update_seed_points_with_existing_bike_network,
     remove_edge_overlaps,
     import_network,
+    add_point_data_to_net,
+    add_trip_data_to_net,
     slugify,
 )
 from growbikenet.visualization import create_plots
@@ -51,6 +53,8 @@ def growbikenet(
     allow_edge_overlaps=False,
     import_files={},
     seed_point_tags=None,
+    point_data_file=None,
+    trip_data_file=None,
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
 
@@ -88,7 +92,7 @@ def growbikenet(
     export_data : bool, default True
         If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[settings.export_file_format], where slug is a string id made out of city_name.
     export_data_slug : str | None, default None
-        If not set to None, the city_name will be slugified and used as the slug in the filename of the data export.
+        If not None, the city_name will be slugified and used as the slug in the filename of the data export.
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
     allow_edge_overlaps : bool, default False
@@ -106,6 +110,8 @@ def growbikenet(
                 If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
             "seed_points" : str | None, default None
                 If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
+            "trip_data_file" : None | str, default None
+                If not None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} retrieves exactly the same as seed_point_type='rail'.
 
@@ -308,9 +314,12 @@ def growbikenet(
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
 
+
     # Add distances between source and target from geometry
     grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
 
+    node_lon = seed_points_snapped_filtered.geometry.x # Needed for add_trip_data_to_net()
+    node_lat = seed_points_snapped_filtered.geometry.y # Needed for add_trip_data_to_net()
     edge_list = grown_bikenet_edges["pair"]
     dist_list = grown_bikenet_edges["dist"]
     dist_dict = dict(zip(edge_list, dist_list))
@@ -319,9 +328,15 @@ def growbikenet(
     # Make graph object from edge list
     B = nx.Graph() # B like bike network
     B.add_nodes_from(seed_points_snapped_filtered.index)
+    nx.set_node_attributes(B, node_lon, "x") # Needed for add_trip_data_to_net()
+    nx.set_node_attributes(B, node_lat, "y") # Needed for add_trip_data_to_net()
     B.add_edges_from(edge_list)
     nx.set_edge_attributes(B, dist_dict, "distance")
     nx.set_edge_attributes(B, geom_dict, "geometry")
+    B.graph["crs"] = settings.crs_projected # Needed for add_trip_data_to_net()
+
+    # Add add_trip_data_to_net() from here
+
 
     progress_bar.update(1)
     progress_bar.close()
