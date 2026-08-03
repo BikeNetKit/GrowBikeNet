@@ -9,7 +9,6 @@ from shapely.geometry import Point, LineString, MultiLineString
 import ast
 from pandas.testing import assert_frame_equal
 import shapely
-from shapely.geometry import Point, LineString, MultiLineString
 from growbikenet.functions import (
     get_principal_bearing,
     get_grid_seed_points,
