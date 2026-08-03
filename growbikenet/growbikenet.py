@@ -333,7 +333,7 @@ def growbikenet(
     B.add_edges_from(edge_list)
     nx.set_edge_attributes(B, dist_dict, "distance")
     nx.set_edge_attributes(B, geom_dict, "geometry")
-    B.graph["crs"] = crs_projected # Needed for add_trip_data_to_net()
+    B.graph["crs"] = settings.crs_projected # Needed for add_trip_data_to_net()
 
     # Add add_trip_data_to_net() from here
 
