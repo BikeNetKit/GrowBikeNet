@@ -54,8 +54,9 @@ jobs:
         python-version: ["3.12"]
         os: [ubuntu-latest]
         submodule:
-          - { name: "Functions", pytest_args: "tests/test_functions.py" }
           - { name: "Main", pytest_args: "tests/test_main.py" }
+          - { name: "Functions", pytest_args: "tests/test_functions.py" }
+          - { name: "Visualization", pytest_args: "tests/test_visualization.py --mpl" }
       fail-fast: false
 
     name: ${{ matrix.submodule.name }} (${{ matrix.python-version }} on ${{ matrix.os }})
@@ -84,4 +85,10 @@ jobs:
 
       - name: "Run tests ${{ matrix.submodule.name }}"
         run: |
-          pytest ${{ matrix.submodule.pytest_args }}
+          pytest ${{ matrix.submodule.pytest_args }} --cov --cov-branch --cov-report=xml
+
+      - name: Upload results to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: BikeNetKit/GrowBikeNet

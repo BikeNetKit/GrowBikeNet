@@ -1,42 +1,65 @@
 """Utility functions for growbikenet."""
 
+from . import constants
+from . import settings
 import os
+from collections import defaultdict
 import re
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+import warnings
 import networkx as nx
 import osmnx as ox
+import scipy # scipy is needed by osmnx.distance.nearest_nodes()
 from scipy.spatial import Delaunay
 import shapely
 from shapely.prepared import prep
 from shapely.geometry import Point, LineString, MultiLineString
 from shapely.affinity import rotate
 from shapely.strtree import STRtree
+from pyproj import Transformer
 from tqdm import tqdm
 
+
+def validate_settings():
+    """ Check if user settings input is valid. If not, raise an exception or warning
+    
+    Parameters
+    ----------
+    See settings
+
+    Returns
+    -------
+    True
+    """
+
+    if type(settings.crs_projected) is not str:
+        raise TypeError("settings.crs_projected must be a string")
+    if settings.export_file_format != "geojson" and settings.export_file_format != "gpkg":
+        raise ValueError("settings.export_file_format must be 'geojson' or 'gpkg'")
+    # To do: check export_path
+    if type(settings.seed_point_snap_distance) is not int and settings.seed_point_snap_distance != 'auto':
+        raise TypeError("settings.seed_point_snap_distance must be 'auto' or an integer")
+    if type(settings.seed_point_snap_distance) is int and settings.seed_point_snap_distance <= 0:
+        raise ValueError("settings.seed_point_snap_distance must be a positive integer")
+    return True
 
 
 def validate_parameters(
         city_name,
-        crs_projected,
         ranking,
         seed_point_type,
         seed_point_grid_spacing,
-        seed_point_delta,
         seed_point_linking,
         existing_network_spacing,
         export_data,
-        export_file_format,
         export_data_slug,
         export_plots,
         # export_video,
         allow_edge_overlaps,
-        city_boundary_file,
-        street_network_file,
-        seed_point_file,
+        import_files,
         seed_point_tags,
-        PRESET_TAGS
     ):
     """ Check if user parameter input is valid. If not, raise an exception or warning
     
@@ -44,7 +67,7 @@ def validate_parameters(
     ----------
     Same as growbikenet.growbikenet()
     Additionally:
-    PRESET_TAGS : dict
+    constants.PRESET_TAGS : dict
         Dictionary of preset seed point tags.
 
     Returns
@@ -54,8 +77,6 @@ def validate_parameters(
 
     if type(city_name) is not str:
         raise TypeError("city_name must be a string")
-    if type(crs_projected) is not str:
-        raise TypeError("crs_projected must be a string")
     if type(ranking) is not str:
         raise TypeError("ranking must be a string")
     if ranking not in ["betweenness_centrality", "closeness_centrality", "random"]:
@@ -68,14 +89,14 @@ def validate_parameters(
         raise TypeError("seed_point_grid_spacing must be 'auto' or an integer")
     if type(seed_point_grid_spacing) is int and seed_point_grid_spacing <= 0:
         raise ValueError("seed_point_grid_spacing must be a positive integer")
-    if seed_point_type == 'file' and type(seed_point_file) is None:
-        raise ValueError("With seed_point_type 'file', a seed_point_file must be provided")
-    if seed_point_type == 'tags' and type(seed_point_file) is None:
+    if type(import_files) is not dict:
+        raise TypeError("import_files must be a dictionary")
+    # Prepare special case import_files. Turn it into a defaultdict where missing keys are None.
+    import_files = defaultdict(lambda: None, import_files)
+    if seed_point_type == 'file' and import_files['seed_points'] is None:
+        raise ValueError("With seed_point_type 'file', a seed_points file must be provided")
+    if seed_point_type == 'tags' and seed_point_tags is None:
         raise ValueError("With seed_point_type 'tags', seed_point_tags must be provided")
-    if type(seed_point_delta) is not int and seed_point_delta != 'auto':
-        raise TypeError("seed_point_delta must be 'auto' or an integer")
-    if type(seed_point_delta) is int and seed_point_delta <= 0:
-        raise ValueError("seed_point_delta must be a positive integer")
     if seed_point_linking not in ['auto', 'triangulate_delaunay', 'quadrangulate']:    
         raise ValueError("seed_point_linking must be 'auto' or 'triangulate_delaunay' or 'quadrangulate'")
     if seed_point_linking == 'quadrangulate' and (seed_point_type != 'grid_square' or existing_network_spacing is not None):
@@ -96,27 +117,20 @@ def validate_parameters(
         raise ValueError(
             "export_data_slug must contain at least one non-special character"
         )
-    if export_file_format != "geojson" and export_file_format != "gpkg":
-        raise ValueError("export_file_format must be 'geojson' or 'gpkg'")
     if type(export_plots) is not bool:
         raise TypeError("export_plots must be a boolean")
     # if type(export_video) is not bool:
     #     raise TypeError("export_video must be a boolean")
-    if city_boundary_file is not None and type(city_boundary_file) is not str:
-        raise TypeError("city_boundary_file must be None or a string")
-    if type(city_boundary_file) is str and not os.path.isfile(city_boundary_file):
-        raise FileNotFoundError("city_boundary_file not found")
-    if city_boundary_file is not None and street_network_file is not None:
-        raise ValueError("city_boundary_file and street_network_file cannot both be set")
-    if type(street_network_file) is str and not os.path.isfile(street_network_file):
-        raise FileNotFoundError("street_network_file not found")
-    if type(seed_point_file) is str and not os.path.isfile(seed_point_file):
-        raise FileNotFoundError("seed_point_file not found")
+
+    # Import files
+    for filename in ['city_boundary','street_network','bike_network','seed_points','point_data','trip_data']:
+        if type(import_files[filename]) is str and not os.path.isfile(settings.import_path+import_files[filename]):
+            raise FileNotFoundError(filename+" not found")
+        
     if seed_point_tags is not None and type(seed_point_tags) is not dict:
         raise TypeError("seed_point_tags must be None or a dictionary")
-    if seed_point_tags is not None and seed_point_type!="tags":
-        raise ValueError("When using seed_point_tags, seed_point_type must be set to 'tags'")
-    return True
+
+    return import_files
 
 
 def slugify(s): 
@@ -144,42 +158,43 @@ def slugify(s):
 def resolve_auto_parameters(
         seed_point_type,
         seed_point_grid_spacing,
-        seed_point_delta,
         seed_point_linking,
         existing_network_spacing,
         phi,
-        PHI_LIMITS
+        import_files,
     ):
     """Resolve auto parameters and parameter inconsistencies
     
     Parameters
     ----------
-    seed_point_* and existing_network_spacing from growbikenet.growbikenet()
+    seed_point_* and existing_network_spacing and import_files from growbikenet.growbikenet()
     
     Additionally:
     phi : float
         Weighted orientation order
-    PHI_LIMITS : list
-        Limits for phi between seed point type categories
 
     Returns
     -------
     seed_point_* and existing_network_spacing from growbikenet.growbikenet()
     """
     
+    if import_files['seed_points']:
+        seed_point_type = 'file'
+        seed_point_linking = 'triangulate_delaunay' 
+
     if seed_point_type == 'auto':
-        if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+        if phi>constants.PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
             seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'quadrangulate'
                 if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
                     existing_network_spacing = None
                     warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-        elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+        elif phi<=constants.PHI_LIMITS[1] and phi>constants.PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
             seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
-        elif phi<=PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
+        elif phi<=constants.PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
             seed_point_type = 'grid_triangle'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
@@ -191,33 +206,111 @@ def resolve_auto_parameters(
             if seed_point_type != 'grid_square': # Everything is triangulated, but the grid could also be quadrangulated
                 seed_point_linking = 'triangulate_delaunay'
             else:
-                if phi>PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+                if phi>constants.PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
                     seed_point_linking = 'quadrangulate'
                     if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
                         existing_network_spacing = None
                         warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-                elif phi<=PHI_LIMITS[1] and phi>PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+                elif phi<=constants.PHI_LIMITS[1] and phi>constants.PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
                     seed_point_linking = 'triangulate_delaunay'
 
     if seed_point_grid_spacing == 'auto': 
         # These values ensure that any point in the city is always within b=500m of the network (if seed points snap perfectly).
         # In comments, general equations for arbitrary buffer distance b
         if seed_point_type == 'grid_square' and seed_point_linking == 'triangulate_delaunay':
-            seed_point_grid_spacing = 1707 # a=2b/(2-sqrt(2))
+            seed_point_grid_spacing = constants.GRID_SPACING_TRIANGULATE # a=2b/(2-sqrt(2))
         elif seed_point_type == 'grid_square' and seed_point_linking == 'quadrangulate':
-            seed_point_grid_spacing = 1000 # a=2b
+            seed_point_grid_spacing = constants.GRID_SPACING_QUADRANGULATE # a=2b
         elif seed_point_type == 'grid_triangle':
-            seed_point_grid_spacing = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
+            seed_point_grid_spacing = constants.GRID_SPACING_TRIANGLE # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
         else:
-            seed_point_grid_spacing = 1707
+            seed_point_grid_spacing = constants.GRID_SPACING_TRIANGULATE
 
-    if seed_point_delta == 'auto':
-        seed_point_delta = int(np.ceil(seed_point_grid_spacing/4))
+    if settings.seed_point_snap_distance == 'auto':
+        settings.seed_point_snap_distance = int(np.ceil(seed_point_grid_spacing*constants.SEED_POINT_SNAP_DISTANCE_FACTOR))
 
     if existing_network_spacing == 'auto':
-        existing_network_spacing = int(np.ceil(seed_point_grid_spacing/2))
+        existing_network_spacing = int(np.ceil(seed_point_grid_spacing*constants.EXISTING_NETWORK_SPACING_FACTOR))
 
-    return seed_point_type, seed_point_grid_spacing, seed_point_delta, seed_point_linking, existing_network_spacing
+    return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
+
+
+def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
+    """Match trip data to network edges
+
+    First, match origin and destination points given in trips to the nodes. Only consider trips where both origins and nodes are matched within matching_distance. Then, for each trip, find the shortest path over the edges from matched origin node to matched destination node, and add 1 (or optionally "num" if column provided in trips) to the affected edges.
+
+    Parameters
+    ----------
+    trips : pandas DataFrame
+        A df of unprojected origin-destination coordinates (columns: o_lat, o_lon, d_lat, d_lon), with each row encoding a trip. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
+    A: networkx.graph
+        Graph created from triangulation edge list
+    crs_projected : str
+        Coordinate reference system that is used to project spatial data.
+    matching_distance : int
+        Matching distance in meters
+
+    Returns
+    -------
+    graph_with_data : networkx.graph
+        The same graph created from triagulation edges list, but with a new edge attribute "num_trips" populated with the summed up "num" values of all trips where both origins and destinations could be matched to the closest network nodes within matching_distance. 
+    """
+
+    graph_with_data = A.copy()
+
+    transformer = Transformer.from_crs("EPSG:4326", crs_projected, always_xy=True)
+
+    # If column "num" is not provided assume 1 trip per origin-destination (OD) pair
+    if 'num' in trips.columns:
+        nums = trips['num']
+    else:
+        nums = [1] * len(trips)
+
+
+    # Project trip data
+    trips_projected = trips.copy()
+    trips_projected['o_lon'], trips_projected['o_lat'] = transformer.transform(trips['o_lon'], trips['o_lat'])
+    trips_projected['d_lon'], trips_projected['d_lat'] = transformer.transform(trips['d_lon'], trips['d_lat'])
+
+    # Match given origins and destinations to the closest nodes in the network
+    o_nodes, o_distances = ox.distance.nearest_nodes(graph_with_data, trips_projected['o_lon'], trips_projected['o_lat'], return_dist=True)
+    d_nodes, d_distances = ox.distance.nearest_nodes(graph_with_data, trips_projected['d_lon'], trips_projected['d_lat'], return_dist=True)
+
+
+    # Add number of trips to graph
+    trip_dict = dict(zip(graph_with_data.edges, [0] * len(graph_with_data.edges)))
+
+    for o_node, o_distance, d_node, d_distance, num in zip(o_nodes, o_distances, d_nodes, d_distances, nums):
+
+        # If:
+        #   - origin and destination are snapped to the same node, or
+        #   - origin is >500m away from the snapped node, or
+        #   - destination is >500m away from the snapped node
+        # no trips are added
+        if o_node == d_node or o_distance > matching_distance or d_distance > matching_distance:
+            continue  
+
+
+        # Get shortest path between the snapped orgin and destination nodes
+        path = nx.shortest_path(graph_with_data, source=o_node, target=d_node, weight="distance")
+        path_edges = list(zip(path[:-1], path[1:]))
+
+
+        # Add the number of trips to each edge of the shortest path
+        for i, edge_id in enumerate(path_edges):
+            if edge_id in trip_dict.keys():
+                trip_dict[edge_id] += num
+
+            else:
+                edge_id = (path[i + 1], path[i])  # Inverse node order
+                if edge_id in trip_dict.keys():
+                    trip_dict[edge_id] += num
+
+    nx.set_edge_attributes(graph_with_data, trip_dict, "num_trips")
+
+    return graph_with_data
+
 
 def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
     """Match point data to network edges
@@ -297,17 +390,21 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
 
     return edges_with_data
 
-def import_network(street_network_file, crs_projected):
+
+def import_network(street_network, import_path=settings.import_path):
     """Import and project a street network from gpkg file
+
+    For all edges between a pair of nodes u and v there must be one edge with key 0.
 
     Parameters
     ----------
-    street_network_file : str
-        The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saved its undirected version via ox.io.save_graph_geopackage(). For example:
+    street_network : str
+        The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saving its undirected version via ox.io.save_graph_geopackage(). For example:
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
-        >>> ox.io.save_graph_geopackage(g.to_undirected(), "Barcelona_streets.gpkg")
-    crs_projected : str
-        Coordinate reference system that is used to project osm data.
+        >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
+        >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg")
+    import_path : str, default settings.import_path
+        Path to import files.
 
     Returns
     -------
@@ -321,8 +418,8 @@ def import_network(street_network_file, crs_projected):
         Convex hull of the street network
     """
 
-    nodes = gpd.read_file(street_network_file, layer='nodes')
-    edges = gpd.read_file(street_network_file, layer='edges')
+    nodes = gpd.read_file(import_path+street_network, layer='nodes')
+    edges = gpd.read_file(import_path+street_network, layer='edges')
 
     # Set indices as required by osmnx.convert.graph_from_gdfs
     # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
@@ -333,42 +430,17 @@ def import_network(street_network_file, crs_projected):
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     city_boundary_gdf = gpd.GeoDataFrame(gpd.GeoSeries(nodes.union_all().convex_hull), geometry=0, crs=nodes.crs) # We do this before the projection of nodes below
-    # To do: To be super-correct, the hull should be buffered by seed_point_delta (in degrees due to being unprojected)
+    # To do: To be super-correct, the hull should be buffered by settings.seed_point_snap_distance (in degrees due to being unprojected)
 
-    nodes, edges = prepare_nodes_edges(nodes, edges, crs_projected)
+    nodes, edges = prepare_nodes_edges(nodes, edges)
 
     return nodes, edges, g_undir, city_boundary_gdf
 
 
-def orientation_order(g_undir):
-    """Calculate a graph's weighted orientation order phi, see [1]_
-
-    Whether phi is weighted or unweighted does not matter much, but for the purpose of growing bike networks, weighted seems more appropriate.
-    Note that the values here are lower than in the paper [1]_ for unknown reasons, also with the unweighted version.
-
-    Parameters
-    ----------
-    g_undir : networkx.classes.multigraph.MultiGraph
-        networkX street network, undirected, weighted with "length"
-
-    Returns
-    -------
-    phi : float
-        Weighted orientation order
-
-    References
-    ----------
-    .. [1] G. Boeing, "Urban spatial order: Street network orientation, configuration, and entropy", Applied Network Science 4, 67 (2019)
-    """
-    Hw = ox.bearing.orientation_entropy(g_undir, weight="length")
-    Hg = 1.386
-    Hmax = 3.584
-    phi = 1 - ((Hw-Hg)/(Hmax-Hg))**2
-    return phi
-
-
-def prepare_nodes_edges(nodes, edges, crs_projected):
+def prepare_nodes_edges(nodes, edges):
     """Project and prepare nodes and edges for further use
+
+    For all edges between a pair of nodes u and v there must be one edge with key 0.
     
     Parameters
     ----------
@@ -376,8 +448,6 @@ def prepare_nodes_edges(nodes, edges, crs_projected):
         OSM nodes, unprojected
     edges : geopandas.geodataframe.GeoDataFrame
         OSM edges, unprojected
-    crs_projected : str
-        Coordinate reference system that is used to project osm data.
         
     Returns
     -------
@@ -387,31 +457,32 @@ def prepare_nodes_edges(nodes, edges, crs_projected):
         OSM edges, projected
     """
 
-    # Replace after dropping edges with key = 1
-    edges = edges.loc[:,:,0].copy()
-    # This also means we are dropping the "key" level from edge index (u,v,key becomes: u,v)
+    if not edges.empty:
+        # Drop edges with key != 0, effectively making it a non-multigraph
+        edges = edges.loc[:,:,0].copy()
+        # This also means we are dropping the "key" level from the edge multiindex (u,v,key becomes u,v)
+        # To do: Instead of assuming key 0 edges exist (which is often not the case), only retain the shortest edges as in osmnx.convert.to_digraph(), independent of the key.
 
-    # Project geometries of nodes, edges
-    edges = edges.to_crs(crs_projected)
-    nodes = nodes.to_crs(crs_projected)
+        # Project geometries of nodes, edges
+        edges = edges.to_crs(settings.crs_projected)
+
+    nodes = nodes.to_crs(settings.crs_projected)
 
     # Add osm ID as column to node gdf
     nodes["osmid"] = nodes.index
     return nodes, edges
 
 
-def download_network(city_name, crs_projected, network_type='drive', custom_filter=None, retain_all=True, city_boundary_geometry=None):
+def download_network(city_name, network_type='drive', custom_filter=None, retain_all=True, city_boundary_geometry=None):
     """Download and prepare a street network from OSM via OSMnx
 
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
-    Then, stores the undirected OSM data in gdfs and projects using crs_projected.
+    Then, stores the undirected OSM data in gdfs and projects using settings.crs_projected.
 
     Parameters
     ----------
     city_name : str
-        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_file or street_network_file is set.
-    crs_projected : str
-        Coordinate reference system that is used to project osm data.
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary or street_network is set.
     network_type : {'all', 'all_public', 'bike', 'drive', 'drive_service', 'walk'} 
         What type of street network to retrieve if custom_filter is None.
     custom_filter : (str | list[str] | None)
@@ -444,19 +515,17 @@ def download_network(city_name, crs_projected, network_type='drive', custom_filt
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
     # Export osmnx data to gdfs
-    nodes, edges = nx_to_nodes_edges(g_undir, crs_projected)
+    nodes, edges = nx_to_nodes_edges(g_undir)
     return nodes, edges, g_undir
 
 
-def nx_to_nodes_edges(G, crs_projected):
+def nx_to_nodes_edges(G):
     """Get nodes and projected edges from networkX graph
     
     Parameters
     ----------
     G : networkx.classes.multigraph.MultiGraph
         networkX graph, undirected
-    crs_projected : str
-        Coordinate reference system that is used to project osm data.
         
     Returns
     -------
@@ -473,7 +542,7 @@ def nx_to_nodes_edges(G, crs_projected):
     fill_edge_geometry=True
     )
 
-    nodes, edges = prepare_nodes_edges(nodes, edges, crs_projected)
+    nodes, edges = prepare_nodes_edges(nodes, edges)
     return nodes, edges
     
 
@@ -541,19 +610,19 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     return seed_points_exnw
 
 
-def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_boundary_geometry=None):
+def update_with_existing_bike_network(city_name, g_undir, import_files, city_boundary_geometry=None):
     """Update street network with existing bike network
 
-    Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir.
+    Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir, or imports it from a local file.
     
     Parameters
     ----------
     city_name : str
         Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_geometry is set.
-    crs_projected : str
-        Coordinate reference system that is used to project osm data.
     g_undir : networkx.classes.multigraph.MultiGraph
         Street network networkX graph, undirected
+    import_files : dict
+        Dictionary containing the key "bike_network" and value None or a string with the path of a bicycle network to import. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
     city_boundary_geometry : (shapely Polygon | shapely MultiPolygon | None), default None
         If not set to None, the study area will be selected from this geometry.
 
@@ -570,25 +639,18 @@ def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_bo
     edges_exnw : geopandas.geodataframe.GeoDataFrame
         OSM edges of the corresponding bike network, projected
     """
-    cf = ['["cycleway"~"track"]',
-          '["highway"~"cycleway"]',
-          '["highway"~"path"]["bicycle"~"designated"]',
-          '["cycleway:right"~"track"]',
-          '["cycleway:left"~"track"]',
-          '["cycleway:both"~"track"]',
-          '["cycleway:right"~"opposite_track"]', # deprecated, but could still exist
-          '["cycleway:left"~"opposite_track"]', # deprecated, but could still exist
-          '["cycleway:both"~"opposite_track"]', # deprecated, but could still exist
-          '["cyclestreet"]',
-          '["highway"~"living_street"]'
-        ]
-    for custom_tag in ["cycleway", "bicycle", "cycleway:right", "cycleway:left", "cycleway:both", "cyclestreet"]:
-        if custom_tag not in ox.settings.useful_tags_way:
-            ox.settings.useful_tags_way.extend(custom_tag)
-    # Fetch protected bike network data from osmnx
-    # Due to retain_all=True, this fetches all the connected components
-    nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, crs_projected, custom_filter=cf, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+    if import_files['bike_network'] is not None:
+        # Import and preprocess data from file
+        nodes_exnw, edges_exnw, g_undir_exnw, _ = import_network(import_files['bike_network'])
+    else:
+        # Fetch protected bike network data from osmnx
+        # Due to retain_all=True, this fetches all the connected components
+        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, custom_filter=constants.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
+
+    # Intermezzo: Get filtered existing network by component length
+    nodes_exnw_filtered, _, _ = filter_network_by_component_length(g_undir_exnw)
 
     # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
     # We delete those parts next:
@@ -598,15 +660,55 @@ def update_with_existing_bike_network(city_name, crs_projected, g_undir, city_bo
     # Restrict nodes and edges of the existing bike net to this lcc
     valid_node_osmids = g_undir.nodes()
     nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
+    nodes_exnw_filtered = nodes_exnw_filtered[nodes_exnw_filtered['osmid'].isin(valid_node_osmids)]
     # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
     edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
     edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
-    nodes, edges = nx_to_nodes_edges(g_undir, crs_projected)
+    nodes, edges = nx_to_nodes_edges(g_undir)
 
-    return nodes, edges, g_undir, nodes_exnw, edges_exnw
+    return nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered
 
 
-def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing, crs_projected):
+def filter_network_by_component_length(g_undir):
+    """Filter a network to remove too short components
+    
+    The application is that g_undir is all the components of the existing bicycle network, but we do not snap seed points to components shorter than constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH. So we create a new set of nodes where the nodes from the too small components are removed.
+
+    Parameters
+    ----------
+    g_undir : networkx.classes.multigraph.MultiGraph
+        Street network networkX graph, undirected
+
+    Returns
+    -------
+    nodes_filtered : geopandas.geodataframe.GeoDataFrame
+        Filtered OSM nodes of the street network, projected
+    edges_filtered : geopandas.geodataframe.GeoDataFrame
+        Filtered OSM edges of the street network, projected
+    g_undir_filtered : networkx.classes.multigraph.MultiGraph
+        Filtered street networkX graph, undirected
+    """
+
+    g_undir_filtered = nx.MultiGraph()
+    components_by_length = [g_undir.subgraph(c).copy() for c in sorted(nx.connected_components(g_undir), key=lambda c: sum([l[-1] for l in g_undir.subgraph(c).copy().edges.data('length')]), reverse=True)]
+    for c in components_by_length: # Create the union of long enough components. Probably there is a way to do this faster/vectorized.
+        if c.number_of_edges() and sum([l[-1] for l in c.edges.data('length')]) >= constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH: # no matter the min length, remove isolated nodes
+            g_undir_filtered = nx.union(g_undir_filtered, c)
+        else:
+            break
+    # Get nodes_exnw_filtered
+    nodes_filtered, edges_filtered = ox.graph_to_gdfs(
+        g_undir_filtered,
+        nodes=True,
+        edges=True,
+        node_geometry=True,
+        fill_edge_geometry=True
+        )
+    nodes_filtered, _ = prepare_nodes_edges(nodes_filtered, gpd.GeoDataFrame())
+    return nodes_filtered, edges_filtered, g_undir_filtered
+
+
+def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing):
     """Update seed points with existing bike network
 
     Updates given snapped seed points by incorporating seed points from an existing bike network.
@@ -616,11 +718,9 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     seed_points_snapped : geopandas.geodataframe.GeoDataFrame
         Snapped seed points on the street network, constructed with seed_point_grid_spacing
     nodes_exnw : geopandas.geodataframe.GeoDataFrame
-        Nodes of the existing bike network
+        Nodes of the existing bike network, after shortest components below constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH have been filtered out
     existing_network_spacing : int
         Positive integer denoting spacing between seed points, in meters, only on the existing bicycle network.
-    crs_projected : str
-        Coordinate reference system that is used to project osm data.
 
     Returns
     -------
@@ -630,12 +730,12 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
 
     # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
     seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
-    seed_points_exnw.to_crs(crs_projected, inplace=True)
+    seed_points_exnw.to_crs(settings.crs_projected, inplace=True)
 
     # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
-    buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing/2)) # To do: Think more about this factor
+    buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing*constants.BUFFER_SEED_POINTS_EXNW_FACTOR))
     buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
-    buffer_seed_points_exnw.to_crs(crs_projected, inplace=True)
+    buffer_seed_points_exnw.to_crs(settings.crs_projected, inplace=True)
 
     # Delete the seed points that are too close to seed_points_exnw via its buffer
     seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
@@ -735,15 +835,13 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poin
     return seed_points, seed_network
 
 
-def prepare_seed_points(seed_points, crs_projected):
+def prepare_seed_points(seed_points):
     """Project and prepare seed points for further use
     
     Parameters
     ----------
     seed_points: geopandas.geodataframe.GeoDataFrame
         Unprojected seed points
-    crs_projected : str
-        Coordinate reference system that is used to project the seed points.
         
     Returns
     -------
@@ -751,20 +849,18 @@ def prepare_seed_points(seed_points, crs_projected):
         Projected and prepared seed points.
     """
     seed_points = seed_points[seed_points["geometry"].type == "Point"]
-    seed_points.to_crs(crs_projected, inplace=True)
+    seed_points.to_crs(settings.crs_projected, inplace=True)
     # To do optional: merge closeby seed points
     return seed_points
 
 
-def get_tags_seed_points(city_name, crs_projected, tags, city_boundary_geometry=None):
+def get_tags_seed_points(city_name, tags, city_boundary_geometry=None):
     """Get tags seed points for a city
 
     Parameters
     ----------
     city_name : str
         Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled (for data fetching) if city_boundary_geometry is set.
-    crs_projected : str
-        Coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) is better.
     tags : None | dict[str, bool | str | list[str]], default None
         Geocodable tags, see [3]_. For example, tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
     city_boundary_geometry : (shapely Polygon | shapely MultiPolygon | None), default None
@@ -788,7 +884,7 @@ def get_tags_seed_points(city_name, crs_projected, tags, city_boundary_geometry=
         seed_points = ox.features_from_place(
             city_name, tags
         )
-    seed_points = prepare_seed_points(seed_points, crs_projected)
+    seed_points = prepare_seed_points(seed_points)
     return seed_points
 
 
@@ -809,10 +905,6 @@ def get_principal_bearing(G):
         The principal bearing, precise to 5 degrees.
     """
 
-    bearingbins = (
-        72  # number of bins to determine bearing. e.g. 72 will create 5 degrees bins
-    )
-
     bearings = {}
     # weight bearings by length (meters)
     city_bearings = []
@@ -823,8 +915,8 @@ def get_principal_bearing(G):
             pass  # Bearings cannot be calculated in rare edge cases.
     b = pd.Series(city_bearings)
     bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop="True")
-    bins = np.arange(bearingbins + 1) * 360 / bearingbins
-    count = count_and_merge(bearingbins, bearings)
+    bins = np.arange(constants.BEARING_BINS + 1) * 360 / constants.BEARING_BINS
+    count = count_and_merge(constants.BEARING_BINS, bearings)
     principal_bearing = bins[np.where(count == max(count))][0]
 
     return principal_bearing
@@ -923,20 +1015,18 @@ def snap_seed_points(seed_points, nodes):
     return seed_points_snapped
 
 
-def filter_seed_points(seed_points_snapped, seed_point_delta):
-    """Remove seed_points that are further than delta away from an actual osm node
+def filter_seed_points(seed_points_snapped):
+    """Remove seed_points that are further than the snap distance away from an actual osm node
 
     Parameters
     ----------
     seed_points_snapped: geopandas.geodataframe.GeoDataFrame
         seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
-    seed_point_delta: int
-        maximum distance a seed_point may be removed from an actual osm node
 
     Returns
     -------
-    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-        seed_points within delta away from an actual osm node, only columns are osmid and the associated osm geometry
+    seed_points_snapped_filtered: geopandas.geodataframe.GeoDataFrame
+        seed_points within snap distance away from an actual osm node, only columns are osmid and the associated osm geometry
     """
     gdf = seed_points_snapped.copy()
 
@@ -944,7 +1034,7 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
     gdf["snap_dist"] = gdf.geometry_generated.distance(gdf.geometry_osm)
 
     # Filter by threshold
-    gdf = gdf[gdf["snap_dist"] <= seed_point_delta].copy()
+    gdf = gdf[gdf["snap_dist"] <= settings.seed_point_snap_distance].copy()
 
     # Drop duplicates: one row per osmid
     gdf = gdf.sort_values("snap_dist").drop_duplicates("osmid")
@@ -956,9 +1046,9 @@ def filter_seed_points(seed_points_snapped, seed_point_delta):
     gdf = gdf.set_geometry("geometry")
     gdf = gdf.set_index("osmid", drop=False)
 
-    seed_points_snapped = gdf.copy()
+    seed_points_snapped_filtered = gdf.copy()
 
-    return seed_points_snapped
+    return seed_points_snapped_filtered
 
 
 def create_delaunay_edges(nodes_gdf):
@@ -1199,9 +1289,40 @@ def create_gdf_with_geoms(df, edges):
         projected GeoDataFrame with path nodes and path edges and merged geometries
     """
     # Get geometry by merging all geoms from edge gdf
-    df["geometry"] = df.path_edges.apply(lambda x: edges.loc[x].geometry.union_all())
+    try:
+        df["geometry"] = df.path_edges.apply(lambda x: MultiLineString(list(edges.loc[x].geometry)))
+    except KeyError as e:
+        e.add_note("NOTE: For all edges between a pair of nodes u and v there must be one edge with key 0. It is possible that this issue caused the KeyError.")
+        raise
     # Convert edges into a gdf
     gdf = gpd.GeoDataFrame(df, crs=edges.crs, geometry="geometry")
     # Merge multilinestring into linestring where possible (should be possible everywhere)
     gdf["geometry"] = gdf.line_merge()
     return gdf
+
+
+def orientation_order(g_undir):
+    """Calculate a graph's weighted orientation order phi, see [1]_
+
+    Whether phi is weighted or unweighted does not matter much, but for the purpose of growing bike networks, weighted seems more appropriate.
+    Note that the values here are lower than in the paper [1]_ for unknown reasons, also with the unweighted version.
+
+    Parameters
+    ----------
+    g_undir : networkx.classes.multigraph.MultiGraph
+        networkX street network, undirected, weighted with "length"
+
+    Returns
+    -------
+    phi : float
+        Weighted orientation order
+
+    References
+    ----------
+    .. [1] G. Boeing, "Urban spatial order: Street network orientation, configuration, and entropy", Applied Network Science 4, 67 (2019)
+    """
+    Hw = ox.bearing.orientation_entropy(g_undir, weight="length")
+    Hg = 1.386
+    Hmax = 3.584
+    phi = 1 - ((Hw-Hg)/(Hmax-Hg))**2
+    return phi
