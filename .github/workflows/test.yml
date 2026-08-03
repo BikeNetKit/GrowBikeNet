@@ -55,7 +55,7 @@ jobs:
         os: [ubuntu-latest]
         submodule:
           - { name: "Main", pytest_args: "tests/test_main.py" }
-          - { name: "Functions", pytest_args: "tests/test_functions.py" }
+          - { name: "Functions", pytest_args: "tests/test_functions.py tests/test_progress.py" }
           - { name: "Visualization", pytest_args: "tests/test_visualization.py --mpl" }
       fail-fast: false
 
