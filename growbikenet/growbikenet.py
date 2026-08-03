@@ -176,7 +176,7 @@ def growbikenet(
         city_boundary_exists = True
         progress_bar = tqdm(
             desc="{:<23}".format("Importing network data"),
-            total=1,
+            total=1+int(bool(existing_network_spacing)),
             unit="network",
             bar_format='{l_bar}{bar:16}{r_bar}',
         )
