@@ -248,13 +248,14 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
     else:
         nums = [1] * len(points_projected)
 
+    precision = 1e-10
     # Reasoning copied from osmnx.distance.nearest_edges()
-    edges_geoms = edges_with_data['geometry']                            
+    edges_geoms = edges_with_data['geometry'].set_precision(grid_size=precision)
     
     # Build an r-tree spatial index by position for subsequent iloc
     rtree = STRtree(edges_geoms)                              
 
-    points_geoms = points_projected['geometry']               
+    points_geoms = points_projected['geometry'].set_precision(grid_size=precision)             
     pos = rtree.query_nearest(                          
         points_geoms, 
         max_distance = matching_distance, 
