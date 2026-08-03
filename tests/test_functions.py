@@ -1,5 +1,8 @@
+from growbikenet import constants
+from growbikenet import settings
 import pytest
 import osmnx as ox
+import networkx as nx
 import pandas as pd
 import geopandas as gpd
 import ast
@@ -11,10 +14,9 @@ from growbikenet.functions import (
     rank_df,
     # intersects_properly,
     remove_edge_overlaps,
-    add_trip_data_to_net
+    add_trip_data_to_net,
+    create_gdf_with_geoms,
 )
-from shapely.geometry import Point, LineString, MultiLineString
-import networkx as nx
 
 
 # @pytest.fixture
@@ -61,11 +63,6 @@ def test_rank_df(test_data_rank, method, validation_data_rank):
 
 
 @pytest.fixture
-def seed_point_delta():
-    return 500
-
-
-@pytest.fixture
 def snapped_seed_points():
     d = {
         "osmid": ["1", "2", "3"],
@@ -89,10 +86,12 @@ def filtered_seed_points():
 
 
 def test_filter_seed_points(
-    snapped_seed_points, filtered_seed_points, seed_point_delta
+    snapped_seed_points, filtered_seed_points
 ):
+    settings.seed_point_snap_distance = 500
+    constants.SEED_POINT_GRID_SPACING_FACTOR = 0.25
     assert_frame_equal(
-        filter_seed_points(snapped_seed_points, seed_point_delta),
+        filter_seed_points(snapped_seed_points),
         filtered_seed_points,
         check_dtype=False,
     )
@@ -101,10 +100,10 @@ def test_filter_seed_points(
 @pytest.fixture
 def validation_streets():
     streets_nodes = gpd.read_file(
-        "./tests/test_data/oelde_streets.gpkg", layer="nodes"
+        "./tests/test_data/oelde_street_network.gpkg", layer="nodes"
     ).set_index("osmid")
     streets_edges = gpd.read_file(
-        "./tests/test_data/oelde_streets.gpkg", layer="edges"
+        "./tests/test_data/oelde_street_network.gpkg", layer="edges"
     ).set_index(["u", "v", "key"])
     streets = ox.convert.graph_from_gdfs(streets_nodes, streets_edges)
     return streets
@@ -390,3 +389,146 @@ def test_add_trip_data_to_net_case_success_turin(turin_trips_data, turin_triangu
     assert result.nodes == expected.nodes, "Nodes are not the same"
     assert result.adj == expected.adj, "Edges are not the same"
     assert result.graph == expected.graph, "Graphs are not the same"
+@pytest.fixture
+def routed_triangulation():
+    df = pd.DataFrame(
+        {
+            'pair': [('A','G'), ('A','H'),('G','J'),('H','J')],
+            'source': ['A','A','G','H'],
+            'target': ['G','H','J','J'],
+            'path_nodes': [['A','B','C','D','E','F','G'], ['A','B','H'], ['G','J'], ['H','F','I','J']],
+            'path_edges': [
+                [('A','B'),('B','C'),('C','D'),('D','E'),('E','F'),('F','G')],
+                [('A','B'),('B','H')],
+                [('G','J')],
+                [('H','F'),('F','I'),('I','J')]
+            ]
+        }
+    )
+
+    return df
+
+@pytest.fixture
+def network_edges():
+    A = (4,9)
+    B = (2,9)
+    C = (1.5,9.5)
+    D = (2,10)
+    E = (3,10)
+    F = (3,8)
+    G = (5.5,8)
+    H = (1.5,8)
+    I = (3,7)
+    J = (3.5,7)
+
+    AB = LineString([A,B])
+    BC = LineString([B,C])
+    CD = LineString([C,D])
+    DE = LineString([D,E])
+    EF = LineString([E,F])
+    FG = LineString([F,G])
+    BH = LineString([B,H])
+    HF = LineString([H,F])
+    FI = LineString([F,I])
+    IJ = LineString([I,J])
+    GJ = LineString([G,J])
+
+    gdf = gpd.GeoDataFrame(
+        {
+            'u': ['A','B','C','D','E','F','B','H','F','I','G'],
+            'v': ['B','C','D','E','F','G','H','F','I','J','J']
+        },
+        crs = '3857',
+        geometry = [AB, BC, CD, DE, EF, FG, BH, HF, FI, IJ, GJ]
+    )
+
+    gdf.set_index(['u','v'], inplace = True)
+
+    return gdf
+
+@pytest.fixture
+def routed_triangulation_with_geoms():
+    A = (4,9)
+    B = (2,9)
+    C = (1.5,9.5)
+    D = (2,10)
+    E = (3,10)
+    F = (3,8)
+    G = (5.5,8)
+    H = (1.5,8)
+    I = (3,7)
+    J = (3.5,7)
+
+    gdf = gpd.GeoDataFrame(
+        {
+            'pair': [('A','G'), ('A','H'),('G','J'),('H','J')],
+            'source': ['A','A','G','H'],
+            'target': ['G','H','J','J'],
+            'path_nodes': [['A','B','C','D','E','F','G'], ['A','B','H'], ['G','J'], ['H','F','I','J']],
+            'path_edges': [
+                [('A','B'),('B','C'),('C','D'),('D','E'),('E','F'),('F','G')],
+                [('A','B'),('B','H')],
+                [('G','J')],
+                [('H','F'),('F','I'),('I','J')]
+            ],
+            'geometry': [
+                LineString([A,B,C,D,E,F,G]),
+                LineString([A,B,H]),
+                LineString([G,J]),
+                LineString([H,F,I,J])
+            ]
+        },
+        crs = '3857',
+        geometry = 'geometry'
+    )
+
+    return gdf
+
+def test_create_gdf_with_geoms_case_success_simple(routed_triangulation, network_edges, routed_triangulation_with_geoms):
+    assert_frame_equal(
+        create_gdf_with_geoms(
+            routed_triangulation,
+            network_edges
+        ),
+        routed_triangulation_with_geoms
+    )
+
+@pytest.fixture
+def turin_routed_triangulation():
+    df = pd.read_csv("./tests/test_data/turin_routed_triangulation_wout_geoms.csv",
+                     sep = ";"
+                     )
+    df['pair'] = df['pair'].apply(ast.literal_eval)
+    df['path_nodes'] = df['path_nodes'].apply(ast.literal_eval)
+    df['path_edges'] = df['path_edges'].apply(ast.literal_eval)
+    
+    return df
+
+@pytest.fixture
+def turin_network_edges():
+    gdf = gpd.read_file(
+        "./tests/test_data/turin_edges.gpkg"
+    )
+    gdf.set_index(['u','v'], inplace=True)
+
+    return gdf
+
+@pytest.fixture
+def turin_routed_triangulation_with_geoms():
+    gdf = gpd.read_file(
+        "./tests/test_data/turin_routed_triangulation_w_geoms.gpkg"
+    )
+    gdf['pair'] = gdf['pair'].apply(ast.literal_eval)
+    gdf['path_nodes'] = gdf['path_nodes'].apply(ast.literal_eval)
+    gdf['path_edges'] = gdf['path_edges'].apply(ast.literal_eval)
+    
+    return gdf
+
+def test_create_gdf_with_geoms_case_success_turin(turin_routed_triangulation, turin_network_edges, turin_routed_triangulation_with_geoms):
+    assert_frame_equal(
+        create_gdf_with_geoms(
+            turin_routed_triangulation, 
+            turin_network_edges
+        ),
+        turin_routed_triangulation_with_geoms
+    )

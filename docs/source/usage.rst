@@ -11,3 +11,4 @@ After having checked the :doc:`mwe`, the following pages walk you through the id
    3. Existing bike network <usage_03_existing_bike_network>
    4. Data export and visualization <usage_04_data_export_and_visualization>
    5. Custom data imports <usage_05_custom_data_imports>
+   6. Settings and constants <usage_06_settings_and_constants>

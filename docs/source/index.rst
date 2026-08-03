@@ -8,14 +8,7 @@ GrowBikeNet |version| documentation
 
 The Python package ``growbikenet`` grows an urban bicycle network from scratch or from an existing bicycle network. It is hosted on `Github <https://github.com/BikeNetKit/GrowBikeNet>`__, part of `BikeNetKit <https://bikenetkit.org>`__.
 
-The software downloads and pre-processes data from OpenStreetMap,
-prepares seed points to connect, runs simulations, saves the results,
-creates plots and videos. The source code builds on `the code from the
-research paper <https://github.com/mszell/bikenwgrowth>`__ *Growing
-Urban Bicycle Networks* and on `the code from the research
-paper <https://github.com/pietrofolco/Data-driven_bicycle_network_planning_for_demand_and_safety>`__
-*Data-driven micromobility network planning for demand and safety*.
-
+The software downloads and pre-processes OpenStreetMap or local data, prepares seed points to connect, grows a network, ranks the edges, saves the results, creates plots and videos. 
 
 Setup and use
 -------------
@@ -28,6 +21,15 @@ is a good place to start, which also explains how the package works in detail. V
 .. =================
 
 .. TBA
+
+Source
+------
+
+The source code builds on `the code from the
+research paper <https://github.com/mszell/bikenwgrowth>`__ *Growing
+Urban Bicycle Networks* and on `the code from the research
+paper <https://github.com/pietrofolco/Data-driven_bicycle_network_planning_for_demand_and_safety>`__
+*Data-driven micromobility network planning for demand and safety*.
 
 How to cite
 -----------
@@ -46,7 +48,7 @@ file.
 Supported by
 ------------
 
-Development of BikeNetKit/GrowBikeNet was supported by the Innovation Fund Denmark, the EU HORIZON grant JUST STREETS, and the Data Science Section of IT University of Copenhagen.
+Development of BikeNetKit/GrowBikeNet is supported by the Innovation Fund Denmark, the EU HORIZON grant JUST STREETS, and the Data Science Section of IT University of Copenhagen.
 
 |Innovation Fund Denmark|    |European Union|   |JUST STREETS|
 
@@ -70,4 +72,4 @@ Documentation contents
    usage
    reference_user
    reference_developer
-   references
+   changelog

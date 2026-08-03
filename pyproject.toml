@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "growbikenet"
-version = "0.10.3"
+version = "0.11.1"
 authors = [
     { name = "Michael Szell", email = "michael@szell.net"},
     { name = "Manuel Knepper"},
@@ -43,7 +43,7 @@ Homepage = "https://bikenetkit.org/"
 Documentation = "https://docs.bikenetkit.org/GrowBikeNet/"
 Repository = "https://github.com/BikeNetKit/GrowBikeNet"
 Issues = "https://github.com/BikeNetKit/GrowBikeNet/issues"
-Changelog = "https://github.com/BikeNetKit/GrowBikeNet/blob/main/docs/changelog.md"
+Changelog = "https://docs.bikenetkit.org/GrowBikeNet/changelog/"
 
 [project.optional-dependencies]
 test = ["pytest"]
