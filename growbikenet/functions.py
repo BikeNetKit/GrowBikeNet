@@ -13,8 +13,9 @@ import networkx as nx
 import osmnx as ox
 import scipy # scipy is needed by osmnx.distance.nearest_nodes()
 from scipy.spatial import Delaunay
+import shapely
 from shapely.prepared import prep
-from shapely.geometry import Point, MultiLineString
+from shapely.geometry import Point, LineString, MultiLineString
 from shapely.affinity import rotate
 from shapely.strtree import STRtree
 from pyproj import Transformer
@@ -339,26 +340,53 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
     if 'num' in points_projected.columns:
         nums = points_projected['num']
     else:
-        num = [1] * len(points_projected)
+        nums = [1] * len(points_projected)
 
-    # Reasoning copied from osmnx.distance.nearest_edges()
-    edges_geoms = edges_with_data['geometry']                            
-    
-    # Build an r-tree spatial index by position for subsequent iloc
-    rtree = STRtree(edges_geoms)                              
-
-    points_geoms = points_projected['geometry']               
-    pos = rtree.query_nearest(                          
-        points_geoms, 
-        max_distance = matching_distance, 
-        all_matches=False)
-
+    # Initialize the 'num_points' column to 0 for all edges
     edges_with_data['num_points'] = 0 * len(edges_with_data)
 
-    # Add the number of events at each point to its nearest edge
-    for point_idx, nearest_edge_idx in zip(pos[0], pos[1]):
-        num = nums[point_idx]
-        edges_with_data.at[nearest_edge_idx, "num_points"] += num
+    # Get geometries of edges and points
+    edges_geoms = edges_with_data['geometry']
+    points_geoms = points_projected['geometry']
+
+    # Build an r-tree spatial index by position for subsequent iloc
+    rtree = STRtree(edges_geoms)    
+                            
+    for point in points_geoms.items(): # point = (id, POINT(x, y))
+
+        # Query the tree for all the edges within the matching distance of the point
+        edges_within_matching_distance = rtree.query(
+            point[1],
+            predicate='dwithin',
+            distance=matching_distance
+        )
+
+        # If no edges are within the matching distance, continue to the next point
+        if len(edges_within_matching_distance) == 0:
+            continue
+
+        # Calculate the distances from the point to each of the edges, and round to 10 decimal places to avoid floating point precision issues
+        distances = []
+        for edge in edges_within_matching_distance:
+            distance = np.around(shapely.distance(point[1], edges_geoms.iloc[edge]), decimals=10)
+            distances.append(distance)
+
+        # Get the edges that are closest to the point
+        closest_edges = edges_within_matching_distance[np.where(distances == np.min(distances))]
+
+        # Get the lowest index of the closest edges
+        closest_edges_min_index = np.sort(closest_edges)[0]
+
+        # Get the number of events at the point
+        num = nums[point[0]]
+
+        # Add the number of events to the nearest edge
+        edges_with_data.loc[closest_edges_min_index, 'num_points'] += num
+
+    # Move the 'geometry' column to the end of the GeoDataFrame
+    # Necessary for testing the function
+    cols = [c for c in edges_with_data.columns if c != 'geometry'] + ['geometry']
+    edges_with_data = edges_with_data[cols]
 
     return edges_with_data
 
