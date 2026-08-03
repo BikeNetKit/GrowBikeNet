@@ -122,7 +122,7 @@ def validate_parameters(
     #     raise TypeError("export_video must be a boolean")
 
     # Import files
-    for filename in ['city_boundary','street_network','bike_network','seed_points']:
+    for filename in ['city_boundary','street_network','bike_network','seed_points','point_data','trip_data']:
         if type(import_files[filename]) is str and not os.path.isfile(settings.import_path+import_files[filename]):
             raise FileNotFoundError(filename+" not found")
         
