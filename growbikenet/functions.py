@@ -22,7 +22,7 @@ from pyproj import Transformer
 from tqdm import tqdm
 
 
-def validate_settings():
+def _validate_settings():
     """ Check if user settings input is valid. If not, raise an exception or warning
     
     Parameters
@@ -46,7 +46,7 @@ def validate_settings():
     return True
 
 
-def validate_parameters(
+def _validate_parameters(
         city_name,
         ranking,
         seed_point_type,
@@ -67,7 +67,7 @@ def validate_parameters(
     ----------
     Same as growbikenet.growbikenet()
     Additionally:
-    constants.PRESET_TAGS : dict
+    constants._PRESET_TAGS : dict
         Dictionary of preset seed point tags.
 
     Returns
@@ -155,7 +155,7 @@ def slugify(s):
     return s
 
 
-def resolve_auto_parameters(
+def _resolve_auto_parameters(
         seed_point_type,
         seed_point_grid_spacing,
         seed_point_linking,
@@ -183,18 +183,18 @@ def resolve_auto_parameters(
         seed_point_linking = 'triangulate_delaunay' 
 
     if seed_point_type == 'auto':
-        if phi>constants.PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+        if phi>constants._PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
             seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'quadrangulate'
                 if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
                     existing_network_spacing = None
                     warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-        elif phi<=constants.PHI_LIMITS[1] and phi>constants.PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+        elif phi<=constants._PHI_LIMITS[1] and phi>constants._PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
             seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
-        elif phi<=constants.PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
+        elif phi<=constants._PHI_LIMITS[0]: # Case negligible grid elements. For example, Berlin, London
             seed_point_type = 'grid_triangle'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
@@ -206,12 +206,12 @@ def resolve_auto_parameters(
             if seed_point_type != 'grid_square': # Everything is triangulated, but the grid could also be quadrangulated
                 seed_point_linking = 'triangulate_delaunay'
             else:
-                if phi>constants.PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+                if phi>constants._PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
                     seed_point_linking = 'quadrangulate'
                     if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
                         existing_network_spacing = None
                         warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-                elif phi<=constants.PHI_LIMITS[1] and phi>constants.PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+                elif phi<=constants._PHI_LIMITS[1] and phi>constants._PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
                     seed_point_linking = 'triangulate_delaunay'
 
     if seed_point_grid_spacing == 'auto': 
@@ -227,10 +227,10 @@ def resolve_auto_parameters(
             seed_point_grid_spacing = constants.GRID_SPACING_TRIANGULATE
 
     if settings.seed_point_snap_distance == 'auto':
-        settings.seed_point_snap_distance = int(np.ceil(seed_point_grid_spacing*constants.SEED_POINT_SNAP_DISTANCE_FACTOR))
+        settings.seed_point_snap_distance = int(np.ceil(seed_point_grid_spacing*constants._SEED_POINT_SNAP_DISTANCE_FACTOR))
 
     if existing_network_spacing == 'auto':
-        existing_network_spacing = int(np.ceil(seed_point_grid_spacing*constants.EXISTING_NETWORK_SPACING_FACTOR))
+        existing_network_spacing = int(np.ceil(seed_point_grid_spacing*constants._EXISTING_NETWORK_SPACING_FACTOR))
 
     return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
 
@@ -437,7 +437,7 @@ def import_network(street_network, import_path=settings.import_path):
     return nodes, edges, g_undir, city_boundary_gdf
 
 
-def prepare_nodes_edges(nodes, edges):
+def prepare_nodes_edges(nodes, edges, crs_projected=settings.crs_projected):
     """Project and prepare nodes and edges for further use
 
     For all edges between a pair of nodes u and v there must be one edge with key 0.
@@ -448,6 +448,8 @@ def prepare_nodes_edges(nodes, edges):
         OSM nodes, unprojected
     edges : geopandas.geodataframe.GeoDataFrame
         OSM edges, unprojected
+    crs_projected : str
+        EPSG code of the coordinate reference system that is used to project osm data. 
         
     Returns
     -------
@@ -464,9 +466,9 @@ def prepare_nodes_edges(nodes, edges):
         # To do: Instead of assuming key 0 edges exist (which is often not the case), only retain the shortest edges as in osmnx.convert.to_digraph(), independent of the key.
 
         # Project geometries of nodes, edges
-        edges = edges.to_crs(settings.crs_projected)
+        edges = edges.to_crs(crs_projected)
 
-    nodes = nodes.to_crs(settings.crs_projected)
+    nodes = nodes.to_crs(crs_projected)
 
     # Add osm ID as column to node gdf
     nodes["osmid"] = nodes.index
@@ -546,7 +548,7 @@ def nx_to_nodes_edges(G):
     return nodes, edges
     
 
-def get_correct_edgetuples(edge_gdf, nodelist):
+def _get_correct_edgetuples(edge_gdf, nodelist):
     """Map a node list (from nx.shortest_paths) to the correct set of edge tuples that can be used for indexing the edge geodataframe
 
     Parameters
@@ -571,7 +573,7 @@ def get_correct_edgetuples(edge_gdf, nodelist):
     return edgelist_final
 
 
-def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
+def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     """Get seed points on an existing bicycle network
     
     Start with the first (arbitrary) node from nodes_exnw. Then, for each node: Delete all other nodes closer than existing_network_spacing, proceed with the closest of the remaining nodes. Finish once all nodes are found or deleted.
@@ -613,7 +615,7 @@ def get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
 def update_with_existing_bike_network(city_name, g_undir, import_files, city_boundary_geometry=None):
     """Update street network with existing bike network
 
-    Downloads a network of protected bike infrastructure from OSM (retaining all connected components) and merges it to a given street network graph g_undir, or imports it from a local file.
+    Downloads a network of protected bike infrastructure from OSM (retaining all connected components) or imports it from a local file and merges it to a given street network graph g_undir.
     
     Parameters
     ----------
@@ -708,7 +710,7 @@ def filter_network_by_component_length(g_undir):
     return nodes_filtered, edges_filtered, g_undir_filtered
 
 
-def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing):
+def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exnw, existing_network_spacing):
     """Update seed points with existing bike network
 
     Updates given snapped seed points by incorporating seed points from an existing bike network.
@@ -729,11 +731,11 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     """
 
     # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
-    seed_points_exnw = get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
+    seed_points_exnw = _get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
     seed_points_exnw.to_crs(settings.crs_projected, inplace=True)
 
     # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
-    buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing*constants.BUFFER_SEED_POINTS_EXNW_FACTOR))
+    buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing*constants._BUFFER_SEED_POINTS_EXNW_FACTOR))
     buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
     buffer_seed_points_exnw.to_crs(settings.crs_projected, inplace=True)
 
@@ -752,7 +754,7 @@ def update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_exn
     return seed_points_snapped
 
 
-def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type='grid_square'):
+def _get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type='grid_square'):
     """Get grid seed points for street network, rotated by principal bearing
 
     Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
@@ -835,7 +837,7 @@ def get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poin
     return seed_points, seed_network
 
 
-def prepare_seed_points(seed_points):
+def _prepare_seed_points(seed_points):
     """Project and prepare seed points for further use
     
     Parameters
@@ -854,7 +856,7 @@ def prepare_seed_points(seed_points):
     return seed_points
 
 
-def get_tags_seed_points(city_name, tags, city_boundary_geometry=None):
+def _get_tags_seed_points(city_name, tags, city_boundary_geometry=None):
     """Get tags seed points for a city
 
     Parameters
@@ -884,7 +886,7 @@ def get_tags_seed_points(city_name, tags, city_boundary_geometry=None):
         seed_points = ox.features_from_place(
             city_name, tags
         )
-    seed_points = prepare_seed_points(seed_points)
+    seed_points = _prepare_seed_points(seed_points)
     return seed_points
 
 
@@ -914,15 +916,15 @@ def get_principal_bearing(G):
         except:  # noqa (To do: make specific and remove noqa)
             pass  # Bearings cannot be calculated in rare edge cases.
     b = pd.Series(city_bearings)
-    bearings = pd.concat([b, b.map(reverse_bearing)]).reset_index(drop="True")
-    bins = np.arange(constants.BEARING_BINS + 1) * 360 / constants.BEARING_BINS
-    count = count_and_merge(constants.BEARING_BINS, bearings)
+    bearings = pd.concat([b, b.map(_reverse_bearing)]).reset_index(drop="True")
+    bins = np.arange(constants._BEARING_BINS + 1) * 360 / constants._BEARING_BINS
+    count = _count_and_merge(constants._BEARING_BINS, bearings)
     principal_bearing = bins[np.where(count == max(count))][0]
 
     return principal_bearing
 
 
-def reverse_bearing(x):
+def _reverse_bearing(x):
     """Reverse bearing
 
     Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
@@ -941,7 +943,7 @@ def reverse_bearing(x):
     return x_rev
 
 
-def count_and_merge(n, bearings):
+def _count_and_merge(n, bearings):
     """Double, then merge bins to avoid edge effects
 
     Make twice as many bins as desired, then merge them in pairs.
@@ -970,71 +972,71 @@ def count_and_merge(n, bearings):
     return bearings_merged
 
 
-def snap_seed_points(seed_points, nodes):
-    """Snap generated seed_points to actual osm nodes
+def snap_points_to_osm_nodes(points, nodes):
+    """Snap points to osm nodes
 
     Parameters
     ----------
-    seed_points: geopandas.geodataframe.GeoDataFrame
-        Seed points that were created within city area, to be snapped to actual osm nodes
+    points: geopandas.geodataframe.GeoDataFrame
+        Points that were created within city area, to be snapped to actual osm nodes
     nodes: geopandas.geodataframe.GeoDataFrame
-        actual osm nodes, downloaded from osmnx
+        Actual osm nodes, downloaded from osmnx
 
     Returns
     -------
-    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+    points_snapped: geopandas.geodataframe.GeoDataFrame
+        Points with additional information about geometries of osm nodes that nodes were snapped to
 
     """
     # Ensure same CRS
-    if seed_points.crs != nodes.crs:
-        seed_points = seed_points.to_crs(nodes.crs)
+    if points.crs != nodes.crs:
+        points = points.to_crs(nodes.crs)
 
     # Find nearest nodes (returns indices)
-    idx_seed, idx_nodes = nodes.sindex.nearest(seed_points.geometry, return_all=False)
+    idx_seed, idx_nodes = nodes.sindex.nearest(points.geometry, return_all=False)
 
     # Assign osmid safely
-    seed_points = seed_points.copy()
-    seed_points["osmid"] = nodes.iloc[idx_nodes]["osmid"].values
+    points = points.copy()
+    points["osmid"] = nodes.iloc[idx_nodes]["osmid"].values
 
     # Keep original geometry
-    seed_points = seed_points.rename(columns={"geometry": "geometry_generated"})
+    points = points.rename(columns={"geometry": "geometry_generated"})
 
     # Attach node geometry + attributes
     nodes_subset = nodes[["osmid", "geometry"]].rename(
         columns={"geometry": "geometry_osm"}
     )
 
-    seed_points = seed_points.reset_index(drop=True)
+    points = points.reset_index(drop=True)
     nodes_subset = nodes_subset.reset_index(drop=True)
 
-    seed_points_snapped = seed_points.merge(nodes_subset, on="osmid", how="left")
+    points_snapped = points.merge(nodes_subset, on="osmid", how="left")
 
-    seed_points_snapped.set_geometry("geometry_osm")
+    points_snapped.set_geometry("geometry_osm")
 
-    return seed_points_snapped
+    return points_snapped
 
 
-def filter_seed_points(seed_points_snapped):
-    """Remove seed_points that are further than the snap distance away from an actual osm node
+def filter_points_distant_from_osm_nodes(points_snapped, snap_distance=settings.seed_point_snap_distance):
+    """Remove points that are further than the snap distance away from an actual osm node
 
     Parameters
     ----------
-    seed_points_snapped: geopandas.geodataframe.GeoDataFrame
-        seed_points with additional information about geometries of osm nodes that seed nodes were snapped to
+    points_snapped: geopandas.geodataframe.GeoDataFrame
+        points with additional information about geometries of osm nodes that seed nodes were snapped to
 
     Returns
     -------
-    seed_points_snapped_filtered: geopandas.geodataframe.GeoDataFrame
-        seed_points within snap distance away from an actual osm node, only columns are osmid and the associated osm geometry
+    points_snapped_filtered: geopandas.geodataframe.GeoDataFrame
+        points within snap distance away from an actual osm node; only columns are osmid and the associated osm geometry
     """
-    gdf = seed_points_snapped.copy()
+    gdf = points_snapped.copy()
 
     # Compute distance
     gdf["snap_dist"] = gdf.geometry_generated.distance(gdf.geometry_osm)
 
     # Filter by threshold
-    gdf = gdf[gdf["snap_dist"] <= settings.seed_point_snap_distance].copy()
+    gdf = gdf[gdf["snap_dist"] <= snap_distance].copy()
 
     # Drop duplicates: one row per osmid
     gdf = gdf.sort_values("snap_dist").drop_duplicates("osmid")
@@ -1046,12 +1048,12 @@ def filter_seed_points(seed_points_snapped):
     gdf = gdf.set_geometry("geometry")
     gdf = gdf.set_index("osmid", drop=False)
 
-    seed_points_snapped_filtered = gdf.copy()
+    points_snapped_filtered = gdf.copy()
 
-    return seed_points_snapped_filtered
+    return points_snapped_filtered
 
 
-def create_delaunay_edges(nodes_gdf):
+def _create_delaunay_edges(nodes_gdf):
     """Create df with edges that are part of Delaunay triangulation
 
     Note that the original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is much faster due to the Delaunay scipy function and gives in most cases identical results. Triangulation and metrics (betweenness, closeness) are calculated for the abstract network for which egde lengths are taken from the routed network.
@@ -1111,7 +1113,7 @@ def create_delaunay_edges(nodes_gdf):
     return df
 
 
-def remove_edge_overlaps(edges_in):
+def _remove_edge_overlaps(edges_in):
     """In the grown network, remove edge overlaps stepwise
 
     Parameters
@@ -1187,7 +1189,7 @@ def df_from_graph(A, method):
     return df
 
 
-def rank_df(df, method):
+def _rank_df(df, method):
     """Rank dataframe by specified method
 
     Parameters
@@ -1269,7 +1271,7 @@ def add_path_to_df(df, edges, g_undir):
             )
         )
     df["path_nodes"] = paths
-    df["path_edges"] = df.path_nodes.apply(lambda x: get_correct_edgetuples(edges, x))
+    df["path_edges"] = df.path_nodes.apply(lambda x: _get_correct_edgetuples(edges, x))
     return df
 
 

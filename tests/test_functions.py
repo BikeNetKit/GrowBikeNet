@@ -11,11 +11,11 @@ from pandas.testing import assert_frame_equal
 import shapely
 from growbikenet.functions import (
     get_principal_bearing,
-    get_grid_seed_points,
-    filter_seed_points,
-    rank_df,
+    _get_grid_seed_points,
+    filter_points_distant_from_osm_nodes,
+    _rank_df,
     # intersects_properly,
-    remove_edge_overlaps,
+    _remove_edge_overlaps,
     add_point_data_to_net,
     add_trip_data_to_net,
     create_gdf_with_geoms,
@@ -57,9 +57,9 @@ def method():
     return "betweenness_centrality"
 
 
-def test_rank_df(test_data_rank, method, validation_data_rank):
+def test__rank_df(test_data_rank, method, validation_data_rank):
     assert_frame_equal(
-        rank_df(test_data_rank, method),
+        _rank_df(test_data_rank, method),
         validation_data_rank,
         check_dtype=False,
     )
@@ -88,13 +88,13 @@ def filtered_seed_points():
     return gdf
 
 
-def test_filter_seed_points(
+def test_filter_points_distant_from_osm_nodes(
     snapped_seed_points, filtered_seed_points
 ):
     settings.seed_point_snap_distance = 500
-    constants.SEED_POINT_GRID_SPACING_FACTOR = 0.25
+    constants._SEED_POINT_GRID_SPACING_FACTOR = 0.25
     assert_frame_equal(
-        filter_seed_points(snapped_seed_points),
+        filter_points_distant_from_osm_nodes(snapped_seed_points, settings.seed_point_snap_distance),
         filtered_seed_points,
         check_dtype=False,
     )
@@ -122,7 +122,7 @@ def validation_grid():
     return grid
 
 
-def test_get_grid_seed_points(validation_grid, validation_streets):
+def test__get_grid_seed_points(validation_grid, validation_streets):
     edges = ox.convert.graph_to_gdfs(
         validation_streets,
         nodes=False,
@@ -130,7 +130,7 @@ def test_get_grid_seed_points(validation_grid, validation_streets):
         node_geometry=False,
         fill_edge_geometry=False,
     )
-    validation_grid.equals(get_grid_seed_points(edges, 1707, 65.0))
+    validation_grid.equals(_get_grid_seed_points(edges, 1707, 65.0))
 
 
 @pytest.fixture
@@ -158,9 +158,9 @@ def ordered_edges_without_overlaps():
     gdf = gpd.GeoDataFrame(d, geometry="geometry", crs="EPSG:3857")
     return gdf
 
-def test_remove_edge_overlaps(ordered_edges, ordered_edges_without_overlaps):
+def test__remove_edge_overlaps(ordered_edges, ordered_edges_without_overlaps):
     assert_frame_equal(
-        remove_edge_overlaps(ordered_edges),
+        _remove_edge_overlaps(ordered_edges),
         ordered_edges_without_overlaps,
         check_dtype=False,
     )
