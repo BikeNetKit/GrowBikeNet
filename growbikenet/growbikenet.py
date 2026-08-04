@@ -11,26 +11,26 @@ from tqdm import tqdm
 import time
 import datetime
 from growbikenet.functions import (
-    validate_settings,
-    validate_parameters,
+    _validate_settings,
+    _validate_parameters,
     orientation_order,
-    resolve_auto_parameters,
+    _resolve_auto_parameters,
     get_principal_bearing,
-    prepare_seed_points,
-    get_grid_seed_points,
-    get_tags_seed_points,
-    snap_seed_points,
-    filter_seed_points,
-    create_delaunay_edges,
+    _prepare_seed_points,
+    _get_grid_seed_points,
+    _get_tags_seed_points,
+    snap_points_to_osm_nodes,
+    filter_points_distant_from_osm_nodes,
+    _create_delaunay_edges,
     add_path_to_df,
     create_gdf_with_geoms,
     node_to_edge_attributes,
     df_from_graph,
-    rank_df,
+    _rank_df,
     download_network,
     update_with_existing_bike_network,
-    update_seed_points_with_existing_bike_network,
-    remove_edge_overlaps,
+    _update_seed_points_with_existing_bike_network,
+    _remove_edge_overlaps,
     import_network,
     add_point_data_to_net,
     add_trip_data_to_net,
@@ -108,10 +108,10 @@ def growbikenet(
                 If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
             "seed_points" : str | None, default None
                 If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
-            "point_data" : None | str, default None
-                If not None, an additional data set of points will be loaded from this file, representing point events like crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. To be used in future versions of growbikenet.
-            "trip_data" : None | str, default None
-                If not None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination. To be used in future versions of growbikenet.
+            "point_data" : str | None, default None
+                If not set to None, an additional data set of points will be loaded from this file, representing point events like crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. To be used in future versions of growbikenet.
+            "trip_data" : str | None, default None
+                If not set to None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination. To be used in future versions of growbikenet.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} retrieves exactly the same as seed_point_type='rail'.
 
@@ -124,19 +124,19 @@ def growbikenet(
     --------
     Minimum working example: Grow a bicycle network from scratch in Lyon.
 
-    >>> edges_ranked = growbikenet("Lyon")
+    >>> edges_ranked = gbn.growbikenet("Lyon")
 
     Grow a bicycle network from scratch in Copenhagen, providing a study area polygon to include also Frederiksberg and Amager.
 
-    >>> edges_ranked = growbikenet("Copenhagen", import_files={'city_boundary':"./tests/test_data/copenhagen_city_boundary.shp"}) 
+    >>> edges_ranked = gbn.growbikenet("Copenhagen", import_files={'city_boundary':"./tests/test_data/copenhagen_city_boundary.shp"}) 
 
     Expand the existing bicycle network of Lyon, connecting all educational institutions.
 
-    >>> edges_ranked = growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
+    >>> edges_ranked = gbn.growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
 
     Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
 
-    >>> edges_ranked = growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_streets.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
+    >>> edges_ranked = gbn.growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_street_network.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
 
     References
     ----------
@@ -148,8 +148,8 @@ def growbikenet(
     """
     starttime = time.time()
 
-    validate_settings()
-    import_files = validate_parameters(
+    _validate_settings()
+    import_files = _validate_parameters(
         city_name,
         ranking,
         seed_point_type,
@@ -213,7 +213,7 @@ def growbikenet(
     # Now that the graph is ready, decide auto values
     ox.bearing.add_edge_bearings(g_undir)
     phi = orientation_order(g_undir)
-    seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = resolve_auto_parameters(
+    seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = _resolve_auto_parameters(
         seed_point_type,
         seed_point_grid_spacing,
         seed_point_linking,
@@ -237,26 +237,26 @@ def growbikenet(
         principal_bearing = get_principal_bearing(g_undir)
 
         # But this is on the projected edges now
-        seed_points, seed_network = get_grid_seed_points(
+        seed_points, seed_network = _get_grid_seed_points(
             edges, seed_point_grid_spacing, principal_bearing, seed_point_type
         ) # The seed_network is only relevant for quadrangulation
-    elif seed_point_type in constants.PRESET_TAGS:
-        seed_point_tags = constants.PRESET_TAGS[seed_point_type]
+    elif seed_point_type in constants._PRESET_TAGS:
+        seed_point_tags = constants._PRESET_TAGS[seed_point_type]
     elif seed_point_type == 'file':
         seed_points = gpd.read_file(settings.import_path+import_files['seed_points'])
-        seed_points = prepare_seed_points(seed_points)
+        seed_points = _prepare_seed_points(seed_points)
 
-    if seed_point_type == 'tags' or seed_point_type in constants.PRESET_TAGS:
-        seed_points = get_tags_seed_points(city_name, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
+    if seed_point_type == 'tags' or seed_point_type in constants._PRESET_TAGS:
+        seed_points = _get_tags_seed_points(city_name, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
     progress_bar.update(1)
 
     # Snap seed points to OSM nodes
-    seed_points_snapped = snap_seed_points(seed_points, nodes)
+    seed_points_snapped = snap_points_to_osm_nodes(seed_points, nodes)
     if seed_point_linking == 'quadrangulate': # Map geometry to osmid
         mapping = {row.geometry_generated: row.osmid for row in seed_points_snapped.itertuples()}
         nx.relabel_nodes(seed_network, mapping, copy=False)
     progress_bar.update(1)
-    seed_points_snapped_filtered = filter_seed_points(seed_points_snapped)
+    seed_points_snapped_filtered = filter_points_distant_from_osm_nodes(seed_points_snapped, settings.seed_point_snap_distance)
     if seed_point_linking == 'quadrangulate': # Remove all filtered out nodes
         filtered_nodes = set(seed_points_snapped.osmid) - set(seed_points_snapped_filtered.osmid)
         seed_network.remove_nodes_from(filtered_nodes)
@@ -264,7 +264,7 @@ def growbikenet(
     progress_bar.update(1)
 
     if existing_network_spacing is not None:
-        seed_points_snapped_filtered = update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing)
+        seed_points_snapped_filtered = _update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing)
         progress_bar.update(1)
     progress_bar.close()
 
@@ -283,7 +283,7 @@ def growbikenet(
             bar_format='{l_bar}{bar:16}{r_bar}',
             )
         # Create unrouted network with delaunay triangulation edges
-        grown_bikenet_edges_abstract = create_delaunay_edges(seed_points_snapped_filtered)
+        grown_bikenet_edges_abstract = _create_delaunay_edges(seed_points_snapped_filtered)
     else: # Build the same dataframe structure for the abstract network from the seed_network.edges
         progress_bar = tqdm(
             desc="{:<23}".format("Quadrangulation"),
@@ -350,7 +350,7 @@ def growbikenet(
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
-    # The ranking=="random" case has no edge attributes and is handled in rank_df
+    # The ranking=="random" case has no edge attributes and is handled in _rank_df
     if ranking == "betweenness_centrality":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
@@ -370,7 +370,7 @@ def growbikenet(
     edges_ranked = df_from_graph(B, ranking)
 
     # Rank edges by specified method
-    edges_ranked = rank_df(edges_ranked, ranking)
+    edges_ranked = _rank_df(edges_ranked, ranking)
 
     edges_ranked = gpd.GeoDataFrame(edges_ranked, crs=settings.crs_projected, geometry="geometry")
 
@@ -387,7 +387,7 @@ def growbikenet(
 
     ### Remove edge overlaps
     if not allow_edge_overlaps:
-        edges_ranked = remove_edge_overlaps(edges_ranked) # Can take a while, could be sped up.
+        edges_ranked = _remove_edge_overlaps(edges_ranked) # Can take a while, could be sped up.
         overlap_string = ""
     else:
         overlap_string = "_with-overlaps"
