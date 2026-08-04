@@ -108,10 +108,10 @@ def growbikenet(
                 If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
             "seed_points" : str | None, default None
                 If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
-            "point_data" : None | str, default None
-                If not None, an additional data set of points will be loaded from this file, representing point events like crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. To be used in future versions of growbikenet.
-            "trip_data" : None | str, default None
-                If not None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination. To be used in future versions of growbikenet.
+            "point_data" : str | None, default None
+                If not set to None, an additional data set of points will be loaded from this file, representing point events like crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. To be used in future versions of growbikenet.
+            "trip_data" : str | None, default None
+                If not set to None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination. To be used in future versions of growbikenet.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} retrieves exactly the same as seed_point_type='rail'.
 
@@ -124,19 +124,19 @@ def growbikenet(
     --------
     Minimum working example: Grow a bicycle network from scratch in Lyon.
 
-    >>> edges_ranked = growbikenet("Lyon")
+    >>> edges_ranked = gbn.growbikenet("Lyon")
 
     Grow a bicycle network from scratch in Copenhagen, providing a study area polygon to include also Frederiksberg and Amager.
 
-    >>> edges_ranked = growbikenet("Copenhagen", import_files={'city_boundary':"./tests/test_data/copenhagen_city_boundary.shp"}) 
+    >>> edges_ranked = gbn.growbikenet("Copenhagen", import_files={'city_boundary':"./tests/test_data/copenhagen_city_boundary.shp"}) 
 
     Expand the existing bicycle network of Lyon, connecting all educational institutions.
 
-    >>> edges_ranked = growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
+    >>> edges_ranked = gbn.growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
 
     Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
 
-    >>> edges_ranked = growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_streets.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
+    >>> edges_ranked = gbn.growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_street_network.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
 
     References
     ----------

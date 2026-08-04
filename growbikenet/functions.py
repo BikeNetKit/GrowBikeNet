@@ -1022,12 +1022,14 @@ def filter_points_distant_from_osm_nodes(points_snapped, snap_distance=settings.
 
     Parameters
     ----------
-    points_snapped: geopandas.geodataframe.GeoDataFrame
-        points with additional information about geometries of osm nodes that seed nodes were snapped to
+    points_snapped : geopandas.geodataframe.GeoDataFrame
+        Points with additional information about geometries of osm nodes that seed nodes were snapped to.
+    snap_distance : int
+        Maximum distance between raw seed points and osm nodes for snapping, in meters.
 
     Returns
     -------
-    points_snapped_filtered: geopandas.geodataframe.GeoDataFrame
+    points_snapped_filtered : geopandas.geodataframe.GeoDataFrame
         points within snap distance away from an actual osm node; only columns are osmid and the associated osm geometry
     """
     gdf = points_snapped.copy()
