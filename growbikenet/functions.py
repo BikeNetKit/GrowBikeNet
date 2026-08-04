@@ -47,14 +47,14 @@ def _validate_settings():
 
 
 def _validate_parameters(
-        city_name,
+        city_query,
         ranking,
         seed_point_type,
         seed_point_grid_spacing,
         seed_point_linking,
         existing_network_spacing,
         export_data,
-        export_data_slug,
+        city_name,
         export_plots,
         # export_video,
         allow_edge_overlaps,
@@ -75,8 +75,8 @@ def _validate_parameters(
     True
     """
 
-    if type(city_name) is not str:
-        raise TypeError("city_name must be a string")
+    if type(city_query) is not str:
+        raise TypeError("city_query must be a string")
     if type(ranking) is not str:
         raise TypeError("ranking must be a string")
     if ranking not in ["betweenness_centrality", "closeness_centrality", "random"]:
@@ -109,13 +109,13 @@ def _validate_parameters(
         warnings.warn("existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around a third, to ensure that the existing bicycle network is built first.")
     if type(export_data) is not bool:
         raise TypeError("export_data must be a boolean")
-    if export_data_slug is not None and type(export_data_slug) is not str:
-        raise TypeError("export_data_slug must be None or a string")
-    if type(export_data_slug) is str and (
-        len(export_data_slug) < 1 or len(slugify(export_data_slug)) < 1
+    if city_name is not None and type(city_name) is not str:
+        raise TypeError("city_name must be None or a string")
+    if type(city_name) is str and (
+        len(city_name) < 1 or len(slugify(city_name)) < 1
     ):
         raise ValueError(
-            "export_data_slug must contain at least one non-special character"
+            "city_name must contain at least one non-special character"
         )
     if type(export_plots) is not bool:
         raise TypeError("export_plots must be a boolean")
@@ -475,7 +475,7 @@ def prepare_nodes_edges(nodes, edges, crs_projected=settings.crs_projected):
     return nodes, edges
 
 
-def download_network(city_name, network_type='drive', custom_filter=None, retain_all=True, city_boundary_geometry=None):
+def download_network(city_query, network_type='drive', custom_filter=None, retain_all=True, city_boundary_geometry=None):
     """Download and prepare a street network from OSM via OSMnx
 
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
@@ -483,7 +483,7 @@ def download_network(city_name, network_type='drive', custom_filter=None, retain
 
     Parameters
     ----------
-    city_name : str
+    city_query : str
         Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary or street_network is set.
     network_type : {'all', 'all_public', 'bike', 'drive', 'drive_service', 'walk'} 
         What type of street network to retrieve if custom_filter is None.
@@ -507,7 +507,7 @@ def download_network(city_name, network_type='drive', custom_filter=None, retain
     # Fetch street network data from osmnx
     if city_boundary_geometry is None:
         g = ox.graph_from_place(
-        city_name, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
+        city_query, network_type=network_type, custom_filter=custom_filter, retain_all=retain_all
         )
     else:
         g = ox.graph_from_polygon(
@@ -612,14 +612,14 @@ def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     return seed_points_exnw
 
 
-def update_with_existing_bike_network(city_name, g_undir, import_files, city_boundary_geometry=None):
+def update_with_existing_bike_network(city_query, g_undir, import_files, city_boundary_geometry=None):
     """Update street network with existing bike network
 
     Downloads a network of protected bike infrastructure from OSM (retaining all connected components) or imports it from a local file and merges it to a given street network graph g_undir.
     
     Parameters
     ----------
-    city_name : str
+    city_query : str
         Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary_geometry is set.
     g_undir : networkx.classes.multigraph.MultiGraph
         Street network networkX graph, undirected
@@ -647,7 +647,7 @@ def update_with_existing_bike_network(city_name, g_undir, import_files, city_bou
     else:
         # Fetch protected bike network data from osmnx
         # Due to retain_all=True, this fetches all the connected components
-        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_name, custom_filter=constants.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_query, custom_filter=constants.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
 
     g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
 
@@ -856,12 +856,12 @@ def _prepare_seed_points(seed_points):
     return seed_points
 
 
-def _get_tags_seed_points(city_name, tags, city_boundary_geometry=None):
+def _get_tags_seed_points(city_query, tags, city_boundary_geometry=None):
     """Get tags seed points for a city
 
     Parameters
     ----------
-    city_name : str
+    city_query : str
         Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled (for data fetching) if city_boundary_geometry is set.
     tags : None | dict[str, bool | str | list[str]], default None
         Geocodable tags, see [3]_. For example, tags={"railway": ["station", "halt"]} will retrieve exactly the same as seed_point_type='rail'.
@@ -884,7 +884,7 @@ def _get_tags_seed_points(city_name, tags, city_boundary_geometry=None):
         )
     else:
         seed_points = ox.features_from_place(
-            city_name, tags
+            city_query, tags
         )
     seed_points = _prepare_seed_points(seed_points)
     return seed_points

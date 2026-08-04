@@ -40,14 +40,14 @@ from growbikenet.visualization import create_plots
 
 
 def growbikenet(
-    city_name,
+    city_query,
     ranking='betweenness_centrality',
     seed_point_type='auto',
     seed_point_grid_spacing='auto',
     seed_point_linking='auto',
     existing_network_spacing=None,
     export_data=True,
-    export_data_slug=None,
+    city_name=None,
     export_plots=False,
     # export_video=False,
     allow_edge_overlaps=False,
@@ -60,8 +60,8 @@ def growbikenet(
 
     Parameters
     ----------
-    city_name : str
-        Name of the city that the analysis should be performed on. This is the query string used to fetch the data from nominatim. Overruled for data fetching if city_boundary or street_network is set.
+    city_query : str
+        Search string for the city that the analysis should be performed on. This is the query used to fetch the data from nominatim. Overruled for data fetching if city_boundary or street_network is set.
     ranking : str, default 'betweenness_centrality'
         Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
     seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
@@ -88,9 +88,9 @@ def growbikenet(
     existing_network_spacing : None | 'auto' | int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
     export_data : bool, default True
-        If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[settings.export_file_format], where slug is a string id made out of city_name.
-    export_data_slug : str | None, default None
-        If not None, the city_name will be slugified and used as the slug in the filename of the data export.
+        If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[settings.export_file_format], where slug is a string id made out of city_query.
+    city_name : str | None, default None
+        If set, the slugified city_name is used as the filename of the data export. For example, "Athens" will use "athens" in filenames. If set to None, the slugified city_query is used as the filename of the data export. It is useful to set city_name for cities where the city_query is not the city name, for example "Municipality of Athens" vs "Athens".
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
     allow_edge_overlaps : bool, default False
@@ -150,14 +150,14 @@ def growbikenet(
 
     _validate_settings()
     import_files = _validate_parameters(
-        city_name,
+        city_query,
         ranking,
         seed_point_type,
         seed_point_grid_spacing,
         seed_point_linking,
         existing_network_spacing,
         export_data,
-        export_data_slug,
+        city_name,
         export_plots,
         allow_edge_overlaps,
         import_files,
@@ -167,7 +167,7 @@ def growbikenet(
     np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
 
     print("==============================================")
-    print("RUNNING GROWBIKENET FOR CITY: " + city_name)
+    print("RUNNING GROWBIKENET FOR CITY: " + city_query)
     print(ranking + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
     print("----------------------------------------------╮")
     
@@ -197,15 +197,15 @@ def growbikenet(
             city_boundary_shp = gpd.read_file(settings.import_path+import_files['city_boundary'])
             city_boundary_gdf = city_boundary_shp.iloc[[0]]    
         else:
-            city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_name)
+            city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_query)
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         # Fetch street network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = download_network(city_name, network_type='drive', retain_all=False, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir = download_network(city_query, network_type='drive', retain_all=False, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
 
     if existing_network_spacing is not None: # update g_undir: add the existing bike network
-        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_name, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_query, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
     progress_bar.close()
 
@@ -247,7 +247,7 @@ def growbikenet(
         seed_points = _prepare_seed_points(seed_points)
 
     if seed_point_type == 'tags' or seed_point_type in constants._PRESET_TAGS:
-        seed_points = _get_tags_seed_points(city_name, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
+        seed_points = _get_tags_seed_points(city_query, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
     progress_bar.update(1)
 
     # Snap seed points to OSM nodes
@@ -400,10 +400,11 @@ def growbikenet(
     # Generate export data filename
     if export_data or export_plots:# or export_video:
         os.makedirs(settings.export_path['results'], exist_ok=True)
-        if export_data_slug is None:
-            city_string = city_name
+        # Note: city_string is slugified later
+        if city_name is None:
+            city_string = city_query
         else:
-            city_string = export_data_slug
+            city_string = city_name
         if existing_network_spacing:
             exnw_string = "_with-bikenw"
         else:

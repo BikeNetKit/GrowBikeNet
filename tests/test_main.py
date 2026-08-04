@@ -24,7 +24,7 @@ def test_growbikenet_case_success_online(validation_gdf_oelde):
     """
     validation_gdf_oelde.equals(
         growbikenet(
-            city_name="Oelde",
+            city_query="Oelde",
             ranking="betweenness_centrality",
             export_data=False,
         )
@@ -35,7 +35,7 @@ def test_growbikenet_case_success_offline1(validation_gdf_oelde):
     """
     validation_gdf_oelde.equals(
         growbikenet(
-            city_name="Oelde",
+            city_query="Oelde",
             ranking="betweenness_centrality",
             export_data=False,
             import_files={"street_network":"./tests/test_data/oelde_street_network.gpkg"},
@@ -47,7 +47,7 @@ def test_growbikenet_case_success_offline2(validation_gdf_athens):
     """
     validation_gdf_athens.equals(
         growbikenet(
-            city_name="Municipality of Athens",
+            city_query="Municipality of Athens",
             ranking="betweenness_centrality",
             export_data=False,
             existing_network_spacing='auto',
@@ -71,7 +71,7 @@ def test_growbikenet_case_success_offline3(validation_gdf_asti):
     """
     validation_gdf_asti.equals(
         growbikenet(
-            city_name="Asti 16", # The 16 is needed to select the city, not the municipality (it doesn't matter here as the network is imported anyway, but it is important to know for exporting the street network asti_street_network.gpkg in the first place)
+            city_query="Asti 16", # The 16 is needed to select the city, not the municipality (it doesn't matter here as the network is imported anyway, but it is important to know for exporting the street network asti_street_network.gpkg in the first place)
             ranking="betweenness_centrality",
             export_data=False,
             import_files={"street_network":"./tests/test_data/asti_street_network.gpkg"},
