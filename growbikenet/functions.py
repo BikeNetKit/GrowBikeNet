@@ -54,7 +54,7 @@ def _validate_parameters(
         seed_point_linking,
         existing_network_spacing,
         export_data,
-        city_name,
+        city_id,
         export_plots,
         # export_video,
         allow_edge_overlaps,
@@ -109,13 +109,13 @@ def _validate_parameters(
         warnings.warn("existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around a third, to ensure that the existing bicycle network is built first.")
     if type(export_data) is not bool:
         raise TypeError("export_data must be a boolean")
-    if city_name is not None and type(city_name) is not str:
-        raise TypeError("city_name must be None or a string")
-    if type(city_name) is str and (
-        len(city_name) < 1 or len(slugify(city_name)) < 1
+    if city_id is not None and type(city_id) is not str:
+        raise TypeError("city_id must be None or a string")
+    if type(city_id) is str and (
+        len(city_id) < 1 or len(slugify(city_id)) < 1
     ):
         raise ValueError(
-            "city_name must contain at least one non-special character"
+            "city_id must contain at least one non-special character"
         )
     if type(export_plots) is not bool:
         raise TypeError("export_plots must be a boolean")

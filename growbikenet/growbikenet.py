@@ -47,7 +47,7 @@ def growbikenet(
     seed_point_linking='auto',
     existing_network_spacing=None,
     export_data=True,
-    city_name=None,
+    city_id=None,
     export_plots=False,
     # export_video=False,
     allow_edge_overlaps=False,
@@ -89,8 +89,8 @@ def growbikenet(
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
     export_data : bool, default True
         If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[settings.export_file_format], where slug is a string id made out of city_query.
-    city_name : str | None, default None
-        If set, the slugified city_name is used as the filename of the data export. For example, "Athens" will use "athens" in filenames. If set to None, the slugified city_query is used as the filename of the data export. It is useful to set city_name for cities where the city_query is not the city name, for example "Municipality of Athens" vs "Athens".
+    city_id : str | None, default None
+        If set, the slugified city_id is used as the filename of the data export. For example, a city_id "Athens" will turn to "athens" in filenames. If set to None, the slugified city_query is used as the filename of the data export. It is useful to set a city_id for cities where the city_query is not the city name, for example to set for a city_query "Municipality of Athens" the city_id to "Athens".
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
     allow_edge_overlaps : bool, default False
@@ -157,7 +157,7 @@ def growbikenet(
         seed_point_linking,
         existing_network_spacing,
         export_data,
-        city_name,
+        city_id,
         export_plots,
         allow_edge_overlaps,
         import_files,
@@ -401,10 +401,10 @@ def growbikenet(
     if export_data or export_plots:# or export_video:
         os.makedirs(settings.export_path['results'], exist_ok=True)
         # Note: city_string is slugified later
-        if city_name is None:
+        if city_id is None:
             city_string = city_query
         else:
-            city_string = city_name
+            city_string = city_id
         if existing_network_spacing:
             exnw_string = "_with-bikenw"
         else:
