@@ -165,8 +165,7 @@ def test_growbikenet_case_success_offline_import_data3(validation_gdf_turin_alph
 
     validation_gdf_turin_alpha0_4.equals( 
         gbn.growbikenet(
-            "Turin", 
-            export_data = True,
+            "Turin",
             import_files={
                 'street_network':"./tests/test_data/turin_street_network.gpkg",
                 'point_data':"./tests/test_data/turin_crashes.gpkg",
