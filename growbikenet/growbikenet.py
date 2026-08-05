@@ -335,7 +335,6 @@ def growbikenet(
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
 
-    # Apply add_point_data_to_net() from here
 
     # Add distances between source and target from geometry
     grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
@@ -346,6 +345,11 @@ def growbikenet(
     dist_list = grown_bikenet_edges["dist"]
     dist_dict = dict(zip(edge_list, dist_list))
     geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
+    # Add point data to edges
+    if point_data is not None:
+        grown_bikenet_edges = add_point_data_to_net(point_data, grown_bikenet_edges)
+        num_points_list = grown_bikenet_edges["num_points"]
+        num_points_dict = dict(zip(edge_list, num_points_list))
 
     # Make graph object from edge list
     B = nx.Graph() # B like bike network
@@ -355,11 +359,16 @@ def growbikenet(
     B.add_edges_from(edge_list)
     nx.set_edge_attributes(B, dist_dict, "distance")
     nx.set_edge_attributes(B, geom_dict, "geometry")
+    if point_data is not None:
+        nx.set_edge_attributes(B, num_points_dict, "num_points")
     B.graph["crs"] = settings.crs_projected # Needed for add_trip_data_to_net()
 
-    # Add add_trip_data_to_net() from here
-    
+    # Add trip data to edges
+    if trip_data is not None:
+        B = add_trip_data_to_net(trip_data, B)
 
+    # To do: Compute weighted distances
+    
 
     progress_bar.update(1)
     progress_bar.close()
