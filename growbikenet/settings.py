@@ -6,6 +6,10 @@ export_path : dict(str)
     Paths to results, plots, and video folders to save data, plots, and videos. 
 export_file_format : str ('geojson' | 'gpkg'), default 'gpkg'
     File format for the data export, relevant if export_data set to True. If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
+import_data_impact : float, default 9
+    Impact of imported trip or point data on results. Must be non-negative.
+import_data_trip_point_balance : float, default 0.5
+    Impact of imported trip data versus point data on results. Must be between 0 and 1, where 0 means no trip impact and full point impact, 1 means full trip impact and no point impact, and 0.5 means balanced impact of both. If only the trip data is imported, this variable is automatically set to 1; if only the point data is imported, this variable is automatically set to 0 - meaning in such a case the data impact is controlled only by settings.import_data_impact.
 import_path : str
     Path to import files (as defined in growbikenet's import_files parameter).
 random_seed : int
