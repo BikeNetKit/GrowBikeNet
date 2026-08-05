@@ -12,6 +12,10 @@ import_data_trip_point_balance : float, default 0.5
     Impact of imported trip data versus point data on results. Must be between 0 and 1, where 0 means no trip impact and full point impact, 1 means full trip impact and no point impact, and 0.5 means balanced impact of both. If only the trip data is imported, this variable is automatically set to 1; if only the point data is imported, this variable is automatically set to 0 - meaning in such a case the data impact is controlled only by settings.import_data_impact.
 import_path : str
     Path to import files (as defined in growbikenet's import_files parameter).
+import_point_data_snap_distance : int, default 500
+    Maximum distance between point data and network links for snapping, in meters.
+import_trip_data_snap_distance : int, default 500
+    Maximum distance between trip data and network links for snapping, in meters.
 random_seed : int
     Random number generator seed for reproducibility
 seed_point_snap_distance : 'auto' | int, default 'auto'
@@ -28,6 +32,8 @@ export_path = {
 }
 export_file_format = 'gpkg'
 import_path = "./"
+import_point_data_snap_distance = 500
+import_trip_data_snap_distance = 500
 random_seed = 42
 seed_point_snap_distance = 'auto'
 

@@ -241,7 +241,7 @@ def _resolve_auto_parameters(
     return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
 
 
-def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
+def add_trip_data_to_net(trips, A, crs_projected=settings.crs_projected, matching_distance=settings.import_trip_data_snap_distance):
     """Match trip data to network edges
 
     First, match origin and destination points given in trips to the nodes. Only consider trips where both origins and nodes are matched within matching_distance. Then, for each trip, find the shortest path over the edges from matched origin node to matched destination node, and add 1 (or optionally "num" if column provided in trips) to the affected edges.
@@ -249,13 +249,13 @@ def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
     Parameters
     ----------
     trips : pandas DataFrame
-        A df of unprojected origin-destination coordinates (columns: o_lat, o_lon, d_lat, d_lon), with each row encoding a trip. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
+        A df of unprojected origin-destination coordinates (columns: o_lat, o_lon, d_lat, d_lon), with each row encoding a trip, in unprojected crs EPSG:4326. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
     A: networkx.graph
         Graph created from triangulation edge list
     crs_projected : str
         Coordinate reference system that is used to project spatial data.
     matching_distance : int
-        Matching distance in meters
+        Matching distance in meters. Set via settings.import_trip_data_snap_distance.
 
     Returns
     -------
@@ -297,7 +297,6 @@ def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
         if o_node == d_node or o_distance > matching_distance or d_distance > matching_distance:
             continue  
 
-
         # Get shortest path between the snapped orgin and destination nodes
         path = nx.shortest_path(graph_with_data, source=o_node, target=d_node, weight="distance")
         path_edges = list(zip(path[:-1], path[1:]))
@@ -318,7 +317,7 @@ def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
     return graph_with_data
 
 
-def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
+def add_point_data_to_net(points, edges, crs_projected=settings.crs_projected, matching_distance=settings.import_point_data_snap_distance):
     """Match point data to network edges
 
     Parameters
@@ -327,10 +326,10 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
         A gdf of unprojected point geometries, optional having a column "num" containing an integer. This could be (number of) point events like crashes or citizen feedback to improve bike infrastructure. If "num" column is not provided, assumes 1 per point.
     edges : geopandas.geodataframe.GeoDataFrame
         A gdf of projected spatial network edges. This is the routed network of seed points.
-    matching_distance : int
-        Matching distance in meters
     crs_projected : str
         Coordinate reference system that is used to project osm data.
+    matching_distance : int
+        Matching distance in meters. Set via settings.import_point_data_snap_distance.
 
     Returns
     -------
