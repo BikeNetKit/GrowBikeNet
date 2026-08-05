@@ -1368,6 +1368,6 @@ def _get_weighted_distances(B, num_types):
 
     dist_weighted_by_types_dict = {}
     for k,d in dist_dict.items():
-        dist_weighted_by_types_dict[k] = d/(1+settings.import_data_impact*(num_types_per_km_dict[k]/max_n)) 
+        dist_weighted_by_types_dict[k] = d/(1+settings.import_data_impact*(num_types_per_km_dict[k]/max_n))
 
     return dist_weighted_by_types_dict

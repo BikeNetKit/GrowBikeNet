@@ -9,6 +9,7 @@ from shapely.geometry import Point, LineString, MultiLineString
 import ast
 from pandas.testing import assert_frame_equal
 import shapely
+import pickle
 from growbikenet.functions import (
     get_principal_bearing,
     _get_grid_seed_points,
@@ -19,6 +20,7 @@ from growbikenet.functions import (
     add_point_data_to_net,
     add_trip_data_to_net,
     create_gdf_with_geoms,
+    _get_weighted_distances,
 )
 
 
@@ -693,3 +695,22 @@ def test_create_gdf_with_geoms_case_success_turin(turin_routed_triangulation, tu
         ),
         turin_routed_triangulation_with_geoms
     )
+
+@pytest.fixture
+def turin_B():
+    B = pickle.load(open('./tests/test_data/turin_B.pickle', 'rb'))
+    return B
+
+@pytest.fixture
+def turin_d_points():
+    d = pickle.load(open('./tests/test_data/turin_d_points.pickle', 'rb'))
+    return d
+
+@pytest.fixture
+def turin_d_trips():
+    d = pickle.load(open('./tests/test_data/turin_d_trips.pickle', 'rb'))
+    return d
+
+def test__get_weighted_distances(turin_B, turin_d_points, turin_d_trips):
+    assert turin_d_points == _get_weighted_distances(turin_B, "num_points")
+    assert turin_d_trips == _get_weighted_distances(turin_B, "num_trips")
