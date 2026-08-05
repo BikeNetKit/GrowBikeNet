@@ -260,7 +260,7 @@ def add_trip_data_to_net(trips, A, crs_projected=settings.crs_projected, matchin
     Returns
     -------
     graph_with_data : networkx.graph
-        The same graph created from triagulation edges list, but with a new edge attribute "num_trips" populated with the summed up "num" values of all trips where both origins and destinations could be matched to the closest network nodes within matching_distance. 
+        The same graph created from triangulation edges list, but with a new edge attribute "num_trips" populated with the summed up "num" values of all trips where both origins and destinations could be matched to the closest network nodes within matching_distance. 
     """
 
     graph_with_data = A.copy()
@@ -1335,3 +1335,39 @@ def orientation_order(g_undir):
     Hmax = 3.584
     phi = 1 - ((Hw-Hg)/(Hmax-Hg))**2
     return phi
+
+def _get_weighted_distances(B, num_types):
+    """Get weighted distances by edge attribute num_types
+
+    The calculation follows [1]_, only without +1 in the numerator and with a small epsilon to prevent division by zero.
+
+    Parameters
+    ----------
+    B : networkx.classes.multigraph.MultiGraph
+        The routed, grown bicycle network graph, where edges have the attribute num_types. The numerical attribute "distance" must exist for all edges.
+    num_types : str
+        Name of the attribute to weight the distances
+
+    Returns
+    -------
+    dist_weighted_by_types_dict : dict
+        Dictionary where keys are the edges (tuples of node ids), and values are the weighted distances following [1]_
+
+    References
+    ----------
+    .. [1] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
+    """
+
+    num_types_dict = nx.get_edge_attributes(B, num_types)
+    dist_dict = nx.get_edge_attributes(B, "distance")
+    num_types_per_km_dict = {}
+
+    for k,d in dist_dict.items():
+        num_types_per_km_dict[k] = 1000*num_types_dict[k]/d
+    max_nt = max(num_types_per_km_dict.values())
+
+    dist_weighted_by_types_dict = {}
+    for k,d in dist_dict.items():
+        dist_weighted_by_types_dict[k] = d/(1+settings.import_data_impact*(num_types_per_km_dict[k]/(max_nt+1e-10))) 
+
+    return dist_weighted_by_types_dict

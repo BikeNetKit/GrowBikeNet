@@ -35,6 +35,7 @@ from growbikenet.functions import (
     add_point_data_to_net,
     add_trip_data_to_net,
     slugify,
+    _get_weighted_distances,
 )
 from growbikenet.visualization import create_plots
 
@@ -367,8 +368,14 @@ def growbikenet(
     if trip_data is not None:
         B = add_trip_data_to_net(trip_data, B)
 
-    # To do: Compute weighted distances
-    
+    # Compute weighted distances
+    if trip_data is not None:
+        dist_weighted_by_trips_dict = _get_weighted_distances(B, "num_trips") # d_trip in [2]_
+    if point_data is not None:
+        dist_weighted_by_points_dict = _get_weighted_distances(B, "num_points") # d_crash in [2]_
+
+    # To do: combine them
+    dist_weighted_list = [] # d_{W} in [2]_
 
     progress_bar.update(1)
     progress_bar.close()

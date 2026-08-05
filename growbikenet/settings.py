@@ -31,6 +31,7 @@ export_path = {
     "plots":"./results/plots/",
 }
 export_file_format = 'gpkg'
+import_data_impact = 9
 import_path = "./"
 import_point_data_snap_distance = 500
 import_trip_data_snap_distance = 500
