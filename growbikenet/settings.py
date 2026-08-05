@@ -3,7 +3,7 @@
 crs_projected : str, default '3857'
     EPSG code of the coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) is better.
 export_path : dict(str)
-    Paths to results, plots, and video folders to save data, plots, and videos. 
+    Paths to results and plots folders to save data and plots.
 export_file_format : str ('geojson' | 'gpkg'), default 'gpkg'
     File format for the data export, relevant if export_data set to True. If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
 import_data_impact : float, default 9
@@ -25,7 +25,6 @@ crs_projected = '3857'
 export_path = {
     "results":"./results/",
     "plots":"./results/plots/",
-    "videos":"./results/videos/",
 }
 export_file_format = 'gpkg'
 import_path = "./"
