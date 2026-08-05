@@ -163,7 +163,7 @@ def _resolve_auto_parameters(
         phi,
         import_files,
     ):
-    """Resolve auto parameters and parameter inconsistencies
+    """Resolve auto parameters, their inconsistencies, and settings
     
     Parameters
     ----------
@@ -231,6 +231,12 @@ def _resolve_auto_parameters(
 
     if existing_network_spacing == 'auto':
         existing_network_spacing = int(np.ceil(seed_point_grid_spacing*constants._EXISTING_NETWORK_SPACING_FACTOR))
+
+    # Set import data balance to 0 or 1 if only one data set is imported
+    if import_files['point_data'] is not None and import_files['trip_data'] is None:
+        settings.import_data_trip_point_balance = 0
+    elif import_files['trip_data'] is not None and import_files['point_data'] is None:
+        settings.import_data_trip_point_balance = 1
 
     return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
 
