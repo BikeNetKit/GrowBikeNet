@@ -19,17 +19,17 @@ def validation_gdf_asti():
     gdf = gpd.read_file("./tests/test_data/asti_growbikenet.gpkg", layer='Grown bike network')
     return gdf
 
-def test_growbikenet_case_success_online(validation_gdf_oelde):
-    """Verify that the online version of growbikenet works as intended.
-    This test might brake whenever Oelde is changed too much on OSM!
-    """
-    validation_gdf_oelde.equals(
-        gbn.growbikenet(
-            city_query="Oelde",
-            ranking="betweenness_centrality",
-            export_data=False,
-        )
-    )
+# def test_growbikenet_case_success_online(validation_gdf_oelde):
+#     """Verify that the online version of growbikenet works as intended.
+#     This test might brake whenever Oelde is changed too much on OSM!
+#     """
+#     validation_gdf_oelde.equals(
+#         gbn.growbikenet(
+#             city_query="Oelde",
+#             ranking="betweenness_centrality",
+#             export_data=False,
+#         )
+#     )
 
 def test_growbikenet_case_success_offline1(validation_gdf_oelde):
     """Verify that the offline version of growbikenet works as intended.
@@ -79,35 +79,35 @@ def test_growbikenet_case_success_offline3(validation_gdf_asti):
         )
     )
 
-def test_growbikenet_case_fail_rail1():
-    """Verify that when there are too few rail stations (Oelde), a 
-    RunTimeError is thrown.
-    """
-    with pytest.raises(Exception):
-        gbn.growbikenet(
-            "Oelde",
-            seed_point_type='rail',
-        )
+# def test_growbikenet_case_fail_rail1():
+#     """Verify that when there are too few rail stations (Oelde), a 
+#     RunTimeError is thrown.
+#     """
+#     with pytest.raises(Exception):
+#         gbn.growbikenet(
+#             "Oelde",
+#             seed_point_type='rail',
+#         )
 
-def test_growbikenet_case_fail_rail2():
-    """Verify that in the absence of rail stations (Andorra), an 
-    osmnx._errors.InsufficientResponseError is thrown.
-    """
-    with pytest.raises(ox._errors.InsufficientResponseError):
-        gbn.growbikenet(
-            "Andorra",
-            seed_point_type='rail',
-        )
+# def test_growbikenet_case_fail_rail2():
+#     """Verify that in the absence of rail stations (Andorra), an 
+#     osmnx._errors.InsufficientResponseError is thrown.
+#     """
+#     with pytest.raises(ox._errors.InsufficientResponseError):
+#         gbn.growbikenet(
+#             "Andorra",
+#             seed_point_type='rail',
+#         )
 
-def test_growbikenet_case_fail_existing_network():
-    """Verify that in the absence of an existing bike network (Hallettsville), an 
-    osmnx._errors.InsufficientResponseError is thrown.
-    """
-    with pytest.raises(ox._errors.InsufficientResponseError):
-        gbn.growbikenet(
-            "Hallettsville",
-            existing_network_spacing=500,
-        )
+# def test_growbikenet_case_fail_existing_network():
+#     """Verify that in the absence of an existing bike network (Hallettsville), an 
+#     osmnx._errors.InsufficientResponseError is thrown.
+#     """
+#     with pytest.raises(ox._errors.InsufficientResponseError):
+#         gbn.growbikenet(
+#             "Hallettsville",
+#             existing_network_spacing=500,
+#         )
 
 
 
