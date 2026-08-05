@@ -9,7 +9,7 @@ export_file_format : str ('geojson' | 'gpkg'), default 'gpkg'
 import_data_impact : float, default 9
     Impact of imported trip or point data on results. Must be non-negative.
 import_data_trip_point_balance : float, default 0.5
-    Impact of imported trip data versus point data on results. Must be between 0 and 1, where 0 means no trip impact and full point impact, 1 means full trip impact and no point impact, and 0.5 means balanced impact of both. If only the trip data is imported, this variable is automatically set to 1; if only the point data is imported, this variable is automatically set to 0 - meaning in such a case the data impact is controlled only by settings.import_data_impact.
+    Impact of imported trip data versus point data on results. Must be between 0 and 1, where 0 means no trip impact and full point impact, 1 means full trip impact and no point impact, and 0.5 means balanced impact of both. If only the trip data is imported, this variable is treated as 1; if only the point data is imported, this variable is treated as 0 - meaning in such a case the data impact is controlled only by settings.import_data_impact.
 import_path : str
     Path to import files (as defined in growbikenet's import_files parameter).
 import_point_data_snap_distance : int, default 500
@@ -32,6 +32,7 @@ export_path = {
 }
 export_file_format = 'gpkg'
 import_data_impact = 9
+import_data_trip_point_balance = 0.5
 import_path = "./"
 import_point_data_snap_distance = 500
 import_trip_data_snap_distance = 500

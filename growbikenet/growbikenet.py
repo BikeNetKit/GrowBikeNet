@@ -175,6 +175,8 @@ def growbikenet(
 
     ### Import data files
     num_data_files = int(bool(import_files['point_data'])) + int(bool(import_files['trip_data']))
+    point_data = None
+    trip_data = None
     if num_data_files:
         progress_bar = tqdm(
             desc="{:<23}".format("Importing data files"),
@@ -185,13 +187,9 @@ def growbikenet(
         if import_files['point_data']:
             point_data = gpd.read_file(settings.import_path+import_files['point_data'])
             progress_bar.update(1)
-        else:
-            point_data = None
         if import_files['trip_data']:
             trip_data = pd.read_csv(settings.import_path+import_files['trip_data'])
             progress_bar.update(1)
-        else:
-            trip_data = None
         progress_bar.close()
 
     if import_files['street_network'] is not None:
@@ -332,10 +330,8 @@ def growbikenet(
     # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
     grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
     progress_bar.update(1)
-
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
-
 
     # Add distances between source and target from geometry
     grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
@@ -364,18 +360,31 @@ def growbikenet(
         nx.set_edge_attributes(B, num_points_dict, "num_points")
     B.graph["crs"] = settings.crs_projected # Needed for add_trip_data_to_net()
 
-    # Add trip data to edges
-    if trip_data is not None:
-        B = add_trip_data_to_net(trip_data, B)
+    if num_data_files:
+        # Add trip data to edges
+        if trip_data is not None:
+            B = add_trip_data_to_net(trip_data, B)
 
-    # Compute weighted distances
-    if trip_data is not None:
-        dist_weighted_by_trips_dict = _get_weighted_distances(B, "num_trips") # d_trip in [2]_
-    if point_data is not None:
-        dist_weighted_by_points_dict = _get_weighted_distances(B, "num_points") # d_crash in [2]_
+        # Compute weighted distances
+        if trip_data is not None:
+            dist_weighted_by_trips_dict = _get_weighted_distances(B, "num_trips") # d_trip in [2]_
+        if point_data is not None:
+            dist_weighted_by_points_dict = _get_weighted_distances(B, "num_points") # d_crash in [2]_
 
-    # To do: combine them
-    dist_weighted_list = [] # d_{W} in [2]_
+        # Combine them
+        dist_weighted_dict = {}
+        if trip_data is not None and point_data is not None:
+            for k in dist_weighted_by_trips_dict:
+                dist_weighted_dict[k] = settings.import_data_trip_point_balance*dist_weighted_by_trips_dict[k] + (1-settings.import_data_trip_point_balance)*dist_weighted_by_points_dict[k] # d_{W} in [2]_
+        elif trip_data is not None and point_data is None:
+            dist_weighted_dict = dist_weighted_by_trips_dict
+        elif trip_data is None and point_data is not None:
+            dist_weighted_dict = dist_weighted_by_points_dict
+
+        metric_weight = "distance_weighted"
+        nx.set_edge_attributes(B, dist_weighted_dict, metric_weight)
+    else:
+        metric_weight = "distance"
 
     progress_bar.update(1)
     progress_bar.close()
@@ -392,12 +401,12 @@ def growbikenet(
     if ranking == "betweenness_centrality":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
-            B, weight="distance", normalized=True
+            B, weight=metric_weight, normalized=True
         )
         nx.set_edge_attributes(B, bc_values, name="betweenness_centrality")
     elif ranking == "closeness_centrality":
         # Add closeness attributes to nodes and edges
-        cc_values_nodes = nx.closeness_centrality(B, distance="distance")
+        cc_values_nodes = nx.closeness_centrality(B, distance=metric_weight)
         nx.set_node_attributes(B, cc_values_nodes, name="closeness_centrality")
         cc_values = node_to_edge_attributes(cc_values_nodes, B.edges)
         nx.set_edge_attributes(B, cc_values, name="closeness_centrality")
