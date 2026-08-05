@@ -171,6 +171,28 @@ def growbikenet(
     print(ranking + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
     print("----------------------------------------------╮")
     
+
+    ### Import data files
+    num_data_files = int(bool(import_files['point_data'])) + int(bool(import_files['trip_data']))
+    if num_data_files:
+        progress_bar = tqdm(
+            desc="{:<23}".format("Importing data files"),
+            total=num_data_files,
+            unit="file",
+            bar_format='{l_bar}{bar:16}{r_bar}',
+        )
+        if import_files['point_data']:
+            point_data = gpd.read_file(settings.import_path+import_files['point_data'])
+            progress_bar.update(1)
+        else:
+            point_data = None
+        if import_files['trip_data']:
+            trip_data = pd.read_csv(settings.import_path+import_files['trip_data'])
+            progress_bar.update(1)
+        else:
+            trip_data = None
+        progress_bar.close()
+
     if import_files['street_network'] is not None:
         ### Import and preprocess data from file
         city_boundary_exists = True
@@ -208,7 +230,6 @@ def growbikenet(
         nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_query, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
     progress_bar.close()
-
 
     # Now that the graph is ready, decide auto values
     ox.bearing.add_edge_bearings(g_undir)

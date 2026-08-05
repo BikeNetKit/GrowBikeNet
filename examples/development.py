@@ -2,6 +2,10 @@
 
 import growbikenet as gbn
 
-edges_ranked = gbn.growbikenet("Oelde", 
-    seed_point_type='file', 
-    import_files={'street_network':"./tests/test_data/oelde_street_network.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
+edges_ranked = gbn.growbikenet("Turin", 
+    import_files={
+        'street_network':"./tests/test_data/turin_it.gpkg",
+        'point_data':"./tests/test_data/turin_crashes.gpkg",
+        'trip_data':"./tests/test_data/turin_trips.csv",
+        },
+    )
