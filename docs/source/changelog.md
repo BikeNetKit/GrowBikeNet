@@ -1,5 +1,18 @@
 # Changelog
 
+## Version 0.12.0 (2026-08-05)
+
+- ✨ Implemented point and trip data import with weighted growth
+- 📝 Added and polished several usage docs
+- ♻️ Renamed many variables, functions, and added underscores for internal ones
+- 📈 Overhauled plot creation
+- 👷 Added pytest-mpl for plot testing
+- 👷 Added codecov
+- 🐛 Updated docs and code with warnings to ensure key 0 edges
+- 👷 Removed unused release-please
+- ✅ Removed online tests temporarily
+- 📝 Fixed docs source variable, added edit button and key navigation
+
 ## Version 0.11.1 (2026-07-17)
 
 - 🐛 Fixed validate seed point bug
