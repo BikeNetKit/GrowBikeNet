@@ -1,32 +1,43 @@
 """Global settings for growbikenet that can be configured by the user.
 
-export_path : dict(str | Path)
-    Paths to results, plots, and video folders to save data, plots, and videos. 
-import_path : str | Path
-    Path to import files (as defined in growbikenet's import_files parameter).
 crs_projected : str, default '3857'
     EPSG code of the coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) is better.
+export_path : dict(str)
+    Paths to results and plots folders to save data and plots.
 export_file_format : str ('geojson' | 'gpkg'), default 'gpkg'
     File format for the data export, relevant if export_data set to True. If exporting as geojson, generates extra files for seed points and city boundary. If exporting as gkpg, these are added all in one file as extra layers.
+import_data_impact : float, default 9
+    Impact of imported trip or point data on results. Must be non-negative.
+import_data_trip_point_balance : float, default 0.5
+    Impact of imported trip data versus point data on results. Must be between 0 and 1, where 0 means no trip impact and full point impact, 1 means full trip impact and no point impact, and 0.5 means balanced impact of both. If only the trip data is imported, this variable is treated as 1; if only the point data is imported, this variable is treated as 0 - meaning in such a case the data impact is controlled only by settings.import_data_impact.
+import_path : str
+    Path to import files (as defined in growbikenet's import_files parameter).
+import_point_data_snap_distance : int, default 500
+    Maximum distance between point data and network links for snapping, in meters.
+import_trip_data_snap_distance : int, default 500
+    Maximum distance between trip data and network links for snapping, in meters.
+random_seed : int
+    Random number generator seed for reproducibility
 seed_point_snap_distance : 'auto' | int, default 'auto'
     Maximum distance between raw seed points and osm nodes for snapping, in meters.
     Auto-value is ceil(seed_point_grid_spacing*constants._SEED_POINT_SNAP_DISTANCE_FACTOR). If integer, must be positive.
-random_seed : int
-    Random number generator seed for reproducibility
 viz : dict
     Dictionary of visualization settings
 """
 
+crs_projected = '3857'
 export_path = {
     "results":"./results/",
     "plots":"./results/plots/",
-    "videos":"./results/videos/",
 }
-import_path = "./"
-crs_projected = '3857'
 export_file_format = 'gpkg'
-seed_point_snap_distance = 'auto'
+import_data_impact = 9
+import_data_trip_point_balance = 0.5
+import_path = "./"
+import_point_data_snap_distance = 500
+import_trip_data_snap_distance = 500
 random_seed = 42
+seed_point_snap_distance = 'auto'
 
 # Viz/plot settings
 viz = {

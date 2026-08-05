@@ -35,6 +35,7 @@ from growbikenet.functions import (
     add_point_data_to_net,
     add_trip_data_to_net,
     slugify,
+    _get_weighted_distances,
 )
 from growbikenet.visualization import create_plots
 
@@ -56,7 +57,7 @@ def growbikenet(
 ):
     """Creates a list of urban street network edges ordered by a ranking method.
 
-    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point[2]_. The original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is implemented much faster and in practice gives identical results. Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
+    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point [2]_. The original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is implemented much faster and in practice gives identical results. Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
 
     Parameters
     ----------
@@ -109,16 +110,16 @@ def growbikenet(
             "seed_points" : str | None, default None
                 If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
             "point_data" : str | None, default None
-                If not set to None, an additional data set of points will be loaded from this file, representing point events like crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. To be used in future versions of growbikenet.
+                If not set to None, an additional data set of points will be loaded from this file, representing point events like traffic crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. The data set is used to re-prioritize the ranking of the network links, controlled with settings.import_data_impact and settings.import_data_trip_point_balance, following [2]_.
             "trip_data" : str | None, default None
-                If not set to None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination. To be used in future versions of growbikenet.
+                If not set to None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination. The data set is used to re-prioritize the ranking of the network links, controlled with settings.import_data_impact and settings.import_data_trip_point_balance, following [2]_.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} retrieves exactly the same as seed_point_type='rail'.
 
     Returns
     -------
     edges_ranked : geopandas.geodataframe.GeoDataFrame
-        ordered geodataframe of all edges in street network
+        Geodataframe of all edges in street network ordered by the ranking method.
 
     Examples
     --------
@@ -171,6 +172,26 @@ def growbikenet(
     print(ranking + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
     print("----------------------------------------------╮")
     
+
+    ### Import data files
+    num_data_files = int(bool(import_files['point_data'])) + int(bool(import_files['trip_data']))
+    point_data = None
+    trip_data = None
+    if num_data_files:
+        progress_bar = tqdm(
+            desc="{:<23}".format("Importing data files"),
+            total=num_data_files,
+            unit="file",
+            bar_format='{l_bar}{bar:16}{r_bar}',
+        )
+        if import_files['point_data']:
+            point_data = gpd.read_file(settings.import_path+import_files['point_data'])
+            progress_bar.update(1)
+        if import_files['trip_data']:
+            trip_data = pd.read_csv(settings.import_path+import_files['trip_data'])
+            progress_bar.update(1)
+        progress_bar.close()
+
     if import_files['street_network'] is not None:
         ### Import and preprocess data from file
         city_boundary_exists = True
@@ -208,7 +229,6 @@ def growbikenet(
         nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_query, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
     progress_bar.close()
-
 
     # Now that the graph is ready, decide auto values
     ox.bearing.add_edge_bearings(g_undir)
@@ -310,11 +330,8 @@ def growbikenet(
     # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
     grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
     progress_bar.update(1)
-
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
-
-    # Apply add_point_data_to_net() from here
 
     # Add distances between source and target from geometry
     grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
@@ -325,6 +342,11 @@ def growbikenet(
     dist_list = grown_bikenet_edges["dist"]
     dist_dict = dict(zip(edge_list, dist_list))
     geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
+    # Add point data to edges
+    if point_data is not None:
+        grown_bikenet_edges = add_point_data_to_net(point_data, grown_bikenet_edges)
+        num_points_list = grown_bikenet_edges["num_points"]
+        num_points_dict = dict(zip(edge_list, num_points_list))
 
     # Make graph object from edge list
     B = nx.Graph() # B like bike network
@@ -334,10 +356,35 @@ def growbikenet(
     B.add_edges_from(edge_list)
     nx.set_edge_attributes(B, dist_dict, "distance")
     nx.set_edge_attributes(B, geom_dict, "geometry")
+    if point_data is not None:
+        nx.set_edge_attributes(B, num_points_dict, "num_points")
     B.graph["crs"] = settings.crs_projected # Needed for add_trip_data_to_net()
 
-    # Add add_trip_data_to_net() from here
+    if num_data_files:
+        # Add trip data to edges
+        if trip_data is not None:
+            B = add_trip_data_to_net(trip_data, B)
 
+        # Compute weighted distances
+        if trip_data is not None:
+            dist_weighted_by_trips_dict = _get_weighted_distances(B, "num_trips") # d_trip in [2]_
+        if point_data is not None:
+            dist_weighted_by_points_dict = _get_weighted_distances(B, "num_points") # d_crash in [2]_
+
+        # Combine them
+        dist_weighted_dict = {}
+        if trip_data is not None and point_data is not None:
+            for k in dist_weighted_by_trips_dict:
+                dist_weighted_dict[k] = settings.import_data_trip_point_balance*dist_weighted_by_trips_dict[k] + (1-settings.import_data_trip_point_balance)*dist_weighted_by_points_dict[k] # d_{W} in [2]_
+        elif trip_data is not None and point_data is None:
+            dist_weighted_dict = dist_weighted_by_trips_dict
+        elif trip_data is None and point_data is not None:
+            dist_weighted_dict = dist_weighted_by_points_dict
+
+        metric_weight = "distance_weighted"
+        nx.set_edge_attributes(B, dist_weighted_dict, metric_weight)
+    else:
+        metric_weight = "distance"
 
     progress_bar.update(1)
     progress_bar.close()
@@ -354,12 +401,12 @@ def growbikenet(
     if ranking == "betweenness_centrality":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
-            B, weight="distance", normalized=True
+            B, weight=metric_weight, normalized=True
         )
         nx.set_edge_attributes(B, bc_values, name="betweenness_centrality")
     elif ranking == "closeness_centrality":
         # Add closeness attributes to nodes and edges
-        cc_values_nodes = nx.closeness_centrality(B, distance="distance")
+        cc_values_nodes = nx.closeness_centrality(B, distance=metric_weight)
         nx.set_node_attributes(B, cc_values_nodes, name="closeness_centrality")
         cc_values = node_to_edge_attributes(cc_values_nodes, B.edges)
         nx.set_edge_attributes(B, cc_values, name="closeness_centrality")

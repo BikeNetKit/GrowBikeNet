@@ -9,6 +9,7 @@ from shapely.geometry import Point, LineString, MultiLineString
 import ast
 from pandas.testing import assert_frame_equal
 import shapely
+import pickle
 from growbikenet.functions import (
     get_principal_bearing,
     _get_grid_seed_points,
@@ -19,6 +20,7 @@ from growbikenet.functions import (
     add_point_data_to_net,
     add_trip_data_to_net,
     create_gdf_with_geoms,
+    _get_weighted_distances,
 )
 
 
@@ -198,7 +200,6 @@ def routed_edges_crashes():
         ]
     }
     graph = gpd.GeoDataFrame(g, geometry="geometry", crs = "EPSG:3857")
-
     return graph
 
 @pytest.fixture
@@ -225,7 +226,6 @@ def crashes_data():
         'num': [1,1,2,3,1,1,1,3,5,1,1,1,1,2,1]
     }
     crashes = gpd.GeoDataFrame(c, geometry="geometry", crs = "EPSG:4326")
-
     return crashes
 
 @pytest.fixture
@@ -272,7 +272,6 @@ def routed_edges_with_crashes_data():
         ]
     }
     graph = gpd.GeoDataFrame(g, geometry="geometry", crs = "EPSG:3857")
-
     return graph
 
 def test_add_point_data_to_net_case_success_simple(routed_edges_crashes, crashes_data, routed_edges_with_crashes_data):
@@ -314,7 +313,6 @@ def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_ro
         check_dtype=False
     )
     Z = (1150,1100)
-
 
 
 @pytest.fixture
@@ -377,7 +375,6 @@ def triangulation_graph_trips():
     nx.set_edge_attributes(graph, edges)
 
     graph.graph["crs"] = '3857'
-
     return graph
 
 @pytest.fixture
@@ -409,7 +406,6 @@ def trips_data():
     }
 
     trips = pd.DataFrame(t)
-
     return trips
 
 @pytest.fixture
@@ -472,7 +468,6 @@ def triangulation_graph_with_trips_data():
     nx.set_edge_attributes(graph, edges)
 
     graph.graph["crs"] = '3857'
-
     return graph
 
 def test_add_trip_data_to_net_case_success_simple(trips_data, triangulation_graph_trips, triangulation_graph_with_trips_data):
@@ -482,7 +477,6 @@ def test_add_trip_data_to_net_case_success_simple(trips_data, triangulation_grap
                 '3857'
             )
     expected = triangulation_graph_with_trips_data
-
     assert result.nodes == expected.nodes, "Nodes are not the same"
     assert result.adj == expected.adj, "Edges are not the same"
     assert result.graph == expected.graph, "Graphs are not the same"
@@ -506,7 +500,6 @@ def turin_triangulation_graph_trips():
     nx.set_edge_attributes(graph, edges)
 
     graph.graph = graph_att
-
     return graph
 
 @pytest.fixture
@@ -532,7 +525,6 @@ def turin_triangulation_graph_with_trips_data():
     nx.set_edge_attributes(graph, edges)
 
     graph.graph = graph_att
-
     return graph
 
 def test_add_trip_data_to_net_case_success_turin(turin_trips_data, turin_triangulation_graph_trips, turin_triangulation_graph_with_trips_data):
@@ -542,11 +534,9 @@ def test_add_trip_data_to_net_case_success_turin(turin_trips_data, turin_triangu
                 '3857'
             )
     expected = turin_triangulation_graph_with_trips_data
-
     assert result.nodes == expected.nodes, "Nodes are not the same"
     assert result.adj == expected.adj, "Edges are not the same"
     assert result.graph == expected.graph, "Graphs are not the same"
-
 
 
 @pytest.fixture
@@ -565,7 +555,6 @@ def routed_triangulation():
             ]
         }
     )
-
     return df
 
 @pytest.fixture
@@ -601,9 +590,7 @@ def network_edges():
         crs = '3857',
         geometry = [AB, BC, CD, DE, EF, FG, BH, HF, FI, IJ, GJ]
     )
-
     gdf.set_index(['u','v'], inplace = True)
-
     return gdf
 
 @pytest.fixture
@@ -641,7 +628,6 @@ def routed_triangulation_with_geoms():
         crs = '3857',
         geometry = 'geometry'
     )
-
     return gdf
 
 def test_create_gdf_with_geoms_case_success_simple(routed_triangulation, network_edges, routed_triangulation_with_geoms):
@@ -662,7 +648,6 @@ def turin_routed_triangulation():
     df['pair'] = df['pair'].apply(ast.literal_eval)
     df['path_nodes'] = df['path_nodes'].apply(ast.literal_eval)
     df['path_edges'] = df['path_edges'].apply(ast.literal_eval)
-    
     return df
 
 @pytest.fixture
@@ -671,7 +656,6 @@ def turin_network_edges():
         "./tests/test_data/turin_edges.gpkg"
     )
     gdf.set_index(['u','v'], inplace=True)
-
     return gdf
 
 @pytest.fixture
@@ -682,7 +666,6 @@ def turin_routed_triangulation_with_geoms():
     gdf['pair'] = gdf['pair'].apply(ast.literal_eval)
     gdf['path_nodes'] = gdf['path_nodes'].apply(ast.literal_eval)
     gdf['path_edges'] = gdf['path_edges'].apply(ast.literal_eval)
-    
     return gdf
 
 def test_create_gdf_with_geoms_case_success_turin(turin_routed_triangulation, turin_network_edges, turin_routed_triangulation_with_geoms):
@@ -693,3 +676,22 @@ def test_create_gdf_with_geoms_case_success_turin(turin_routed_triangulation, tu
         ),
         turin_routed_triangulation_with_geoms
     )
+
+@pytest.fixture
+def turin_B():
+    B = pickle.load(open('./tests/test_data/turin_B.pickle', 'rb'))
+    return B
+
+@pytest.fixture
+def turin_d_points():
+    d = pickle.load(open('./tests/test_data/turin_d_points.pickle', 'rb'))
+    return d
+
+@pytest.fixture
+def turin_d_trips():
+    d = pickle.load(open('./tests/test_data/turin_d_trips.pickle', 'rb'))
+    return d
+
+def test__get_weighted_distances(turin_B, turin_d_points, turin_d_trips):
+    assert turin_d_points == _get_weighted_distances(turin_B, "num_points")
+    assert turin_d_trips == _get_weighted_distances(turin_B, "num_trips")

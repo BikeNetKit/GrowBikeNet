@@ -163,7 +163,7 @@ def _resolve_auto_parameters(
         phi,
         import_files,
     ):
-    """Resolve auto parameters and parameter inconsistencies
+    """Resolve auto parameters, their inconsistencies, and settings
     
     Parameters
     ----------
@@ -232,10 +232,16 @@ def _resolve_auto_parameters(
     if existing_network_spacing == 'auto':
         existing_network_spacing = int(np.ceil(seed_point_grid_spacing*constants._EXISTING_NETWORK_SPACING_FACTOR))
 
+    # Set import data balance to 0 or 1 if only one data set is imported
+    if import_files['point_data'] is not None and import_files['trip_data'] is None:
+        settings.import_data_trip_point_balance = 0
+    elif import_files['trip_data'] is not None and import_files['point_data'] is None:
+        settings.import_data_trip_point_balance = 1
+
     return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
 
 
-def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
+def add_trip_data_to_net(trips, A, crs_projected=settings.crs_projected, matching_distance=settings.import_trip_data_snap_distance):
     """Match trip data to network edges
 
     First, match origin and destination points given in trips to the nodes. Only consider trips where both origins and nodes are matched within matching_distance. Then, for each trip, find the shortest path over the edges from matched origin node to matched destination node, and add 1 (or optionally "num" if column provided in trips) to the affected edges.
@@ -243,18 +249,18 @@ def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
     Parameters
     ----------
     trips : pandas DataFrame
-        A df of unprojected origin-destination coordinates (columns: o_lat, o_lon, d_lat, d_lon), with each row encoding a trip. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
+        A df of unprojected origin-destination coordinates (columns: o_lat, o_lon, d_lat, d_lon), with each row encoding a trip, in unprojected crs EPSG:4326. Optional with a column "num" containing an integer. This could be (number of) trip events. If "num" column is not provided, assumes 1 per trip.
     A: networkx.graph
         Graph created from triangulation edge list
     crs_projected : str
         Coordinate reference system that is used to project spatial data.
     matching_distance : int
-        Matching distance in meters
+        Matching distance in meters. Set via settings.import_trip_data_snap_distance.
 
     Returns
     -------
     graph_with_data : networkx.graph
-        The same graph created from triagulation edges list, but with a new edge attribute "num_trips" populated with the summed up "num" values of all trips where both origins and destinations could be matched to the closest network nodes within matching_distance. 
+        The same graph created from triangulation edges list, but with a new edge attribute "num_trips" populated with the summed up "num" values of all trips where both origins and destinations could be matched to the closest network nodes within matching_distance. 
     """
 
     graph_with_data = A.copy()
@@ -291,7 +297,6 @@ def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
         if o_node == d_node or o_distance > matching_distance or d_distance > matching_distance:
             continue  
 
-
         # Get shortest path between the snapped orgin and destination nodes
         path = nx.shortest_path(graph_with_data, source=o_node, target=d_node, weight="distance")
         path_edges = list(zip(path[:-1], path[1:]))
@@ -312,7 +317,7 @@ def add_trip_data_to_net(trips, A, crs_projected, matching_distance=500):
     return graph_with_data
 
 
-def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
+def add_point_data_to_net(points, edges, crs_projected=settings.crs_projected, matching_distance=settings.import_point_data_snap_distance):
     """Match point data to network edges
 
     Parameters
@@ -321,10 +326,10 @@ def add_point_data_to_net(points, edges, crs_projected, matching_distance=500):
         A gdf of unprojected point geometries, optional having a column "num" containing an integer. This could be (number of) point events like crashes or citizen feedback to improve bike infrastructure. If "num" column is not provided, assumes 1 per point.
     edges : geopandas.geodataframe.GeoDataFrame
         A gdf of projected spatial network edges. This is the routed network of seed points.
-    matching_distance : int
-        Matching distance in meters
     crs_projected : str
         Coordinate reference system that is used to project osm data.
+    matching_distance : int
+        Matching distance in meters. Set via settings.import_point_data_snap_distance.
 
     Returns
     -------
@@ -1330,3 +1335,39 @@ def orientation_order(g_undir):
     Hmax = 3.584
     phi = 1 - ((Hw-Hg)/(Hmax-Hg))**2
     return phi
+
+def _get_weighted_distances(B, num_types):
+    """Get weighted distances by edge attribute num_types
+
+    The calculation follows [1]_, only without +1 in the numerator and with a small epsilon to prevent division by zero.
+
+    Parameters
+    ----------
+    B : networkx.classes.multigraph.MultiGraph
+        The routed, grown bicycle network graph, where edges have the attribute num_types. The numerical attribute "distance" must exist for all edges.
+    num_types : str
+        Name of the attribute to weight the distances
+
+    Returns
+    -------
+    dist_weighted_by_types_dict : dict
+        Dictionary where keys are the edges (tuples of node ids), and values are the weighted distances following [1]_
+
+    References
+    ----------
+    .. [1] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
+    """
+
+    num_types_dict = nx.get_edge_attributes(B, num_types)
+    dist_dict = nx.get_edge_attributes(B, "distance")
+    num_types_per_km_dict = {}
+
+    for k,d in dist_dict.items():
+        num_types_per_km_dict[k] = 1000*num_types_dict[k]/d
+    max_n = max(num_types_per_km_dict.values())+1e-10
+
+    dist_weighted_by_types_dict = {}
+    for k,d in dist_dict.items():
+        dist_weighted_by_types_dict[k] = d/(1+settings.import_data_impact*(num_types_per_km_dict[k]/max_n))
+
+    return dist_weighted_by_types_dict
