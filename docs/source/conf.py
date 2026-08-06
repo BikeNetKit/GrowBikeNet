@@ -57,17 +57,15 @@ html_static_path = ["_static"]
 ### select html theme
 html_theme = "furo"
 
+html_logo = "_static/logo_growbikenet.svg"
+html_favicon = "_static/favicon.png"
 html_theme_options = {
+    "sidebar_hide_name": True,
     "source_repository": "https://github.com/BikeNetKit/GrowBikeNet/",
     "source_branch": "main",
     "source_directory": "docs/source/",
     "top_of_page_buttons": ["view", "edit"],
     "navigation_with_keys": True,
-    "pygment_light_style": "tango",
-    "logo": {
-        "image_light": "logo.png",
-        "image_dark": "logo.png",
-    },
     "light_css_variables": {
         "color-brand-primary": "#096a51",
         "color-brand-content": "#096a51",
