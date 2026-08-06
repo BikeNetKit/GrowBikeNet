@@ -6,9 +6,12 @@
 GrowBikeNet |version| documentation
 ===================================
 
-The Python package ``growbikenet`` grows an urban bicycle network from scratch or from an existing bicycle network. It is hosted on `Github <https://github.com/BikeNetKit/GrowBikeNet>`__, part of `BikeNetKit <https://bikenetkit.org>`__.
+The Python package `growbikenet` grows an urban bicycle network from scratch or from an existing bicycle network. You can download street and bike network data with a single line of code, simulate different bicycle network growth scenarios, and export and plot the resulting prioritized growth steps. It is hosted on `Github <https://github.com/BikeNetKit/GrowBikeNet>`__, part of `BikeNetKit <https://bikenetkit.org>`__.
 
-The software downloads and pre-processes OpenStreetMap or local data, prepares seed points to connect, grows a network, ranks the edges, saves the results, creates plots and videos. 
+|Example Paris|
+
+GrowBikeNet is a decision support tool for urban planners based on the Dutch CROW Design manual for bicycle traffic. It is also useful for proactive citizens to create a compelling vision for urban cycling in their city, and it aims to foster research on bicycle networks. GrowBikeNet is fully customizable and data-driven allowing to explore different scenarios - for example, you can import custom data sets such as points of interest or limit network development to specific streets to adapt the software to your local needs.
+
 
 Setup and use
 -------------
@@ -52,6 +55,8 @@ Development of BikeNetKit/GrowBikeNet is supported by the Innovation Fund Denmar
 
 |Innovation Fund Denmark|    |European Union|   |JUST STREETS|
 
+.. |Example Paris| image:: _static/growbikenet-paris.gif
+   :target: https://bikenetkit.org/growbikenet
 .. |Innovation Fund Denmark| image:: _static/logo_innovationfund.png
    :target: https://innovationsfonden.dk/en
 .. |European Union| image:: _static/logo_eu.png
