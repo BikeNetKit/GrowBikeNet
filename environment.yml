@@ -4,6 +4,7 @@ channels:
 dependencies:
   - python>=3.12
   - matplotlib
-  - osmnx>=2
+  - osmnx>=2.2 # NOT YET RELEASED. Wait for release and confirm version.
+  - pyosmium # for pbf imports
   - tqdm
   - geojson

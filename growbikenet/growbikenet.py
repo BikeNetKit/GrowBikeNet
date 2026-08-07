@@ -201,7 +201,12 @@ def growbikenet(
             unit="network",
             bar_format='{l_bar}{bar:16}{r_bar}',
         )
-        nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['street_network'])
+        if import_files['city_boundary']:
+            city_boundary_shp = gpd.read_file(settings.import_path+import_files['city_boundary'])
+            city_boundary_gdf = city_boundary_shp.iloc[[0]] 
+            nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['street_network'], import_path=settings.import_path, city_boundary_imported=city_boundary_gdf)
+        else:
+            nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['street_network'])
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         progress_bar.update(1)
     else:

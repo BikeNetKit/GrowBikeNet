@@ -4,9 +4,10 @@ channels:
 dependencies:
   - python>=3.12
   - matplotlib=3.11.0 # The exact version is important for visualization tests
-  - osmnx>=2
+  # - osmnx>=2
   - tqdm
   - geojson
+  - scipy
 
   # additional to the non-dev env
   - ipykernel
@@ -22,8 +23,11 @@ dependencies:
   - pre-commit
   - jupyterlab
   - pixi-kernel
-  - growbikenet
+  - pyosmium
+  # - growbikenet=0.12.0
   - pip:
       # not available via conda-forge:
       - sphinx-copybutton
       - furo
+      - osmnx @ git+https://github.com/gboeing/osmnx.git@pbf # temporary test of rc for pbf imports - remove once released and update osmnx version
+      # - osmium # Use -pyosmium from conda-forge instead of osmium via pip

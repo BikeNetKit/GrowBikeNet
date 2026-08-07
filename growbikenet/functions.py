@@ -396,7 +396,7 @@ def add_point_data_to_net(points, edges, crs_projected=settings.crs_projected, m
     return edges_with_data
 
 
-def import_network(street_network, import_path=settings.import_path):
+def import_network(street_network, import_path=settings.import_path, city_boundary_imported=None):
     """Import and project a street network from gpkg file
 
     For all edges between a pair of nodes u and v there must be one edge with key 0.
@@ -423,18 +423,28 @@ def import_network(street_network, import_path=settings.import_path):
         Convex hull of the street network
     """
 
-    nodes = gpd.read_file(import_path+street_network, layer='nodes')
-    edges = gpd.read_file(import_path+street_network, layer='edges')
+    if street_network.lower().endswith('.gpkg'):
+        nodes = gpd.read_file(import_path+street_network, layer='nodes')
+        edges = gpd.read_file(import_path+street_network, layer='edges')
 
-    # Set indices as required by osmnx.convert.graph_from_gdfs
-    # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
-    nodes = nodes.set_index(['osmid'])
-    edges = edges.set_index(['u', 'v', 'key'])
+        # Set indices as required by osmnx.convert.graph_from_gdfs
+        # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
+        nodes = nodes.set_index(['osmid'])
+        edges = edges.set_index(['u', 'v', 'key'])
 
-    g = ox.convert.graph_from_gdfs(nodes, edges)
+        g = ox.convert.graph_from_gdfs(nodes, edges)
+    elif street_network.lower().endswith('.pbf'):
+        g = ox.pbf.graph_from_pbf(import_path+street_network, network_type='drive')
+        if city_boundary_imported is not None:
+            g = ox.truncate.truncate_graph_polygon(g, city_boundary_imported.to_crs("4326").loc[0, 'geometry'])
+        nodes, edges = ox.convert.graph_to_gdfs(g)
+
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
-    city_boundary_gdf = gpd.GeoDataFrame(gpd.GeoSeries(nodes.union_all().convex_hull), geometry=0, crs=nodes.crs) # We do this before the projection of nodes below
+    if city_boundary_imported is not None:
+        city_boundary_gdf = city_boundary_imported
+    else:
+        city_boundary_gdf = gpd.GeoDataFrame(gpd.GeoSeries(nodes.union_all().convex_hull), geometry=0, crs=nodes.crs) # We do this before the projection of nodes below
     # To do: To be super-correct, the hull should be buffered by settings.seed_point_snap_distance (in degrees due to being unprojected)
 
     nodes, edges = prepare_nodes_edges(nodes, edges)
