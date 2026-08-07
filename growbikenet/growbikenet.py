@@ -89,9 +89,9 @@ def growbikenet(
     existing_network_spacing : None | 'auto' | int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
     export_data : bool, default True
-        If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[settings.export_file_format], where slug is a string id made out of city_query.
+        If set to True, data is saved to a file. The filename is [slug]-growbikenet-[ranking]-from_scratch|from_bikenw-[seed_point_type]-with_overlaps|no_overlaps.[settings.export_file_format], depending on the parameters, and where [slug] is a string id made out of city_query or city_id.
     city_id : str | None, default None
-        If set, the slugified city_id is used as the filename of the data export. For example, a city_id "Athens" will turn to "athens" in filenames. If set to None, the slugified city_query is used as the filename of the data export. It is useful to set a city_id for cities where the city_query is not the city name, for example to set for a city_query "Municipality of Athens" the city_id to "Athens".
+        If set, the slugified city_id is used in the filename of the data export. For example, a city_id "Athens" will slugify into "athens" in filenames. If set to None, the slugified city_query is used in the filename of the data export. It is useful to set a city_id for cities where the city_query is not the city name, for example to set for a city_query "Municipality of Athens" the city_id to "Athens".
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
     allow_edge_overlaps : bool, default False
@@ -435,9 +435,9 @@ def growbikenet(
     ### Remove edge overlaps
     if not allow_edge_overlaps:
         edges_ranked = _remove_edge_overlaps(edges_ranked) # Can take a while, could be sped up.
-        overlap_string = ""
+        overlap_string = "no_overlaps"
     else:
-        overlap_string = "_with-overlaps"
+        overlap_string = "with_overlaps"
 
     # Add lengths and cumulative lengths, rounded to integer meters
     edges_ranked['length'] = edges_ranked.geometry.length
@@ -453,11 +453,11 @@ def growbikenet(
         else:
             city_string = city_id
         if existing_network_spacing:
-            exnw_string = "_with-bikenw"
+            exnw_string = "from_bikenw"
         else:
-            exnw_string = ""
+            exnw_string = "from_scratch"
         export_data_filename = (
-            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + settings.export_file_format
+            slugify(city_string) + "-growbikenet-" + ranking + "-" + exnw_string + "-" + seed_point_type + "-" + overlap_string + "." + settings.export_file_format
         )
 
     ### Export data
@@ -479,7 +479,7 @@ def growbikenet(
 
         if settings.export_file_format == "geojson":
             edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
-            seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
+            seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON")
             if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif settings.export_file_format == "gpkg":
             f = settings.export_path['results']+export_data_filename
