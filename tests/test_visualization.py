@@ -30,10 +30,7 @@ settings.viz = {
     },
     "dpi": 150,
 }
-settings.export_path = {
-    "plots":"./tests/test_data/plots_temp/",
-    "videos":"./tests/test_data/videos_temp/",
-}
+settings.export_path["plots"] = "./tests/test_data/plots_temp/"
 
 
 @pytest.fixture

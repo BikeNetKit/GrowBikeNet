@@ -23,6 +23,10 @@ from growbikenet.functions import (
     _get_weighted_distances,
 )
 
+settings.export_path = {
+    "results":"./results/",
+    "plots":"./results/plots/",
+}
 
 # @pytest.fixture
 # def geom_1():
