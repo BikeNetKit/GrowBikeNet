@@ -4,6 +4,11 @@ import osmnx as ox
 import growbikenet as gbn
 from pandas.testing import assert_frame_equal
 
+gbn.settings.export_path = {
+    "results":"./results/",
+    "plots":"./results/plots/",
+}
+
 @pytest.fixture
 def validation_gdf_oelde():
     gdf = gpd.read_file("./tests/test_data/oelde_growbikenet.gpkg", layer='Grown bike network')
