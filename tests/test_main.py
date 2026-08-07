@@ -8,6 +8,7 @@ gbn.settings.export_path = {
     "results":"./results/",
     "plots":"./results/plots/",
 }
+gbn.settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
 
 @pytest.fixture
 def validation_gdf_oelde():

@@ -31,7 +31,7 @@ settings.viz = {
     "dpi": 150,
 }
 settings.export_path["plots"] = "./tests/test_data/plots_temp/"
-
+settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
 
 @pytest.fixture
 def validation_gdf_athens_without_bikenw():

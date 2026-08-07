@@ -5,6 +5,7 @@ import growbikenet as gbn
 gbn.settings.import_data_impact = 9
 gbn.settings.import_data_trip_point_balance = 0.4 # alpha
 gbn.settings.export_file_format = "geojson"
+gbn.settings.crs_result = "4326"
 edges_ranked = gbn.growbikenet("Turin", 
     export_data = True,
     import_files={

@@ -444,6 +444,9 @@ def growbikenet(
     edges_ranked['length_cumulative'] = edges_ranked.geometry.length.cumsum()
     edges_ranked = edges_ranked.astype({'length': int, 'length_cumulative': int})
 
+    # Back to unprojected (potentially). No more calculations after here.
+    edges_ranked.to_crs(epsg=settings.crs_result, inplace=True)
+
     # Generate export data filename
     if export_data or export_plots:# or export_video:
         os.makedirs(settings.export_path['results'], exist_ok=True)
@@ -469,18 +472,18 @@ def growbikenet(
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
         seed_points_snapped_filtered.drop(["osmid"], axis=1, inplace=True)
-        # We have meter precision, so rounding to integers is fine. Better would be to 
-        # change dtypes to int, but this does not seem possible without manual looping.
+        seed_points_snapped_filtered.to_crs(epsg=settings.crs_result, inplace=True)
         if city_boundary_exists:
-            city_boundary_gdf.to_crs(epsg=settings.crs_projected, inplace=True)
-            city_boundary_gdf.geometry = city_boundary_gdf.geometry.set_precision(grid_size=1) 
-        seed_points_snapped_filtered.geometry = seed_points_snapped_filtered.geometry.set_precision(grid_size=1)
-        edges_ranked.geometry = edges_ranked.geometry.set_precision(grid_size=1)
-
+            city_boundary_gdf.to_crs(epsg=settings.crs_result, inplace=True)
         if settings.export_file_format == "geojson":
-            edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
-            seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON")
-            if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
+            if settings.crs_result == '4326': # Export with RFC7946="YES"
+                edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON", RFC7946="YES")
+                if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON", RFC7946="YES")
+            else: # To do, maybe: Clean up ugly code duplication
+                edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON")
+                if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif settings.export_file_format == "gpkg":
             f = settings.export_path['results']+export_data_filename
             if os.path.exists(f):

@@ -28,6 +28,7 @@ settings.export_path = {
     "results":"./results/",
     "plots":"./results/plots/",
 }
+settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
 
 # @pytest.fixture
 # def geom_1():
