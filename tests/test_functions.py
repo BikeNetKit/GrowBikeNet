@@ -21,12 +21,14 @@ from growbikenet.functions import (
     add_trip_data_to_net,
     create_gdf_with_geoms,
     _get_weighted_distances,
+    slugify,
 )
 
 settings.export_path = {
     "results":"./results/",
     "plots":"./results/plots/",
 }
+settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
 
 # @pytest.fixture
 # def geom_1():
@@ -60,7 +62,7 @@ def validation_data_rank(method):
 
 @pytest.fixture
 def method():
-    return "betweenness_centrality"
+    return "betweenness"
 
 
 def test__rank_df(test_data_rank, method, validation_data_rank):
@@ -699,3 +701,18 @@ def turin_d_trips():
 def test__get_weighted_distances(turin_B, turin_d_points, turin_d_trips):
     assert turin_d_points == _get_weighted_distances(turin_B, "num_points")
     assert turin_d_trips == _get_weighted_distances(turin_B, "num_trips")
+
+
+@pytest.fixture
+def city_names():
+    names = ["Aix-En-Provence", "Alcalá De Henares", "Almería", "Bielsko-Biala", "Chișinău", "Durrës", "L'Hospitalet De Llobregat", "Nîmes", "Umeå", "amsterdam_nl", "áéíóúàèìùòâêîôûäëïöüǎěǐǒǔãẽĩõũăåæçčıłñňøœřßșşšůŷÿźž"]
+    return names
+
+@pytest.fixture
+def city_names_slugified():
+    names = ["aixenprovence", "alcaladehenares", "almeria", "bielskobiala", "chisinau", "durres", "lhospitaletdellobregat", "nimes", "umea", "amsterdam_nl", "aeiouaeiouaeiouaeiouaeiouaeiouaaaccilnnoorssssuyyzz"]
+    return names
+
+def test_slugify(city_names, city_names_slugified):
+    for n, ns in zip(city_names, city_names_slugified):
+        assert slugify(n) == ns

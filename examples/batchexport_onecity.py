@@ -19,10 +19,10 @@ bike_network : st
 Notes
 -------
 Exports data into four files:
-[slug]-betweenness_centrality-grid.gpkg
-[slug]-betweenness_centrality-rail.gpkg
-[slug]-closeness_centrality-grid.gpkg
-[slug]-closeness_centrality-rail.gpkg
+[slug]-betweenness-grid.gpkg
+[slug]-betweenness-rail.gpkg
+[slug]-closeness-grid.gpkg
+[slug]-closeness-rail.gpkg
     Data is saved into the current working directory.
     slug is a string id created out of city_id.
 
@@ -33,7 +33,7 @@ Examples
 
 # WHICH DATA TO EXPORT?
 export_seed_point_types = ['auto', 'rail', 'school'] # Full array: ['auto', 'rail', 'school']
-export_rankings = ['betweenness_centrality', 'closeness_centrality'] # Full array: ['betweenness_centrality', 'closeness_centrality', 'random']
+export_rankings = ['betweenness', 'closeness'] # Full array: ['betweenness', 'closeness', 'random']
 export_existing_network_spacings = [None, 'auto'] # Full array: [None, 'auto']
 
 # Main

@@ -42,7 +42,7 @@ from growbikenet.visualization import create_plots
 
 def growbikenet(
     city_query,
-    ranking='betweenness_centrality',
+    ranking='betweenness',
     seed_point_type='auto',
     seed_point_grid_spacing='auto',
     seed_point_linking='auto',
@@ -63,8 +63,8 @@ def growbikenet(
     ----------
     city_query : str
         Search string for the city that the analysis should be performed on. This is the query used to fetch the data from nominatim. Overruled for data fetching if city_boundary or street_network is set.
-    ranking : str, default 'betweenness_centrality'
-        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
+    ranking : str, default 'betweenness'
+        Method used to rank edges. Must be 'betweenness' (default), 'closeness', or 'random'.
     seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
         If set to 'auto', selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [3]_.
         If set to 'grid_square', creates a square grid. 
@@ -89,9 +89,9 @@ def growbikenet(
     existing_network_spacing : None | 'auto' | int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
     export_data : bool, default True
-        If set to True, data is saved to a file. The filename is [slug]-[ranking]-[seed_point_type].[settings.export_file_format], where slug is a string id made out of city_query.
+        If set to True, data is saved to a file. The filename is [slug]-growbikenet-[ranking]-from_scratch|from_bikenw-[seed_point_type]-with_overlaps|no_overlaps.[settings.export_file_format], depending on the parameters, and where [slug] is a string id made out of city_query or city_id.
     city_id : str | None, default None
-        If set, the slugified city_id is used as the filename of the data export. For example, a city_id "Athens" will turn to "athens" in filenames. If set to None, the slugified city_query is used as the filename of the data export. It is useful to set a city_id for cities where the city_query is not the city name, for example to set for a city_query "Municipality of Athens" the city_id to "Athens".
+        If set, the slugified city_id is used in the filename of the data export. For example, a city_id "Athens" will slugify into "athens" in filenames. If set to None, the slugified city_query is used in the filename of the data export. It is useful to set a city_id for cities where the city_query is not the city name, for example to set for a city_query "Municipality of Athens" the city_id to "Athens".
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
     allow_edge_overlaps : bool, default False
@@ -398,18 +398,18 @@ def growbikenet(
         )
 
     # The ranking=="random" case has no edge attributes and is handled in _rank_df
-    if ranking == "betweenness_centrality":
+    if ranking == "betweenness":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
             B, weight=metric_weight, normalized=True
         )
-        nx.set_edge_attributes(B, bc_values, name="betweenness_centrality")
-    elif ranking == "closeness_centrality":
+        nx.set_edge_attributes(B, bc_values, name="betweenness")
+    elif ranking == "closeness":
         # Add closeness attributes to nodes and edges
         cc_values_nodes = nx.closeness_centrality(B, distance=metric_weight)
-        nx.set_node_attributes(B, cc_values_nodes, name="closeness_centrality")
+        nx.set_node_attributes(B, cc_values_nodes, name="closeness")
         cc_values = node_to_edge_attributes(cc_values_nodes, B.edges)
-        nx.set_edge_attributes(B, cc_values, name="closeness_centrality")
+        nx.set_edge_attributes(B, cc_values, name="closeness")
     progress_bar.update(1)
 
     # Export attributes to gdfs:
@@ -435,14 +435,17 @@ def growbikenet(
     ### Remove edge overlaps
     if not allow_edge_overlaps:
         edges_ranked = _remove_edge_overlaps(edges_ranked) # Can take a while, could be sped up.
-        overlap_string = ""
+        overlap_string = "no_overlaps"
     else:
-        overlap_string = "_with-overlaps"
+        overlap_string = "with_overlaps"
 
     # Add lengths and cumulative lengths, rounded to integer meters
     edges_ranked['length'] = edges_ranked.geometry.length
     edges_ranked['length_cumulative'] = edges_ranked.geometry.length.cumsum()
     edges_ranked = edges_ranked.astype({'length': int, 'length_cumulative': int})
+
+    # Back to unprojected (potentially). No more calculations after here.
+    edges_ranked.to_crs(epsg=settings.crs_result, inplace=True)
 
     # Generate export data filename
     if export_data or export_plots:# or export_video:
@@ -453,11 +456,11 @@ def growbikenet(
         else:
             city_string = city_id
         if existing_network_spacing:
-            exnw_string = "_with-bikenw"
+            exnw_string = "from_bikenw"
         else:
-            exnw_string = ""
+            exnw_string = "from_scratch"
         export_data_filename = (
-            slugify(city_string) + "-" + ranking + "-" + seed_point_type + overlap_string + exnw_string + "." + settings.export_file_format
+            slugify(city_string) + "-growbikenet-" + ranking + "-" + exnw_string + "-" + seed_point_type + "-" + overlap_string + "." + settings.export_file_format
         )
 
     ### Export data
@@ -469,18 +472,18 @@ def growbikenet(
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
         seed_points_snapped_filtered.drop(["osmid"], axis=1, inplace=True)
-        # We have meter precision, so rounding to integers is fine. Better would be to 
-        # change dtypes to int, but this does not seem possible without manual looping.
+        seed_points_snapped_filtered.to_crs(epsg=settings.crs_result, inplace=True)
         if city_boundary_exists:
-            city_boundary_gdf.to_crs(epsg=settings.crs_projected, inplace=True)
-            city_boundary_gdf.geometry = city_boundary_gdf.geometry.set_precision(grid_size=1) 
-        seed_points_snapped_filtered.geometry = seed_points_snapped_filtered.geometry.set_precision(grid_size=1)
-        edges_ranked.geometry = edges_ranked.geometry.set_precision(grid_size=1)
-
+            city_boundary_gdf.to_crs(epsg=settings.crs_result, inplace=True)
         if settings.export_file_format == "geojson":
-            edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
-            seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-"+seed_point_type+exnw_string+".geojson", driver="GeoJSON")
-            if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
+            if settings.crs_result == '4326': # Export with RFC7946="YES"
+                edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON", RFC7946="YES")
+                if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON", RFC7946="YES")
+            else: # To do, maybe: Clean up ugly code duplication
+                edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON")
+                if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif settings.export_file_format == "gpkg":
             f = settings.export_path['results']+export_data_filename
             if os.path.exists(f):

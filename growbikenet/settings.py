@@ -1,7 +1,9 @@
 """Global settings for growbikenet that can be configured by the user.
 
 crs_projected : str, default '3857'
-    EPSG code of the coordinate reference system that is used to project osm data. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) is better.
+    EPSG code of the coordinate reference system that is used to project osm data for calculations and for plots. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) is better.
+crs_result : str, default '4326'
+    EPSG code of the coordinate reference system for the resulting geodataframe and exported data.
 export_path : dict(str)
     Paths to results and plots folders to save data and plots.
 export_file_format : str ('geojson' | 'gpkg'), default 'gpkg'
@@ -26,6 +28,7 @@ viz : dict
 """
 
 crs_projected = '3857'
+crs_result = '4326'
 export_path = {
     "results":"./results/",
     "plots":"./results/plots/",
