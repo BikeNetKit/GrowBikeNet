@@ -49,7 +49,7 @@ def test_create_plots_case_success_without_bikenw(validation_gdf_athens_without_
     """Verify that the same last plot is created for the case without existing bike network
     """
 
-    ranking = "betweenness_centrality"
+    ranking = "betweenness"
     with_existing_bike_network = 0
 
     # Create directory
@@ -85,7 +85,7 @@ def test_create_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw
     """Verify that the same last plot is created for the case with existing bike network
     """
 
-    ranking = "betweenness_centrality"
+    ranking = "betweenness"
     with_existing_bike_network = 1
 
     # Add existing bike network on top

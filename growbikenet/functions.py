@@ -79,9 +79,9 @@ def _validate_parameters(
         raise TypeError("city_query must be a string")
     if type(ranking) is not str:
         raise TypeError("ranking must be a string")
-    if ranking not in ["betweenness_centrality", "closeness_centrality", "random"]:
+    if ranking not in ["betweenness", "closeness", "random"]:
         raise ValueError(
-            "ranking must be either 'betweenness_centrality', 'closeness_centrality', or 'random'"
+            "ranking must be either 'betweenness', 'closeness', or 'random'"
         )
     if seed_point_type not in ['auto', 'grid_square', 'grid_triangle', 'rail', 'school', 'park', 'file', 'tags']:
         raise ValueError("seed_point_type must be 'auto' or 'grid_square' or 'grid_triangle' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
@@ -1164,7 +1164,7 @@ def df_from_graph(A, method):
     A: networkx.graph
         Graph created from triangulation edge list
     method: str
-        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
+        Method used to rank edges. Must be 'betweenness' (default), 'closeness', or 'random'.
 
     Returns
     -------
@@ -1204,7 +1204,7 @@ def _rank_df(df, method):
     df: pandas.DataFrame
         Dataframe with source and target information for each edge, as well as edge attributes as columns
     method: str
-        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
+        Method used to rank edges. Must be 'betweenness' (default), 'closeness', or 'random'.
 
     Results
     -------

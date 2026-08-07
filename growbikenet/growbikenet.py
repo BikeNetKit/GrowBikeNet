@@ -42,7 +42,7 @@ from growbikenet.visualization import create_plots
 
 def growbikenet(
     city_query,
-    ranking='betweenness_centrality',
+    ranking='betweenness',
     seed_point_type='auto',
     seed_point_grid_spacing='auto',
     seed_point_linking='auto',
@@ -63,8 +63,8 @@ def growbikenet(
     ----------
     city_query : str
         Search string for the city that the analysis should be performed on. This is the query used to fetch the data from nominatim. Overruled for data fetching if city_boundary or street_network is set.
-    ranking : str, default 'betweenness_centrality'
-        Method used to rank edges. Must be 'betweenness_centrality' (default), 'closeness_centrality', or 'random'.
+    ranking : str, default 'betweenness'
+        Method used to rank edges. Must be 'betweenness' (default), 'closeness', or 'random'.
     seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
         If set to 'auto', selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [3]_.
         If set to 'grid_square', creates a square grid. 
@@ -398,18 +398,18 @@ def growbikenet(
         )
 
     # The ranking=="random" case has no edge attributes and is handled in _rank_df
-    if ranking == "betweenness_centrality":
+    if ranking == "betweenness":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
             B, weight=metric_weight, normalized=True
         )
-        nx.set_edge_attributes(B, bc_values, name="betweenness_centrality")
-    elif ranking == "closeness_centrality":
+        nx.set_edge_attributes(B, bc_values, name="betweenness")
+    elif ranking == "closeness":
         # Add closeness attributes to nodes and edges
         cc_values_nodes = nx.closeness_centrality(B, distance=metric_weight)
-        nx.set_node_attributes(B, cc_values_nodes, name="closeness_centrality")
+        nx.set_node_attributes(B, cc_values_nodes, name="closeness")
         cc_values = node_to_edge_attributes(cc_values_nodes, B.edges)
-        nx.set_edge_attributes(B, cc_values, name="closeness_centrality")
+        nx.set_edge_attributes(B, cc_values, name="closeness")
     progress_bar.update(1)
 
     # Export attributes to gdfs:

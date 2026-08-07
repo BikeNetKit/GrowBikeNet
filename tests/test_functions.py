@@ -60,7 +60,7 @@ def validation_data_rank(method):
 
 @pytest.fixture
 def method():
-    return "betweenness_centrality"
+    return "betweenness"
 
 
 def test__rank_df(test_data_rank, method, validation_data_rank):
