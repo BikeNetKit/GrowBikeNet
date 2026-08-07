@@ -137,6 +137,7 @@ def slugify(s):
     """Slugify a string
     
     Source: https://github.com/Chalarangelo/30-seconds-of-code/blob/master/content/snippets/python/s/slugify.md
+    Note: A clean global solution would be using unidecode, but we do not want extra dependencies for this. We assume European city names in latin alphabet, some special letters like Hungarian long ö already mapped.
 
     Parameters
     ----------
@@ -149,9 +150,14 @@ def slugify(s):
         Slugified string
     """
     s = s.lower().strip()
+    s = re.sub(r'[\s-]+', '', s) # Remove white spaces, -
     s = re.sub(r'[^\w\s-]', '', s)
-    s = re.sub(r'[\s_-]+', '-', s)
     s = re.sub(r'^-+|-+$', '', s)
+    tab = str.maketrans(
+        "áéíóúàèìùòâêîôûäëïöüǎěǐǒǔãẽĩõũăåæçčıłñňøœřßșşšůŷÿźž",
+        "aeiouaeiouaeiouaeiouaeiouaeiouaaaccilnnoorssssuyyzz"
+    )
+    s = s.translate(tab)
     return s
 
 
