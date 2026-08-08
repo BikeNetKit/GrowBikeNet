@@ -35,6 +35,7 @@ dependencies = [
     "geopandas>=1",
     "matplotlib",
     "osmnx>=2",
+    "scipy",
     "geojson",
     "tqdm",
 ]
