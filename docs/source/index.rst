@@ -10,15 +10,27 @@ The Python package ``growbikenet`` grows an urban bicycle network from scratch o
 
 |Example Paris|
 
-GrowBikeNet is a decision support tool for urban planners based on the Dutch CROW Design manual for bicycle traffic. It is also useful for proactive citizens to create a compelling vision for urban cycling in their city, and it aims to foster research on bicycle networks. GrowBikeNet is fully customizable and data-driven allowing to explore different scenarios - for example, you can import custom data sets such as points of interest or limit network development to specific streets to adapt the software to your local needs.
+GrowBikeNet is a decision support tool for urban planners based on the Dutch CROW Design manual for bicycle traffic. It is also useful for proactive citizens to create a compelling vision for urban cycling in their city, and it aims to foster research on bicycle networks. 
 
+GrowBikeNet is fully customizable and data-driven allowing to explore different scenarios - for example, you can import and make use of your own custom data sets like points of interest or traffic flows, or limit network development to specific streets to adapt the software to your local needs.
+
+When to use
+-----------
+
+GrowBikeNet works well for most cities on the planet. It can grow a bicycle network from scratch which makes most sense for cities that have only negligible bicycle infrastructure. It can also extend an existing bicycle network, which works best if it is not too developed already.
+
+Recommended example cities to grow from scratch: Athens, Kyiv, Naples
+
+Recommended example cities to extend the existing net: Berlin, Prague, Rome
+
+For alternative approaches, or for cities with more developed bicycle networks, consider using `LinkBikeNet <https://github.com/BikeNetKit/LinkBikeNet>`__ or `FixBikeNet <https://github.com/BikeNetKit/FixBikeNet>`__.
 
 Setup and use
 -------------
 
 To set up GrowBikeNet, see the :doc:`installation` page.
 To use GrowBikeNet, the :doc:`getting_started` page
-is a good place to start, which also explains how the package works in detail. Various usage examples are walked through on the :doc:`usage` page. For technical documentation, consult the :doc:`reference_user`.
+is a good place to start. Various usage examples are walked through on the :doc:`usage` page. For technical documentation, consult the :doc:`reference_user`.
 
 .. Statement of need
 .. =================
