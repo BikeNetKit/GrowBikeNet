@@ -2,7 +2,7 @@ name: gbnenvdev
 channels:
   - conda-forge
 dependencies:
-  - python>=3.12
+  - python>=3.13
   - matplotlib=3.11.0 # The exact version is important for visualization tests
   - osmnx>=2
   - tqdm
