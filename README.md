@@ -1,4 +1,4 @@
-# <a href="https://docs.bikenetkit.org/GrowBikeNet/"><img src="docs/source/_static/logo_growbikenet.png" alt="GrowBikeNet" width="292.63" height="59"></a>
+# <a href="https://docs.bikenetkit.org/GrowBikeNet/"><img src="docs/source/_static/logo_growbikenet.svg" alt="GrowBikeNet" width="292.63" height="59"></a>
 
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/growbikenet?color=10d249)](https://anaconda.org/conda-forge/growbikenet)
 [![PyPI Version](https://img.shields.io/pypi/v/growbikenet?color=10d249)](https://pypi.org/project/growbikenet/)
