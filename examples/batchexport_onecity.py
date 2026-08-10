@@ -33,7 +33,7 @@ Examples
 
 # WHICH DATA TO EXPORT?
 export_seed_point_types = ['auto', 'rail', 'school'] # Full array: ['auto', 'rail', 'school']
-export_rankings = ['betweenness', 'closeness'] # Full array: ['betweenness', 'closeness', 'random']
+export_orderings = ['betweenness', 'closeness'] # Full array: ['betweenness', 'closeness', 'random']
 export_existing_network_spacings = [None, 'auto'] # Full array: [None, 'auto']
 
 # Main
@@ -65,7 +65,7 @@ if len(sys.argv) >= 7:
 city_id = slugify(city_id)
 
 for seed_point_type in export_seed_point_types:
-    for ranking in export_rankings:
+    for ordering in export_orderings:
         for existing_network_spacing in export_existing_network_spacings:
             if seed_point_type == 'auto' and existing_network_spacing == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
@@ -73,7 +73,7 @@ for seed_point_type in export_seed_point_types:
                 seed_point_linking = 'auto'
             gbn.growbikenet(
                 city_query,
-                ranking=ranking,
+                ordering=ordering,
                 seed_point_type=seed_point_type,
                 seed_point_linking=seed_point_linking,
                 export_data=True,

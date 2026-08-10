@@ -26,7 +26,7 @@ from growbikenet.functions import (
     create_gdf_with_geoms,
     node_to_edge_attributes,
     df_from_graph,
-    _rank_df,
+    _order_df,
     download_network,
     update_with_existing_bike_network,
     _update_seed_points_with_existing_bike_network,
@@ -42,7 +42,7 @@ from growbikenet.visualization import create_plots
 
 def growbikenet(
     city_query,
-    ranking='betweenness',
+    ordering='betweenness',
     seed_point_type='auto',
     seed_point_grid_spacing='auto',
     seed_point_linking='auto',
@@ -55,7 +55,7 @@ def growbikenet(
     import_files={},
     seed_point_tags=None,
 ):
-    """Creates a list of urban street network edges ordered by a ranking method.
+    """Creates a list of urban street network edges ordered by an ordering method.
 
     The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point [2]_. The original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is implemented much faster and in practice gives identical results. Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
 
@@ -63,8 +63,8 @@ def growbikenet(
     ----------
     city_query : str
         Search string for the city that the analysis should be performed on. This is the query used to fetch the data from nominatim. Overruled for data fetching if city_boundary or street_network is set.
-    ranking : str, default 'betweenness'
-        Method used to rank edges. Must be 'betweenness' (default), 'closeness', or 'random'.
+    ordering : str, default 'betweenness'
+        Method used to order edges. Must be 'betweenness' (default), 'closeness', or 'random'.
     seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
         If set to 'auto', selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [3]_.
         If set to 'grid_square', creates a square grid. 
@@ -89,7 +89,7 @@ def growbikenet(
     existing_network_spacing : None | 'auto' | int, default None
         Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
     export_data : bool, default True
-        If set to True, data is saved to a file. The filename is [slug]-growbikenet-[ranking]-from_scratch|from_bikenw-[seed_point_type]-with_overlaps|no_overlaps.[settings.export_file_format], depending on the parameters, and where [slug] is a string id made out of city_query or city_id.
+        If set to True, data is saved to a file. The filename is [slug]-growbikenet-[ordering]-from_scratch|from_bikenw-[seed_point_type]-with_overlaps|no_overlaps.[settings.export_file_format], depending on the parameters, and where [slug] is a string id made out of city_query or city_id.
     city_id : str | None, default None
         If set, the slugified city_id is used in the filename of the data export. For example, a city_id "Athens" will slugify into "athens" in filenames. If set to None, the slugified city_query is used in the filename of the data export. It is useful to set a city_id for cities where the city_query is not the city name, for example to set for a city_query "Municipality of Athens" the city_id to "Athens".
     export_plots : bool, default False
@@ -110,34 +110,34 @@ def growbikenet(
             "seed_points" : str | None, default None
                 If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
             "point_data" : str | None, default None
-                If not set to None, an additional data set of points will be loaded from this file, representing point events like traffic crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. The data set is used to re-prioritize the ranking of the network links, controlled with settings.import_data_impact and settings.import_data_trip_point_balance, following [2]_.
+                If not set to None, an additional data set of points will be loaded from this file, representing point events like traffic crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. The data set is used to re-prioritize the ordering of the network links, controlled with settings.import_data_impact and settings.import_data_trip_point_balance, following [2]_.
             "trip_data" : str | None, default None
-                If not set to None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination. The data set is used to re-prioritize the ranking of the network links, controlled with settings.import_data_impact and settings.import_data_trip_point_balance, following [2]_.
+                If not set to None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination. The data set is used to re-prioritize the ordering of the network links, controlled with settings.import_data_impact and settings.import_data_trip_point_balance, following [2]_.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} retrieves exactly the same as seed_point_type='rail'.
 
     Returns
     -------
-    edges_ranked : geopandas.geodataframe.GeoDataFrame
-        Geodataframe of all edges in street network ordered by the ranking method.
+    edges_ordered : geopandas.geodataframe.GeoDataFrame
+        Geodataframe of all edges in street network ordered by the ordering method.
 
     Examples
     --------
     Minimum working example: Grow a bicycle network from scratch in Lyon.
 
-    >>> edges_ranked = gbn.growbikenet("Lyon")
+    >>> edges_ordered = gbn.growbikenet("Lyon")
 
     Grow a bicycle network from scratch in Copenhagen, providing a study area polygon to include also Frederiksberg and Amager.
 
-    >>> edges_ranked = gbn.growbikenet("Copenhagen", import_files={'city_boundary':"./tests/test_data/copenhagen_city_boundary.shp"}) 
+    >>> edges_ordered = gbn.growbikenet("Copenhagen", import_files={'city_boundary':"./tests/test_data/copenhagen_city_boundary.shp"}) 
 
     Expand the existing bicycle network of Lyon, connecting all educational institutions.
 
-    >>> edges_ranked = gbn.growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
+    >>> edges_ordered = gbn.growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
 
     Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
 
-    >>> edges_ranked = gbn.growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_street_network.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
+    >>> edges_ordered = gbn.growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_street_network.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
 
     References
     ----------
@@ -152,7 +152,7 @@ def growbikenet(
     _validate_settings()
     import_files = _validate_parameters(
         city_query,
-        ranking,
+        ordering,
         seed_point_type,
         seed_point_grid_spacing,
         seed_point_linking,
@@ -169,7 +169,7 @@ def growbikenet(
 
     print("==============================================")
     print("RUNNING GROWBIKENET FOR CITY: " + city_query)
-    print(ranking + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
+    print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
     print("----------------------------------------------╮")
     
 
@@ -397,14 +397,14 @@ def growbikenet(
         bar_format='{l_bar}{bar:16}{r_bar}',
         )
 
-    # The ranking=="random" case has no edge attributes and is handled in _rank_df
-    if ranking == "betweenness":
+    # The ordering=="random" case has no edge attributes and is handled in _order_df
+    if ordering == "betweenness":
         # Add betweenness attributes to edges
         bc_values = nx.edge_betweenness_centrality(
             B, weight=metric_weight, normalized=True
         )
         nx.set_edge_attributes(B, bc_values, name="betweenness")
-    elif ranking == "closeness":
+    elif ordering == "closeness":
         # Add closeness attributes to nodes and edges
         cc_values_nodes = nx.closeness_centrality(B, distance=metric_weight)
         nx.set_node_attributes(B, cc_values_nodes, name="closeness")
@@ -414,41 +414,41 @@ def growbikenet(
 
     # Export attributes to gdfs:
     # Create dataframe and add method as edge attribute
-    edges_ranked = df_from_graph(B, ranking)
+    edges_ordered = df_from_graph(B, ordering)
 
     # Rank edges by specified method
-    edges_ranked = _rank_df(edges_ranked, ranking)
+    edges_ordered = _order_df(edges_ordered, ordering)
 
-    edges_ranked = gpd.GeoDataFrame(edges_ranked, crs=settings.crs_projected, geometry="geometry")
+    edges_ordered = gpd.GeoDataFrame(edges_ordered, crs=settings.crs_projected, geometry="geometry")
 
     # Add existing bike network on top, https://stackoverflow.com/a/43408736
     if existing_network_spacing:
-        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ranked.columns}, index=[-1], crs=settings.crs_projected)
+        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ordered.columns}, index=[-1], crs=settings.crs_projected)
         existing_bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
-        edges_ranked.loc[-1] = existing_bikenet.loc[-1]
-        edges_ranked.index = edges_ranked.index+1
-        edges_ranked.sort_index(inplace=True)
-        edges_ranked.crs = settings.crs_projected
+        edges_ordered.loc[-1] = existing_bikenet.loc[-1]
+        edges_ordered.index = edges_ordered.index+1
+        edges_ordered.sort_index(inplace=True)
+        edges_ordered.crs = settings.crs_projected
     progress_bar.update(1)
     progress_bar.close()
 
     ### Remove edge overlaps
     if not allow_edge_overlaps:
-        edges_ranked = _remove_edge_overlaps(edges_ranked) # Can take a while, could be sped up.
+        edges_ordered = _remove_edge_overlaps(edges_ordered) # Can take a while, could be sped up.
         overlap_string = "no_overlaps"
     else:
         overlap_string = "with_overlaps"
 
     # Add lengths and cumulative lengths, rounded to integer meters
-    edges_ranked['length'] = edges_ranked.geometry.length
-    edges_ranked['length_cumulative'] = edges_ranked.geometry.length.cumsum()
-    edges_ranked = edges_ranked.astype({'length': int, 'length_cumulative': int})
+    edges_ordered['length'] = edges_ordered.geometry.length
+    edges_ordered['length_cumulative'] = edges_ordered.geometry.length.cumsum()
+    edges_ordered = edges_ordered.astype({'length': int, 'length_cumulative': int})
 
-    if constants.RERANK:
-        edges_ranked['rank'] = edges_ranked.index
+    if constants.REORDER:
+        edges_ordered['ordering'] = edges_ordered.index
 
     # Back to unprojected (potentially). No more calculations after here.
-    edges_ranked.to_crs(epsg=settings.crs_result, inplace=True)
+    edges_ordered.to_crs(epsg=settings.crs_result, inplace=True)
 
     # Generate export data filename
     if export_data or export_plots:# or export_video:
@@ -463,7 +463,7 @@ def growbikenet(
         else:
             exnw_string = "from_scratch"
         export_data_filename = (
-            slugify(city_string) + "-growbikenet-" + ranking + "-" + exnw_string + "-" + seed_point_type + "-" + overlap_string + "." + settings.export_file_format
+            slugify(city_string) + "-growbikenet-" + ordering + "-" + exnw_string + "-" + seed_point_type + "-" + overlap_string + "." + settings.export_file_format
         )
 
     ### Export data
@@ -480,11 +480,11 @@ def growbikenet(
             city_boundary_gdf.to_crs(epsg=settings.crs_result, inplace=True)
         if settings.export_file_format == "geojson":
             if settings.crs_result == '4326': # Export with RFC7946="YES"
-                edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
+                edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
                 seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON", RFC7946="YES")
                 if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON", RFC7946="YES")
             else: # To do, maybe: Clean up ugly code duplication
-                edges_ranked.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
+                edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
                 seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON")
                 if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif settings.export_file_format == "gpkg":
@@ -492,10 +492,10 @@ def growbikenet(
             if os.path.exists(f):
                 os.remove(f) # mode="w" does not work for to_file with gpkg. It always appends. Therefore, existing file needs to be deleted.
             if existing_network_spacing:
-                edges_ranked.iloc[[0]].to_file(f, driver="GPKG", layer="Existing bike network") 
-                edges_ranked.iloc[1:-1].to_file(f, driver="GPKG", layer="Grown bike network")
+                edges_ordered.iloc[[0]].to_file(f, driver="GPKG", layer="Existing bike network") 
+                edges_ordered.iloc[1:-1].to_file(f, driver="GPKG", layer="Grown bike network")
             else:
-                edges_ranked.to_file(f, driver="GPKG", layer="Grown bike network")
+                edges_ordered.to_file(f, driver="GPKG", layer="Grown bike network")
             seed_points_snapped_filtered.to_file(f, driver="GPKG", layer="Seed points")
             if city_boundary_exists: city_boundary_gdf.to_file(f, driver="GPKG", layer="City boundary")
         progress_bar.update(1)
@@ -504,17 +504,17 @@ def growbikenet(
     if export_plots:# or export_video:
         ### Visualize
 
-        os.makedirs(settings.export_path['plots']+"ordering_"+ranking+"/", exist_ok=True)
+        os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
         create_plots(
-            edges_ranked,
+            edges_ordered,
             seed_points_snapped_filtered,
-            ranking,
+            ordering,
             bool(existing_network_spacing),
         )
 
         # if export_video:
-        #     os.makedirs(settings.export_path['videos']+"/ordering_"+ranking+"/", exist_ok=True)
-        #     make_video(img_folder_name=settings.export_path['videos']+"ordering_"+ranking+"/", fps=5)
+        #     os.makedirs(settings.export_path['videos']+"/ordering_"+ordering+"/", exist_ok=True)
+        #     make_video(img_folder_name=settings.export_path['videos']+"ordering_"+ordering+"/", fps=5)
 
     print("----------------------------------------------╯")
     if export_data:
@@ -530,4 +530,4 @@ def growbikenet(
     print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
     print("==============================================")
 
-    return edges_ranked
+    return edges_ordered

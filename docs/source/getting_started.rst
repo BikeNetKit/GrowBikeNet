@@ -26,7 +26,7 @@ GrowBikeNet is built on top of `OSMnx`_ and `GeoPandas`_. It takes one mandatory
 * The seed points are linked (triangulated or quadrangulated).
 * The edges which link the seed points are routed on the street network.
 * A metric is computed for all edges. By default this is betweenness centrality. 
-* The edges are ranked by this metric, denoting the importance and order of links to build.
+* The edges are ordered by this metric, denoting the importance and order of links to build.
 * Data is exported to a results folder, by default to geojson files, but gpkg is also possible. Exported files are the city boundary, the seed points, and the grown edges (and the existing bicycle network, if used).
 * Optional, plots are generated in the results folder for each edge.
 * Optional, a video is generated in the results folder, using the plots as frames.

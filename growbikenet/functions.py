@@ -48,7 +48,7 @@ def _validate_settings():
 
 def _validate_parameters(
         city_query,
-        ranking,
+        ordering,
         seed_point_type,
         seed_point_grid_spacing,
         seed_point_linking,
@@ -77,11 +77,11 @@ def _validate_parameters(
 
     if type(city_query) is not str:
         raise TypeError("city_query must be a string")
-    if type(ranking) is not str:
-        raise TypeError("ranking must be a string")
-    if ranking not in ["betweenness", "closeness", "random"]:
+    if type(ordering) is not str:
+        raise TypeError("ordering must be a string")
+    if ordering not in ["betweenness", "closeness", "random"]:
         raise ValueError(
-            "ranking must be either 'betweenness', 'closeness', or 'random'"
+            "ordering must be either 'betweenness', 'closeness', or 'random'"
         )
     if seed_point_type not in ['auto', 'grid_square', 'grid_triangle', 'rail', 'school', 'park', 'file', 'tags']:
         raise ValueError("seed_point_type must be 'auto' or 'grid_square' or 'grid_triangle' or 'rail' or 'school' or 'park' or 'file' or 'tags'")
@@ -1170,7 +1170,7 @@ def df_from_graph(A, method):
     A: networkx.graph
         Graph created from triangulation edge list
     method: str
-        Method used to rank edges. Must be 'betweenness' (default), 'closeness', or 'random'.
+        Method used to order edges. Must be 'betweenness' (default), 'closeness', or 'random'.
 
     Returns
     -------
@@ -1202,32 +1202,32 @@ def df_from_graph(A, method):
     return df
 
 
-def _rank_df(df, method):
-    """Rank dataframe by specified method
+def _order_df(df, method):
+    """Order dataframe by specified method
 
     Parameters
     ----------
     df: pandas.DataFrame
         Dataframe with source and target information for each edge, as well as edge attributes as columns
     method: str
-        Method used to rank edges. Must be 'betweenness' (default), 'closeness', or 'random'.
+        Method used to order edges. Must be 'betweenness' (default), 'closeness', or 'random'.
 
     Results
     -------
     df: pandas.DataFrame
-        Dataframe sorted by specified ranking method.
+        Dataframe sorted by specified ordering method.
     """
-    if method == "random": # ranking is random
-        df["rank"] = np.random.permutation(np.arange(df.shape[0]))
-        df = df.sort_values(by="rank", ascending=False)
+    if method == "random": # ordering is random
+        df['ordering'] = np.random.permutation(np.arange(df.shape[0]))
+        df = df.sort_values(by="ordering", ascending=False)
         df.reset_index(drop=True, inplace=True)
-        df["rank"] = (
+        df['ordering'] = (
             df.index
         )  
-    else: # ranking is the order of appearance in the method's ranking
+    else: # ordering is the order of appearance in the method's ordering
         df = df.sort_values(by=method, ascending=False)
         df.reset_index(drop=True, inplace=True)
-        df["rank"] = (
+        df['ordering'] = (
             df.index
         )  
     return df
