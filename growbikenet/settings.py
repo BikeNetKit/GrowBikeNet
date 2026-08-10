@@ -68,6 +68,6 @@ viz = {
         "edgecolor": "#FFFFFF",
         "markersize": 40,
     },
-    "dpi": 150,
+    "dpi": 100,
     "crs": 'auto',
 }
