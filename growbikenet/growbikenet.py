@@ -444,6 +444,9 @@ def growbikenet(
     edges_ranked['length_cumulative'] = edges_ranked.geometry.length.cumsum()
     edges_ranked = edges_ranked.astype({'length': int, 'length_cumulative': int})
 
+    if constants.RERANK:
+        edges_ranked['rank'] = edges_ranked.index
+
     # Back to unprojected (potentially). No more calculations after here.
     edges_ranked.to_crs(epsg=settings.crs_result, inplace=True)
 

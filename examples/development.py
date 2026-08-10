@@ -14,4 +14,4 @@ edges_ranked = gbn.growbikenet("Turin",
         'trip_data':"./tests/test_data/turin_trips.csv",
         },
     )
-print(len(edges_ranked))
+print(edges_ranked.tail())
