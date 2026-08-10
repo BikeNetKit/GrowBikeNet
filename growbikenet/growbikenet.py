@@ -358,7 +358,7 @@ def growbikenet(
     nx.set_edge_attributes(B, geom_dict, "geometry")
     if point_data is not None:
         nx.set_edge_attributes(B, num_points_dict, "num_points")
-    B.graph["crs"] = settings.crs_projected # Needed for add_trip_data_to_net()
+    B.graph["crs"] = constants._CRS_CALCULATIONS # Needed for add_trip_data_to_net()
     B = B.subgraph(sorted(nx.connected_components(B), key=len, reverse=True)[0]) # Keep only the largest connected component (the network might have fallen apart)
     seed_points_snapped_filtered = seed_points_snapped_filtered[seed_points_snapped_filtered.index.isin(B.nodes)] # Remove seed points from disconnected components
 
@@ -421,16 +421,16 @@ def growbikenet(
     # Rank edges by specified method
     edges_ordered = _order_df(edges_ordered, ordering)
 
-    edges_ordered = gpd.GeoDataFrame(edges_ordered, crs=settings.crs_projected, geometry="geometry")
+    edges_ordered = gpd.GeoDataFrame(edges_ordered, crs=constants._CRS_CALCULATIONS, geometry="geometry")
 
     # Add existing bike network on top, https://stackoverflow.com/a/43408736
     if existing_network_spacing:
-        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ordered.columns}, index=[-1], crs=settings.crs_projected)
+        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ordered.columns}, index=[-1], crs=constants._CRS_CALCULATIONS)
         existing_bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
         edges_ordered.loc[-1] = existing_bikenet.loc[-1]
         edges_ordered.index = edges_ordered.index+1
         edges_ordered.sort_index(inplace=True)
-        edges_ordered.crs = settings.crs_projected
+        edges_ordered.crs = constants._CRS_CALCULATIONS
     progress_bar.update(1)
     progress_bar.close()
 
@@ -507,6 +507,11 @@ def growbikenet(
         ### Visualize
 
         os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
+        
+        if settings.viz["crs"] == "auto": # Make it local azimuthal by default
+            network_center = edges_ordered.to_crs(constants._CRS_CALCULATIONS).dissolve().centroid.to_crs('4326') # Calculate centroid in projected CRS, then go back to unprojected CRS for lat lon
+            settings.viz["crs"] = f"+proj=aeqd +R=6371000 +units=m +lat_0={network_center.y[0]} +lon_0={network_center.x[0]}" # The first coordinate x is the latitude
+
         create_plots(
             edges_ordered,
             seed_points_snapped_filtered,

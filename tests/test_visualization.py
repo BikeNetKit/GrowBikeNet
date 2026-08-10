@@ -26,12 +26,12 @@ settings.viz = {
     "seed_point":{
         "color": "#000000",
         "edgecolor": "#FFFFFF",
-        "markersize": 60,
+        "markersize": 40,
     },
-    "dpi": 150,
+    "dpi": 100,
+    "crs": '3035',
 }
 settings.export_path["plots"] = "./tests/test_data/plots_temp/"
-settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
 
 @pytest.fixture
 def validation_gdf_athens_without_bikenw():
@@ -47,6 +47,13 @@ def validation_seed_points_athens_without_bikenw():
                             filename="athens_without-bikenw.png")
 def test_create_plots_case_success_without_bikenw(validation_gdf_athens_without_bikenw, validation_seed_points_athens_without_bikenw):
     """Verify that the same last plot is created for the case without existing bike network
+
+    Generate test data:
+    pytest tests/test_visualization.py --mpl-generate-path=tests/test_data
+
+    Test:
+    pytest tests/test_visualization.py --mpl
+
     """
 
     ordering = "betweenness"
@@ -83,6 +90,12 @@ def validation_existing_gdf_athens_with_bikenw():
                             filename="athens_with-bikenw.png")
 def test_create_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw, validation_seed_points_athens_with_bikenw, validation_existing_gdf_athens_with_bikenw):
     """Verify that the same last plot is created for the case with existing bike network
+
+    Generate test data:
+    pytest tests/test_visualization.py --mpl-generate-path=tests/test_data
+
+    Test:
+    pytest tests/test_visualization.py --mpl
     """
 
     ordering = "betweenness"
@@ -92,6 +105,7 @@ def test_create_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw
     validation_gdf_athens_with_bikenw.loc[-1] = validation_existing_gdf_athens_with_bikenw.iloc[0]
     validation_gdf_athens_with_bikenw.index = validation_gdf_athens_with_bikenw.index+1
     validation_gdf_athens_with_bikenw.sort_index(inplace=True)
+    validation_gdf_athens_with_bikenw.crs = '3857'
     
     # Create directory
     os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)

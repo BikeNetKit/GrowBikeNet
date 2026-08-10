@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-def create_plots(edges_ordered, seed_points_snapped, ordering, with_existing_bike_network):
+def create_plots(edges_ordered, nodes, ordering, with_existing_bike_network):
     """Plot frames of a growing bicycle network 
 
     Results are png files saved into settings.export_path['plots'].
@@ -20,7 +20,7 @@ def create_plots(edges_ordered, seed_points_snapped, ordering, with_existing_bik
     ----------
     edges_ordered : geopandas.geodataframe.GeoDataFrame
         Ordered geodataframe of all edges in street network, representing a growing bicycle network
-    seed_points_snapped : geopandas.geodataframe.GeoDataFrame
+    nodes : geopandas.geodataframe.GeoDataFrame
         Set of seed points snapped to the street network, representing the growing bicycle network nodes
     ordering : str
         Method used to order edges.
@@ -33,6 +33,11 @@ def create_plots(edges_ordered, seed_points_snapped, ordering, with_existing_bik
         List of figure handles
     """
 
+    # Set plot CRS
+    edges_ordered.to_crs(settings.viz["crs"], inplace=True)
+    nodes.to_crs(settings.viz["crs"], inplace=True)
+
+    # Loop through frames
     n = len(edges_ordered)+int(not with_existing_bike_network)
     figs = [0]*n
 
@@ -44,7 +49,8 @@ def create_plots(edges_ordered, seed_points_snapped, ordering, with_existing_bik
         bar_format='{l_bar}{bar:16}{r_bar}',
         ):
 
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_axes([0, 0, 1, 1])
 
         # Plot to grow network as base line
         edges_ordered.plot(ax=ax, color=settings.viz['bike_to_grow']['color'], lw=settings.viz['bike_to_grow']['line_width'], zorder=0)
@@ -61,13 +67,13 @@ def create_plots(edges_ordered, seed_points_snapped, ordering, with_existing_bik
                 ax=ax, color=settings.viz['bike_grown']['color'], lw=settings.viz['bike_grown']['line_width'], zorder=1
             )
 
-        seed_points_snapped.plot(ax=ax, color=settings.viz['seed_point']['color'], markersize=settings.viz['seed_point']['markersize'], edgecolor=settings.viz['seed_point']['edgecolor'], zorder=2)
+        nodes.plot(ax=ax, color=settings.viz['seed_point']['color'], markersize=settings.viz['seed_point']['markersize'], edgecolor=settings.viz['seed_point']['edgecolor'], zorder=2)
 
         ax.set_axis_off()
 
         plot_id = "{:04d}".format(framenum)  # format plot ID with leading zeros
 
-        fig.savefig(settings.export_path['plots']+f"ordering_{ordering}/{plot_id}.png", dpi=settings.viz['dpi'], bbox_inches='tight')
+        fig.savefig(settings.export_path['plots']+f"ordering_{ordering}/{plot_id}.png", dpi=settings.viz['dpi'])
         figs[framenum] = fig
         plt.close()
         
