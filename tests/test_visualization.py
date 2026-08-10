@@ -26,9 +26,10 @@ settings.viz = {
     "seed_point":{
         "color": "#000000",
         "edgecolor": "#FFFFFF",
-        "markersize": 60,
+        "markersize": 40,
     },
     "dpi": 150,
+    "crs": 'auto',
 }
 settings.export_path["plots"] = "./tests/test_data/plots_temp/"
 settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
