@@ -34,8 +34,8 @@ def _validate_settings():
     True
     """
 
-    if type(settings.crs_projected) is not str:
-        raise TypeError("settings.crs_projected must be a string")
+    if type(constants._CRS_CALCULATIONS) is not str:
+        raise TypeError("constants._CRS_CALCULATIONS must be a string")
     if settings.export_file_format != "geojson" and settings.export_file_format != "gpkg":
         raise ValueError("settings.export_file_format must be 'geojson' or 'gpkg'")
     # To do: check export_path
@@ -247,7 +247,7 @@ def _resolve_auto_parameters(
     return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
 
 
-def add_trip_data_to_net(trips, A, crs_projected=settings.crs_projected, matching_distance=settings.import_trip_data_snap_distance):
+def add_trip_data_to_net(trips, A, crs_projected=constants._CRS_CALCULATIONS, matching_distance=settings.import_trip_data_snap_distance):
     """Match trip data to network edges
 
     First, match origin and destination points given in trips to the nodes. Only consider trips where both origins and nodes are matched within matching_distance. Then, for each trip, find the shortest path over the edges from matched origin node to matched destination node, and add 1 (or optionally "num" if column provided in trips) to the affected edges.
@@ -259,7 +259,7 @@ def add_trip_data_to_net(trips, A, crs_projected=settings.crs_projected, matchin
     A: networkx.graph
         Graph created from triangulation edge list
     crs_projected : str
-        Coordinate reference system that is used to project spatial data.
+        Coordinate reference system that is used to project spatial data for calculations.
     matching_distance : int
         Matching distance in meters. Set via settings.import_trip_data_snap_distance.
 
@@ -323,7 +323,7 @@ def add_trip_data_to_net(trips, A, crs_projected=settings.crs_projected, matchin
     return graph_with_data
 
 
-def add_point_data_to_net(points, edges, crs_projected=settings.crs_projected, matching_distance=settings.import_point_data_snap_distance):
+def add_point_data_to_net(points, edges, crs_projected=constants._CRS_CALCULATIONS, matching_distance=settings.import_point_data_snap_distance):
     """Match point data to network edges
 
     Parameters
@@ -333,7 +333,7 @@ def add_point_data_to_net(points, edges, crs_projected=settings.crs_projected, m
     edges : geopandas.geodataframe.GeoDataFrame
         A gdf of projected spatial network edges. This is the routed network of seed points.
     crs_projected : str
-        Coordinate reference system that is used to project osm data.
+        Coordinate reference system that is used to project osm data for calculations.
     matching_distance : int
         Matching distance in meters. Set via settings.import_point_data_snap_distance.
 
@@ -448,7 +448,7 @@ def import_network(street_network, import_path=settings.import_path):
     return nodes, edges, g_undir, city_boundary_gdf
 
 
-def prepare_nodes_edges(nodes, edges, crs_projected=settings.crs_projected):
+def prepare_nodes_edges(nodes, edges, crs_projected=constants._CRS_CALCULATIONS):
     """Project and prepare nodes and edges for further use
 
     For all edges between a pair of nodes u and v there must be one edge with key 0.
@@ -460,7 +460,7 @@ def prepare_nodes_edges(nodes, edges, crs_projected=settings.crs_projected):
     edges : geopandas.geodataframe.GeoDataFrame
         OSM edges, unprojected
     crs_projected : str
-        EPSG code of the coordinate reference system that is used to project osm data. 
+        EPSG code of the coordinate reference system that is used to project osm data for calculations. 
         
     Returns
     -------
@@ -490,7 +490,7 @@ def download_network(city_query, network_type='drive', custom_filter=None, retai
     """Download and prepare a street network from OSM via OSMnx
 
     Downloads a network with a given network_type and custom_filter using ox.graph_from_place.
-    Then, stores the undirected OSM data in gdfs and projects using settings.crs_projected.
+    Then, stores the undirected OSM data in gdfs and projects using constants._CRS_CALCULATIONS.
 
     Parameters
     ----------
@@ -743,12 +743,12 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
 
     # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
     seed_points_exnw = _get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
-    seed_points_exnw.to_crs(settings.crs_projected, inplace=True)
+    seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
 
     # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
     buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing*constants._BUFFER_SEED_POINTS_EXNW_FACTOR))
     buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
-    buffer_seed_points_exnw.to_crs(settings.crs_projected, inplace=True)
+    buffer_seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
 
     # Delete the seed points that are too close to seed_points_exnw via its buffer
     seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
@@ -862,7 +862,7 @@ def _prepare_seed_points(seed_points):
         Projected and prepared seed points.
     """
     seed_points = seed_points[seed_points["geometry"].type == "Point"]
-    seed_points.to_crs(settings.crs_projected, inplace=True)
+    seed_points.to_crs(constants._CRS_CALCULATIONS, inplace=True)
     # To do optional: merge closeby seed points
     return seed_points
 
