@@ -28,7 +28,7 @@ settings.viz = {
         "edgecolor": "#FFFFFF",
         "markersize": 40,
     },
-    "dpi": 150,
+    "dpi": 100,
     "crs": '3035',
 }
 settings.export_path["plots"] = "./tests/test_data/plots_temp/"
