@@ -49,7 +49,8 @@ def create_plots(edges_ordered, nodes, ordering, with_existing_bike_network):
         bar_format='{l_bar}{bar:16}{r_bar}',
         ):
 
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.add_axes([0, 0, 1, 1])
 
         # Plot to grow network as base line
         edges_ordered.plot(ax=ax, color=settings.viz['bike_to_grow']['color'], lw=settings.viz['bike_to_grow']['line_width'], zorder=0)
@@ -72,7 +73,7 @@ def create_plots(edges_ordered, nodes, ordering, with_existing_bike_network):
 
         plot_id = "{:04d}".format(framenum)  # format plot ID with leading zeros
 
-        fig.savefig(settings.export_path['plots']+f"ordering_{ordering}/{plot_id}.png", dpi=settings.viz['dpi'], bbox_inches='tight')
+        fig.savefig(settings.export_path['plots']+f"ordering_{ordering}/{plot_id}.png", dpi=settings.viz['dpi'])
         figs[framenum] = fig
         plt.close()
         
