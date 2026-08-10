@@ -49,12 +49,11 @@ def test_create_plots_case_success_without_bikenw(validation_gdf_athens_without_
     """Verify that the same last plot is created for the case without existing bike network
 
     Generate test data:
-    edges_ordered = gbn.growbikenet("Athens",
-    export_plots = True,
-    import_files = {
-        'street_network':"./tests/test_data/athens_street_network.gpkg",
-        },
-    )
+    pytest tests/test_visualization.py --mpl-generate-path=tests/test_data
+
+    Test:
+    pytest tests/test_visualization.py --mpl
+
     """
 
     ordering = "betweenness"
@@ -93,14 +92,10 @@ def test_create_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw
     """Verify that the same last plot is created for the case with existing bike network
 
     Generate test data:
-    edges_ordered = gbn.growbikenet("Athens", 
-    existing_network_spacing = 'auto',
-    export_plots = True,
-    import_files = {
-        'street_network':"./tests/test_data/athens_street_network.gpkg",
-        'bike_network':"./tests/test_data/athens_bike_network.gpkg",
-        },
-    )
+    pytest tests/test_visualization.py --mpl-generate-path=tests/test_data
+
+    Test:
+    pytest tests/test_visualization.py --mpl
     """
 
     ordering = "betweenness"
