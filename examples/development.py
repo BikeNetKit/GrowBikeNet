@@ -8,6 +8,7 @@ gbn.settings.export_file_format = "gpkg"
 gbn.settings.crs_result = "3857"
 edges_ordered = gbn.growbikenet("Turin", 
     export_data = True,
+    export_plots = True,
     seed_point_linking = 'quadrangulate',
     seed_point_type = 'grid_square',
     import_files={

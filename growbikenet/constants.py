@@ -14,7 +14,7 @@ REORDER : bool, default True
     Decision whether ordering should be reordered after edge removal, as edge removal can leave gaps.
 
 _CRS_CALCULATIONS : str
-    EPSG code of the coordinate reference system that is used to project osm data for calculations. Default is '3857' (WGS 84 / Pseudo-Mercator). Note that the CRS for plotting is set in settings.viz["crs"].
+    EPSG code of the coordinate reference system that is used to project osm data for calculations. Default is '3857' (WGS 84 / Pseudo-Mercator). Note that the CRS for plotting is not set here, but in settings.viz["crs"].
 _PRESET_TAGS : dict
     Pre-defined tags to select tags as seed points
 _PHI_LIMITS : list[float]

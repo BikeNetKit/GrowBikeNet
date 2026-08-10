@@ -507,6 +507,11 @@ def growbikenet(
         ### Visualize
 
         os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
+        
+        if settings.viz["crs"] == "auto": # Make it local azimuthal by default
+            network_center = edges_ordered.to_crs(constants._CRS_CALCULATIONS).dissolve().centroid.to_crs('4326') # Calculate centroid in projected CRS, then go back to unprojected CRS for lat lon
+            settings.viz["crs"] = f"+proj=aeqd +R=6371000 +units=m +lat_0={network_center.y[0]} +lon_0={network_center.x[0]}" # The first coordinate x is the latitude
+
         create_plots(
             edges_ordered,
             seed_points_snapped_filtered,

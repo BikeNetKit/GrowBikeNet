@@ -1,9 +1,7 @@
 """Global settings for growbikenet that can be configured by the user.
 
-crs_projected : str, default '3857'
-    EPSG code of the coordinate reference system that is used to project osm data for calculations and for plots. Default is '3857' (WGS 84 / Pseudo-Mercator). If this web mercator projection is not needed, then for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) is better.
 crs_result : str, default '4326'
-    EPSG code of the coordinate reference system for the resulting geodataframe and exported data.
+    EPSG code of the coordinate reference system for the resulting geodataframe and exported data. If '4326' (WGS84) and export_file_format is set to 'geojson', data is exported via the RFC7946 standard.
 export_path : dict(str)
     Paths to results and plots folders to save data and plots.
 export_file_format : str ('geojson' | 'gpkg'), default 'gpkg'
@@ -24,10 +22,19 @@ seed_point_snap_distance : 'auto' | int, default 'auto'
     Maximum distance between raw seed points and osm nodes for snapping, in meters.
     Auto-value is ceil(seed_point_grid_spacing*constants._SEED_POINT_SNAP_DISTANCE_FACTOR). If integer, must be positive. The default values for seed_point_grid_spacing of 1000/1154/1707 are: 250/289/427
 viz : dict
-    Dictionary of visualization settings
+    Dictionary of visualization settings:
+    "bike_to_grow" : dict
+        Dictionary of properties for the bicycle network to grow but not yet grown
+    "bike_grown" : dict
+        Dictionary of properties for the bicycle network grown
+    "bike_existing" : dict
+        Dictionary of properties for the existing bicycle network
+    "seed_point" : dict
+        Dictionary of properties for the seed points. Set "markersize" to 0 to hide them.
+    "crs" : str, default 'auto'
+        The CRS used for plotting. Option 'auto' sets a local azimuthal projection centered on the network. Otherwise, for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) also produce good results.
 """
 
-crs_projected = '3857'
 crs_result = '4326'
 export_path = {
     "results":"./results/",
@@ -59,7 +66,8 @@ viz = {
     "seed_point":{
         "color": "#000000",
         "edgecolor": "#FFFFFF",
-        "markersize": 60,
+        "markersize": 40,
     },
     "dpi": 150,
+    "crs": 'auto',
 }
