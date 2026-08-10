@@ -359,6 +359,8 @@ def growbikenet(
     if point_data is not None:
         nx.set_edge_attributes(B, num_points_dict, "num_points")
     B.graph["crs"] = settings.crs_projected # Needed for add_trip_data_to_net()
+    B = B.subgraph(sorted(nx.connected_components(B), key=len, reverse=True)[0]) # Keep only the largest connected component (the network might have fallen apart)
+    seed_points_snapped_filtered = seed_points_snapped_filtered[seed_points_snapped_filtered.index.isin(B.nodes)] # Remove seed points from disconnected components
 
     if num_data_files:
         # Add trip data to edges
