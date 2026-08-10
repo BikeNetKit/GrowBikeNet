@@ -11,19 +11,19 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-def create_plots(edges_ranked, seed_points_snapped, ranking, with_existing_bike_network):
+def create_plots(edges_ordered, seed_points_snapped, ordering, with_existing_bike_network):
     """Plot frames of a growing bicycle network 
 
     Results are png files saved into settings.export_path['plots'].
 
     Parameters
     ----------
-    edges_ranked : geopandas.geodataframe.GeoDataFrame
+    edges_ordered : geopandas.geodataframe.GeoDataFrame
         Ordered geodataframe of all edges in street network, representing a growing bicycle network
     seed_points_snapped : geopandas.geodataframe.GeoDataFrame
         Set of seed points snapped to the street network, representing the growing bicycle network nodes
-    ranking : str
-        Method used to rank edges.
+    ordering : str
+        Method used to order edges.
     with_existing_bike_network : bool
         Boolean deciding whether the plot is with or without existing bike network.
 
@@ -33,10 +33,10 @@ def create_plots(edges_ranked, seed_points_snapped, ranking, with_existing_bike_
         List of figure handles
     """
 
-    n = len(edges_ranked)+int(not with_existing_bike_network)
+    n = len(edges_ordered)+int(not with_existing_bike_network)
     figs = [0]*n
 
-    for ordering in tqdm(
+    for framenum in tqdm(
         list(range(n)), # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
         desc="{:<23}".format("Generating plots"),
         leave=True,
@@ -47,17 +47,17 @@ def create_plots(edges_ranked, seed_points_snapped, ranking, with_existing_bike_
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
 
         # Plot to grow network as base line
-        edges_ranked.plot(ax=ax, color=settings.viz['bike_to_grow']['color'], lw=settings.viz['bike_to_grow']['line_width'], zorder=0)
+        edges_ordered.plot(ax=ax, color=settings.viz['bike_to_grow']['color'], lw=settings.viz['bike_to_grow']['line_width'], zorder=0)
 
         if with_existing_bike_network:
             # Plot existing bike network
-            edges_ranked.iloc[[0]].plot(
+            edges_ordered.iloc[[0]].plot(
                 ax=ax, color=settings.viz['bike_existing']['color'], lw=settings.viz['bike_existing']['line_width'], zorder=1
             )
 
-        # Plot all edges up to current rank
-        if ordering >= 1:
-            edges_ranked.iloc[int(with_existing_bike_network):ordering+int(with_existing_bike_network)].plot(
+        # Plot all edges up to current framenum
+        if framenum >= 1:
+            edges_ordered.iloc[int(with_existing_bike_network):framenum+int(with_existing_bike_network)].plot(
                 ax=ax, color=settings.viz['bike_grown']['color'], lw=settings.viz['bike_grown']['line_width'], zorder=1
             )
 
@@ -65,10 +65,10 @@ def create_plots(edges_ranked, seed_points_snapped, ranking, with_existing_bike_
 
         ax.set_axis_off()
 
-        plot_id = "{:04d}".format(ordering)  # format plot ID with leading zeros
+        plot_id = "{:04d}".format(framenum)  # format plot ID with leading zeros
 
-        fig.savefig(settings.export_path['plots']+f"ordering_{ranking}/{plot_id}.png", dpi=settings.viz['dpi'], bbox_inches='tight')
-        figs[ordering] = fig
+        fig.savefig(settings.export_path['plots']+f"ordering_{ordering}/{plot_id}.png", dpi=settings.viz['dpi'], bbox_inches='tight')
+        figs[framenum] = fig
         plt.close()
         
     return figs

@@ -14,7 +14,7 @@ from growbikenet.functions import (
     get_principal_bearing,
     _get_grid_seed_points,
     filter_points_distant_from_osm_nodes,
-    _rank_df,
+    _order_df,
     # intersects_properly,
     _remove_edge_overlaps,
     add_point_data_to_net,
@@ -47,17 +47,17 @@ settings.crs_result = '3857' # Leave for testing temporarily at the old value. C
 
 
 @pytest.fixture
-def test_data_rank(method):
+def test_data_ordering(method):
     df = pd.DataFrame((6, 2, 4), columns=[method])
     return df
 
 
 @pytest.fixture
-def validation_data_rank(method):
-    ranked_df = pd.DataFrame(
-        ([6, 0], [4, 1], [2, 2]), columns=[method, "rank"]
+def validation_data_ordering(method):
+    ordered_df = pd.DataFrame(
+        ([6, 0], [4, 1], [2, 2]), columns=[method, "ordering"]
     )
-    return ranked_df
+    return ordered_df
 
 
 @pytest.fixture
@@ -65,10 +65,10 @@ def method():
     return "betweenness"
 
 
-def test__rank_df(test_data_rank, method, validation_data_rank):
+def test__order_df(test_data_ordering, method, validation_data_ordering):
     assert_frame_equal(
-        _rank_df(test_data_rank, method),
-        validation_data_rank,
+        _order_df(test_data_ordering, method),
+        validation_data_ordering,
         check_dtype=False,
     )
 

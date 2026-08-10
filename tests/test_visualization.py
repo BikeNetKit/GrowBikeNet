@@ -49,14 +49,14 @@ def test_create_plots_case_success_without_bikenw(validation_gdf_athens_without_
     """Verify that the same last plot is created for the case without existing bike network
     """
 
-    ranking = "betweenness"
+    ordering = "betweenness"
     with_existing_bike_network = 0
 
     # Create directory
-    os.makedirs(settings.export_path['plots']+"ordering_"+ranking+"/", exist_ok=True)
+    os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
 
     # Run function
-    figs = create_plots(validation_gdf_athens_without_bikenw, validation_seed_points_athens_without_bikenw, ranking, with_existing_bike_network)
+    figs = create_plots(validation_gdf_athens_without_bikenw, validation_seed_points_athens_without_bikenw, ordering, with_existing_bike_network)
 
     # Remove directory
     shutil.rmtree(settings.export_path['plots'])
@@ -85,7 +85,7 @@ def test_create_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw
     """Verify that the same last plot is created for the case with existing bike network
     """
 
-    ranking = "betweenness"
+    ordering = "betweenness"
     with_existing_bike_network = 1
 
     # Add existing bike network on top
@@ -94,10 +94,10 @@ def test_create_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw
     validation_gdf_athens_with_bikenw.sort_index(inplace=True)
     
     # Create directory
-    os.makedirs(settings.export_path['plots']+"ordering_"+ranking+"/", exist_ok=True)
+    os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
 
     # Run function
-    figs = create_plots(validation_gdf_athens_with_bikenw, validation_seed_points_athens_with_bikenw, ranking, with_existing_bike_network)
+    figs = create_plots(validation_gdf_athens_with_bikenw, validation_seed_points_athens_with_bikenw, ordering, with_existing_bike_network)
 
     # Remove directory
     shutil.rmtree(settings.export_path['plots'])

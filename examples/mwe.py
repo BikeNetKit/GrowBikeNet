@@ -2,4 +2,4 @@
 
 import growbikenet as gbn
 
-edges_ranked = gbn.growbikenet("Lyon")
+edges_ordered = gbn.growbikenet("Lyon")

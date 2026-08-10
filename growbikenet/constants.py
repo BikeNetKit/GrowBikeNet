@@ -10,6 +10,8 @@ GRID_SPACING_QUADRANGULATE : int
     Grid spacing in meters for quadrangulation that ensures that any point in the city is always within buffer distance b=500m of the network (if seed points snap perfectly).
 GRID_SPACING_TRIANGLE : int
     Grid spacing in meters for triangle grid that ensures that any point in the city is always within buffer distance b=500m of the network (if seed points snap perfectly).
+REORDER : bool, default True
+    Decision whether ordering should be reordered after edge removal, as edge removal can leave gaps.
 
 _PRESET_TAGS : dict
     Pre-defined tags to select tags as seed points
@@ -50,6 +52,9 @@ EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH = 100
 GRID_SPACING_TRIANGULATE = 1707 # a=2b/(2-sqrt(2))
 GRID_SPACING_QUADRANGULATE = 1000 # a=2b
 GRID_SPACING_TRIANGLE = 1154 # h/2=b=a*sqrt(3)/4 -> a=4b/sqrt(3)
+
+REORDER = True
+
 
 _PRESET_TAGS = {
             "rail": {"railway": ["station", "halt"]},
