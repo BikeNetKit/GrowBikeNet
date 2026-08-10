@@ -29,7 +29,7 @@ settings.viz = {
         "markersize": 40,
     },
     "dpi": 150,
-    "crs": 'auto',
+    "crs": '3857',
 }
 settings.export_path["plots"] = "./tests/test_data/plots_temp/"
 settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
@@ -93,6 +93,7 @@ def test_create_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw
     validation_gdf_athens_with_bikenw.loc[-1] = validation_existing_gdf_athens_with_bikenw.iloc[0]
     validation_gdf_athens_with_bikenw.index = validation_gdf_athens_with_bikenw.index+1
     validation_gdf_athens_with_bikenw.sort_index(inplace=True)
+    validation_gdf_athens_with_bikenw.crs = '3857'
     
     # Create directory
     os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
