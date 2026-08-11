@@ -167,10 +167,11 @@ def growbikenet(
     
     np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
 
-    print("==============================================")
-    print("RUNNING GROWBIKENET FOR CITY: " + city_query)
-    print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
-    print("----------------------------------------------╮")
+    if not settings.silent:
+        print("==============================================")
+        print("RUNNING GROWBIKENET FOR CITY: " + city_query)
+        print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
+        print("----------------------------------------------╮")
     
 
     ### Import data files
@@ -183,6 +184,7 @@ def growbikenet(
             total=num_data_files,
             unit="file",
             bar_format='{l_bar}{bar:16}{r_bar}',
+            disable=settings.silent
         )
         if import_files['point_data']:
             point_data = gpd.read_file(settings.import_path+import_files['point_data'])
@@ -200,6 +202,7 @@ def growbikenet(
             total=1+int(bool(existing_network_spacing)),
             unit="network",
             bar_format='{l_bar}{bar:16}{r_bar}',
+            disable=settings.silent,
         )
         nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['street_network'])
         city_boundary_geometry = city_boundary_gdf.geometry[0]
@@ -212,6 +215,7 @@ def growbikenet(
             total=1+int(bool(existing_network_spacing)),
             unit="network",
             bar_format='{l_bar}{bar:16}{r_bar}',
+            disable=settings.silent,
         )
         # Get city boundary 
         if import_files['city_boundary']:
@@ -246,10 +250,11 @@ def growbikenet(
 
     ### Create seed points
     progress_bar = tqdm(
-        desc="{:<23}".format("Creating seed points"),
-        total=3+int(bool(existing_network_spacing)), # 3 or 4
-        unit="step",
-        bar_format='{l_bar}{bar:16}{r_bar}',
+            desc="{:<23}".format("Creating seed points"),
+            total=3+int(bool(existing_network_spacing)), # 3 or 4
+            unit="step",
+            bar_format='{l_bar}{bar:16}{r_bar}',
+            disable=settings.silent,
         )
 
     if seed_point_type == 'grid_square' or seed_point_type == 'grid_triangle':
@@ -297,19 +302,21 @@ def growbikenet(
         ### Triangulate
         # Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
         progress_bar = tqdm(
-            desc="{:<23}".format("Triangulation"),
-            total=1,
-            unit="step",
-            bar_format='{l_bar}{bar:16}{r_bar}',
+                desc="{:<23}".format("Triangulation"),
+                total=1,
+                unit="step",
+                bar_format='{l_bar}{bar:16}{r_bar}',
+                disable=settings.silent,
             )
         # Create unrouted network with delaunay triangulation edges
         grown_bikenet_edges_abstract = _create_delaunay_edges(seed_points_snapped_filtered)
     else: # Build the same dataframe structure for the abstract network from the seed_network.edges
         progress_bar = tqdm(
-            desc="{:<23}".format("Quadrangulation"),
-            total=1,
-            unit="step",
-            bar_format='{l_bar}{bar:16}{r_bar}',
+                desc="{:<23}".format("Quadrangulation"),
+                total=1,
+                unit="step",
+                bar_format='{l_bar}{bar:16}{r_bar}',
+                disable=settings.silent,
             )
         grown_bikenet_edges_abstract = pd.DataFrame({
             'pair': seed_network.edges,
@@ -321,10 +328,11 @@ def growbikenet(
 
     ### Get routed geometry (LineString) for each abstract edge (row)
     progress_bar = tqdm(
-        desc="{:<23}".format("Routing"),
-        total=3,
-        unit="step",
-        bar_format='{l_bar}{bar:16}{r_bar}',
+            desc="{:<23}".format("Routing"),
+            total=3,
+            unit="step",
+            bar_format='{l_bar}{bar:16}{r_bar}',
+            disable=settings.silent,
         )
 
     # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
@@ -393,10 +401,11 @@ def growbikenet(
 
     ### Compute edge attributes
     progress_bar = tqdm(
-        desc="{:<23}".format("Computing edge metrics"),
-        total=2,
-        unit="step",
-        bar_format='{l_bar}{bar:16}{r_bar}',
+            desc="{:<23}".format("Computing edge metrics"),
+            total=2,
+            unit="step",
+            bar_format='{l_bar}{bar:16}{r_bar}',
+            disable=settings.silent,
         )
 
     # The ordering=="random" case has no edge attributes and is handled in _order_df
@@ -471,10 +480,11 @@ def growbikenet(
     ### Export data
     if export_data:
         progress_bar = tqdm(
-        desc="{:<23}".format("Exporting data"),
-        total=1,
-        unit="step",
-        bar_format='{l_bar}{bar:16}{r_bar}',
+            desc="{:<23}".format("Exporting data"),
+            total=1,
+            unit="step",
+            bar_format='{l_bar}{bar:16}{r_bar}',
+            disable=settings.silent,
         )
         seed_points_snapped_filtered.drop(["osmid"], axis=1, inplace=True)
         seed_points_snapped_filtered.to_crs(epsg=settings.crs_result, inplace=True)
@@ -523,18 +533,20 @@ def growbikenet(
         #     os.makedirs(settings.export_path['videos']+"/ordering_"+ordering+"/", exist_ok=True)
         #     make_video(img_folder_name=settings.export_path['videos']+"ordering_"+ordering+"/", fps=5)
 
-    print("----------------------------------------------╯")
-    if export_data:
-        print("Data exported to "+settings.export_path['results'])
-    if export_plots:
-        print("Plots exported to "+settings.export_path['plots'])
-    # if export_video:
-    #     print("Video exported to "+settings.export_path['videos'])
-    if export_data or export_plots:# or export_video:
-        print("----------------------------------------------")
+    if not settings.silent:
+        print("----------------------------------------------╯")
+        if export_data:
+            print("Data exported to "+settings.export_path['results'])
+        if export_plots:
+            print("Plots exported to "+settings.export_path['plots'])
+        # if export_video:
+        #     print("Video exported to "+settings.export_path['videos'])
+        if export_data or export_plots:# or export_video:
+            print("----------------------------------------------")
 
     endtime = time.time()
-    print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
-    print("==============================================")
+    if not settings.silent:
+        print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
+        print("==============================================")
 
     return edges_ordered
