@@ -600,10 +600,15 @@ def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     seed_points_exnw: geopandas.geodataframe.GeoDataFrame
         Seed points, already part of the network, in the same projected coordinate reference system as edges
     """
+    
+    seed_points_exnw = gpd.GeoDataFrame()
+    if len(nodes_exnw) == 0:
+        return gpd.GeoDataFrame()
+
     # Start with the first (arbitrary) node from nodes_exnw
     node_current = nodes_exnw.iloc[[0]]
 
-    seed_points_exnw = gpd.GeoDataFrame()
+    
     while len(node_current)>0 and len(nodes_exnw)>0:
         # Find all too close nodes to the current nodes
         nodes_too_close = nodes_exnw.loc[(nodes_exnw.geometry.distance(Point(node_current.iloc[0].geometry)) <= existing_network_spacing)]
@@ -743,6 +748,9 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
 
     # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
     seed_points_exnw = _get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
+    if len(seed_points_exnw) == 0: # Nothing happens, so set existing_network_spacing to None
+        return seed_points_snapped, None
+
     seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
 
     # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
@@ -762,7 +770,7 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
     seed_points_snapped = seed_points_snapped[['osmid_1','geometry']]
     seed_points_snapped.rename(columns={"osmid_1": "osmid"}, inplace=True)
     seed_points_snapped.set_index("osmid", drop=False, inplace=True)
-    return seed_points_snapped
+    return seed_points_snapped, existing_network_spacing
 
 
 def _get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type='grid_square'):
