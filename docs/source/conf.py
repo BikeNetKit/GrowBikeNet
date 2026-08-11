@@ -45,7 +45,7 @@ extensions = [
     "sphinx_copybutton",
 ]
 
-nbsphinx_allow_errors = True # Remove once growbikenet is v1
+nbsphinx_allow_errors = False # Let's be strict so we don't publish completely broken docs
 nbsphinx_widgets_path = "_static/widgets"
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
