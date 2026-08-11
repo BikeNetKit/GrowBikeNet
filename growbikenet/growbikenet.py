@@ -289,7 +289,7 @@ def growbikenet(
     progress_bar.update(1)
 
     if existing_network_spacing is not None:
-        seed_points_snapped_filtered = _update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing)
+        seed_points_snapped_filtered, existing_network_spacing = _update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing)
         progress_bar.update(1)
     progress_bar.close()
 
