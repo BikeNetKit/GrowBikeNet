@@ -1,7 +1,10 @@
 """Example of growbikenet used during package development."""
 
 import growbikenet as gbn
-gbn.constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH=0
+from growbikenet import constants
+
+# constants.GROWABLE_NETWORK_CUSTOM_FILTER = None
+# constants.GROWABLE_NETWORK_TYPE = 'all'
 
 edges_ordered = gbn.growbikenet("Podgorica", 
     existing_network_spacing = 'auto',

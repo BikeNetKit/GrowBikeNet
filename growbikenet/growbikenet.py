@@ -226,7 +226,7 @@ def growbikenet(
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         # Fetch street network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = download_network(city_query, network_type='drive', retain_all=False, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir = download_network(city_query, network_type=constants.GROWABLE_NETWORK_TYPE, custom_filter=constants.GROWABLE_NETWORK_CUSTOM_FILTER, retain_all=False, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
 
     if existing_network_spacing is not None: # update g_undir: add the existing bike network
