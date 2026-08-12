@@ -26,6 +26,8 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Natural Language :: English",
     "Topic :: Scientific/Engineering :: GIS",
 ]
@@ -34,6 +36,7 @@ dependencies = [
     "geopandas>=1",
     "matplotlib",
     "osmnx>=2",
+    "scipy",
     "geojson",
     "tqdm",
 ]

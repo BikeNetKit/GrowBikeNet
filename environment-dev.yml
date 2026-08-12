@@ -5,6 +5,7 @@ dependencies:
   - python>=3.12
   - matplotlib=3.11.0 # The exact version is important for visualization tests
   - osmnx>=2
+  - scipy
   - tqdm
   - geojson
 
