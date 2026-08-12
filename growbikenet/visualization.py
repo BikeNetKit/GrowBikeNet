@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-def create_plots(edges_ordered, nodes, ordering, with_existing_bike_network):
+def generate_plots(edges_ordered, nodes, ordering, with_existing_bike_network):
     """Plot frames of a growing bicycle network 
 
     Results are png files saved into settings.export_path['plots'].
