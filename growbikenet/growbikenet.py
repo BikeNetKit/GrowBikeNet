@@ -71,7 +71,7 @@ def growbikenet(
         If set to 'rail', uses railway stations and halts.
         If set to 'school', uses kindergartens, schools, colleges, and universities.
         If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
-        If set to 'file', imports seed_point.
+        If set to 'file', imports seed_point. In this case, the name of the seed points in the exported file name is controlled via settings.seed_point_type_name.
         If set to 'tags', uses geocodable seed_point_tags, see [4]_. 
     seed_point_grid_spacing : 'auto' | int, default 'auto'
         If seed_point_type is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters.
@@ -107,7 +107,7 @@ def growbikenet(
             "bike_network" : str | None, default None
                 If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
             "seed_points" : str | None, default None
-                If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'.
+                If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'. The name of the seed points in the exported file name is controlled via settings.seed_point_type_name.
             "point_data" : str | None, default None
                 If not set to None, an additional data set of points will be loaded from this file, representing point events like traffic crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. The data set is used to re-prioritize the ordering of the network links, controlled with settings.import_data_impact and settings.import_data_trip_point_balance, following [2]_.
             "trip_data" : str | None, default None
@@ -472,8 +472,12 @@ def growbikenet(
             exnw_string = "from_bikenw"
         else:
             exnw_string = "from_scratch"
+        if seed_point_type == "file":
+            seed_point_string = slugify(settings.seed_point_type_name)
+        else:
+            seed_point_string = seed_point_type
         export_data_filename = (
-            slugify(city_string) + "-growbikenet-" + ordering + "-" + exnw_string + "-" + seed_point_type + "-" + overlap_string + "." + settings.export_file_format
+            slugify(city_string) + "-growbikenet-" + ordering + "-" + exnw_string + "-" + seed_point_string + "-" + overlap_string + "." + settings.export_file_format
         )
 
     ### Export data
@@ -492,11 +496,11 @@ def growbikenet(
         if settings.export_file_format == "geojson":
             if settings.crs_result == '4326': # Export with RFC7946="YES"
                 edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
-                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON", RFC7946="YES")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_string+".geojson", driver="GeoJSON", RFC7946="YES")
                 if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON", RFC7946="YES")
             else: # To do, maybe: Clean up ugly code duplication
                 edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
-                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_type+".geojson", driver="GeoJSON")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_string+".geojson", driver="GeoJSON")
                 if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif settings.export_file_format == "gpkg":
             f = settings.export_path['results']+export_data_filename
