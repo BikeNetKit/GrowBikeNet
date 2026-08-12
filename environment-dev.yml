@@ -27,3 +27,4 @@ dependencies:
       # not available via conda-forge:
       - sphinx-copybutton
       - furo
+      - opencv-python # For the generate_video.py script
