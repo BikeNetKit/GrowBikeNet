@@ -56,7 +56,6 @@ def _validate_parameters(
         export_data,
         city_id,
         export_plots,
-        # export_video,
         allow_edge_overlaps,
         import_files,
         seed_point_tags,
@@ -119,8 +118,6 @@ def _validate_parameters(
         )
     if type(export_plots) is not bool:
         raise TypeError("export_plots must be a boolean")
-    # if type(export_video) is not bool:
-    #     raise TypeError("export_video must be a boolean")
 
     # Import files
     for filename in ['city_boundary','street_network','bike_network','seed_points','point_data','trip_data']:

@@ -50,7 +50,6 @@ def growbikenet(
     export_data=True,
     city_id=None,
     export_plots=False,
-    # export_video=False,
     allow_edge_overlaps=False,
     import_files={},
     seed_point_tags=None,
@@ -462,7 +461,7 @@ def growbikenet(
     edges_ordered.to_crs(epsg=settings.crs_result, inplace=True)
 
     # Generate export data filename
-    if export_data or export_plots:# or export_video:
+    if export_data or export_plots:
         os.makedirs(settings.export_path['results'], exist_ok=True)
         # Note: city_string is slugified later
         if city_id is None:
@@ -513,7 +512,7 @@ def growbikenet(
         progress_bar.update(1)
         progress_bar.close()
 
-    if export_plots:# or export_video:
+    if export_plots:
         ### Visualize
 
         os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
@@ -529,19 +528,13 @@ def growbikenet(
             bool(existing_network_spacing),
         )
 
-        # if export_video:
-        #     os.makedirs(settings.export_path['videos']+"/ordering_"+ordering+"/", exist_ok=True)
-        #     make_video(img_folder_name=settings.export_path['videos']+"ordering_"+ordering+"/", fps=5)
-
     if not settings.silent:
         print("----------------------------------------------╯")
         if export_data:
             print("Data exported to "+settings.export_path['results'])
         if export_plots:
             print("Plots exported to "+settings.export_path['plots'])
-        # if export_video:
-        #     print("Video exported to "+settings.export_path['videos'])
-        if export_data or export_plots:# or export_video:
+        if export_data or export_plots:
             print("----------------------------------------------")
 
     endtime = time.time()
