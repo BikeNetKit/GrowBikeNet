@@ -759,7 +759,7 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
     seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
 
     # Merge original snapped points with new existing network points (=already snapped)
-    seed_points_snapped = seed_points_snapped.overlay(seed_points_exnw, how='union')
+    seed_points_snapped = seed_points_exnw.overlay(seed_points_snapped, how='union')
 
     # Bring back to original form (geometry and osmid columns, osmid index)
     # This is a bit of a mess but it works. Simplify it in the future.
