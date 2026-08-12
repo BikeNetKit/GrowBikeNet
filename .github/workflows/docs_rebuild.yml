@@ -19,7 +19,7 @@ jobs:
   generate-deploy-docs:
     strategy:
       matrix:
-        python-version: ["3.13"]
+        python-version: ["3.12"]
         os: [ubuntu-latest]
     name: Generate documentation
     runs-on: ${{ matrix.os }}
