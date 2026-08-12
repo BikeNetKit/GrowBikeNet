@@ -21,6 +21,8 @@ random_seed : int
 seed_point_snap_distance : 'auto' | int, default 'auto'
     Maximum distance between raw seed points and osm nodes for snapping, in meters.
     Auto-value is ceil(seed_point_grid_spacing*constants._SEED_POINT_SNAP_DISTANCE_FACTOR). If integer, must be positive. The default values for seed_point_grid_spacing of 1000/1154/1707 are: 250/289/427
+seed_point_type_name : str
+    The name of the seed points in the exported file name, when seed_point_type is set to 'file'.
 silent : bool, default False
     If set to True, suppresses all user feedback. Useful for batch exports.
 viz : dict
@@ -50,6 +52,7 @@ import_point_data_snap_distance = 500
 import_trip_data_snap_distance = 500
 random_seed = 42
 seed_point_snap_distance = 'auto'
+seed_point_type_name = 'file'
 silent = False
 
 # Viz/plot settings
