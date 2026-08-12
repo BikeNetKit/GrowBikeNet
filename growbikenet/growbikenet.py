@@ -37,7 +37,7 @@ from growbikenet.functions import (
     slugify,
     _get_weighted_distances,
 )
-from growbikenet.visualization import create_plots
+from growbikenet.visualization import generate_plots
 
 
 def growbikenet(
@@ -522,7 +522,7 @@ def growbikenet(
             network_center = edges_ordered.to_crs(constants._CRS_CALCULATIONS).dissolve().centroid.to_crs('4326') # Calculate centroid in projected CRS, then go back to unprojected CRS for lat lon
             settings.viz["crs"] = f"+proj=aeqd +R=6371000 +units=m +lat_0={network_center.y[0]} +lon_0={network_center.x[0]}" # The first coordinate x is the latitude
 
-        create_plots(
+        generate_plots(
             edges_ordered,
             seed_points_snapped_filtered,
             ordering,

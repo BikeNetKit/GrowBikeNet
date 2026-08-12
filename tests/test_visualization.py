@@ -6,7 +6,7 @@ import shutil
 import pytest
 import matplotlib.pyplot as plt
 from growbikenet.visualization import (
-    create_plots
+    generate_plots
 )
 
 # Consistent settings
@@ -45,7 +45,7 @@ def validation_seed_points_athens_without_bikenw():
 
 @pytest.mark.mpl_image_compare(baseline_dir="test_data",
                             filename="athens_without-bikenw.png")
-def test_create_plots_case_success_without_bikenw(validation_gdf_athens_without_bikenw, validation_seed_points_athens_without_bikenw):
+def test_generate_plots_case_success_without_bikenw(validation_gdf_athens_without_bikenw, validation_seed_points_athens_without_bikenw):
     """Verify that the same last plot is created for the case without existing bike network
 
     Generate test data:
@@ -63,7 +63,7 @@ def test_create_plots_case_success_without_bikenw(validation_gdf_athens_without_
     os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
 
     # Run function
-    figs = create_plots(validation_gdf_athens_without_bikenw, validation_seed_points_athens_without_bikenw, ordering, with_existing_bike_network)
+    figs = generate_plots(validation_gdf_athens_without_bikenw, validation_seed_points_athens_without_bikenw, ordering, with_existing_bike_network)
 
     # Remove directory
     shutil.rmtree(settings.export_path['plots'])
@@ -88,7 +88,7 @@ def validation_existing_gdf_athens_with_bikenw():
 
 @pytest.mark.mpl_image_compare(baseline_dir="test_data",
                             filename="athens_with-bikenw.png")
-def test_create_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw, validation_seed_points_athens_with_bikenw, validation_existing_gdf_athens_with_bikenw):
+def test_generate_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw, validation_seed_points_athens_with_bikenw, validation_existing_gdf_athens_with_bikenw):
     """Verify that the same last plot is created for the case with existing bike network
 
     Generate test data:
@@ -111,7 +111,7 @@ def test_create_plots_case_success_with_bikenw(validation_gdf_athens_with_bikenw
     os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
 
     # Run function
-    figs = create_plots(validation_gdf_athens_with_bikenw, validation_seed_points_athens_with_bikenw, ordering, with_existing_bike_network)
+    figs = generate_plots(validation_gdf_athens_with_bikenw, validation_seed_points_athens_with_bikenw, ordering, with_existing_bike_network)
 
     # Remove directory
     shutil.rmtree(settings.export_path['plots'])
