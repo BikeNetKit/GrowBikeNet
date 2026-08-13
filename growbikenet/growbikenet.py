@@ -61,7 +61,7 @@ def growbikenet(
     Parameters
     ----------
     city_query : str
-        Search string for the city that the analysis should be performed on. This is the query used to fetch the data from nominatim. Overruled for data fetching if city_boundary or street_network is set.
+        Search string for the city that the analysis should be performed on. This is the query used to fetch the data from nominatim. Overruled for data fetching if city_boundary or growable_network is set.
     ordering : str, default 'betweenness'
         Method used to order edges. Must be 'betweenness' (default), 'closeness', or 'random'.
     seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
@@ -99,11 +99,13 @@ def growbikenet(
         The following key:value entries can be set:
             "city_boundary" : str | None, default None
                 If not set to None, the study area is selected from the (Multi)Polygon provided in the city_boundary shape or gpkg file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen_city_boundary.shp".
-            "street_network" : str | None, default None
-                If not set to None, the street network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network g has after saved via ox.io.save_graph_geopackage(). For example:
+            "growable_network" : str | None, default None
+                If not set to None, the growable street network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network g has after saved via ox.io.save_graph_geopackage(). For example:
                 >>> g = ox.graph_from_place("Barcelona", network_type='drive')
                 >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
                 >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg").
+                To download a growable network that also includes existing bicycle infrastructure, as growbikenet does by default, replace the first example line by this one:
+                >>> g = ox.graph_from_place("Barcelona", custom_filter=gbn.constants.GROWABLE_NETWORK_CUSTOM_FILTER)
             "bike_network" : str | None, default None
                 If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
             "seed_points" : str | None, default None
@@ -136,7 +138,7 @@ def growbikenet(
 
     Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
 
-    >>> edges_ordered = gbn.growbikenet("Oelde", seed_point_type='file', import_files={'street_network':"./tests/test_data/oelde_street_network.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
+    >>> edges_ordered = gbn.growbikenet("Oelde", seed_point_type='file', import_files={'growable_network':"./tests/test_data/oelde_growable_network.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
 
     References
     ----------
@@ -193,7 +195,7 @@ def growbikenet(
             progress_bar.update(1)
         progress_bar.close()
 
-    if import_files['street_network'] is not None:
+    if import_files['growable_network'] is not None:
         ### Import and preprocess data from file
         city_boundary_exists = True
         progress_bar = tqdm(
@@ -203,7 +205,7 @@ def growbikenet(
             bar_format='{l_bar}{bar:16}{r_bar}',
             disable=settings.silent,
         )
-        nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['street_network'])
+        nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['growable_network'])
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         progress_bar.update(1)
     else:

@@ -45,7 +45,7 @@ def test_growbikenet_case_success_offline1(validation_gdf_oelde):
             city_query="Oelde",
             ordering="betweenness",
             export_data=False,
-            import_files={"street_network":"./tests/test_data/oelde_street_network.gpkg"},
+            import_files={"growable_network":"./tests/test_data/oelde_growable_network.gpkg"},
         )
     )
 
@@ -60,7 +60,7 @@ def test_growbikenet_case_success_offline2(validation_gdf_athens):
             existing_network_spacing='auto',
             import_files={
                 "city_boundary":"./tests/test_data/athens_city_boundary.gpkg",
-                "street_network":"./tests/test_data/athens_street_network.gpkg",
+                "growable_network":"./tests/test_data/athens_growable_network.gpkg",
                 "bike_network":"./tests/test_data/athens_bike_network.gpkg",
             }
         )
@@ -70,18 +70,18 @@ def test_growbikenet_case_success_offline3(validation_gdf_asti):
     """Verify that the offline version of growbikenet works as intended. 
     Asti has previously caused a KeyError.
 
-    To get the correct asti_street_network.gpkg, run the following:
+    To get the correct asti_growable_network.gpkg, run the following:
     >>> city_boundary_gdf = ox.geocoder.geocode_to_gdf("Asti 16")
     >>> g = ox.graph_from_polygon(city_boundary_gdf.geometry[0], network_type="drive")
     >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
-    >>> ox.io.save_graph_geopackage(g, "asti_street_network.gpkg")
+    >>> ox.io.save_graph_geopackage(g, "asti_growable_network.gpkg")
     """
     validation_gdf_asti.equals(
         gbn.growbikenet(
-            city_query="Asti 16", # The 16 is needed to select the city, not the municipality (it doesn't matter here as the network is imported anyway, but it is important to know for exporting the street network asti_street_network.gpkg in the first place)
+            city_query="Asti 16", # The 16 is needed to select the city, not the municipality (it doesn't matter here as the network is imported anyway, but it is important to know for exporting the street network asti_growable_network.gpkg in the first place)
             ordering="betweenness",
             export_data=False,
-            import_files={"street_network":"./tests/test_data/asti_street_network.gpkg"},
+            import_files={"growable_network":"./tests/test_data/asti_growable_network.gpkg"},
         )
     )
 
@@ -140,7 +140,7 @@ def test_growbikenet_case_success_offline_import_data1(validation_gdf_turin_alph
         gbn.growbikenet(
             "Turin", 
             import_files={
-                'street_network':"./tests/test_data/turin_street_network.gpkg",
+                'growable_network':"./tests/test_data/turin_growable_network.gpkg",
                 'point_data':"./tests/test_data/turin_crashes.gpkg",
                 'trip_data':"./tests/test_data/turin_trips.csv",
             },
@@ -157,7 +157,7 @@ def test_growbikenet_case_success_offline_import_data2(validation_gdf_turin_alph
         gbn.growbikenet(
             "Turin", 
             import_files={
-                'street_network':"./tests/test_data/turin_street_network.gpkg",
+                'growable_network':"./tests/test_data/turin_growable_network.gpkg",
                 'trip_data':"./tests/test_data/turin_trips.csv",
             },
         )
@@ -173,7 +173,7 @@ def test_growbikenet_case_success_offline_import_data3(validation_gdf_turin_alph
         gbn.growbikenet(
             "Turin",
             import_files={
-                'street_network':"./tests/test_data/turin_street_network.gpkg",
+                'growable_network':"./tests/test_data/turin_growable_network.gpkg",
                 'point_data':"./tests/test_data/turin_crashes.gpkg",
                 'trip_data':"./tests/test_data/turin_trips.csv",
             },
