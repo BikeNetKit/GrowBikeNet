@@ -1,5 +1,19 @@
 # Changelog
 
+## Version 0.13.0 (2026-08-14)
+
+- 🐛 Changed street network to growable network
+- 🐛 Removed isolated seed points
+- ✨ Added custom filter constants
+- 🎨 Polished settings, especially with CRS
+- ✨ Added silent setting
+- ✨ Added script for video generation
+- 🎨 Improved exported data, implemented RFC7946 for geojson
+- ♻️ Renamed several parameters and functions
+- ⬆️ Added Python 3.13 and 3.14 support
+- ➕ Added scipy dependency
+- 📝 Added and polished usage docs
+
 ## Version 0.12.0 (2026-08-05)
 
 - ✨ Implemented point and trip data import with weighted growth
