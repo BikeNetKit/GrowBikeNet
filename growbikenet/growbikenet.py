@@ -225,7 +225,7 @@ def growbikenet(
         else:
             city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_query)
         city_boundary_geometry = city_boundary_gdf.geometry[0]
-        # Fetch street network data from osmnx
+        # Fetch growable network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
         nodes, edges, g_undir = download_network(city_query, network_type=constants.GROWABLE_NETWORK_TYPE, custom_filter=constants.GROWABLE_NETWORK_CUSTOM_FILTER, retain_all=False, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
