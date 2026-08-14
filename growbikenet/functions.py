@@ -120,7 +120,7 @@ def _validate_parameters(
         raise TypeError("export_plots must be a boolean")
 
     # Import files
-    for filename in ['city_boundary','street_network','bike_network','seed_points','point_data','trip_data']:
+    for filename in ['city_boundary','growable_network','bike_network','seed_points','point_data','trip_data']:
         if type(import_files[filename]) is str and not os.path.isfile(settings.import_path+import_files[filename]):
             raise FileNotFoundError(filename+" not found")
         
@@ -399,14 +399,14 @@ def add_point_data_to_net(points, edges, crs_projected=constants._CRS_CALCULATIO
     return edges_with_data
 
 
-def import_network(street_network, import_path=settings.import_path):
+def import_network(growable_network, import_path=settings.import_path):
     """Import and project a street network from gpkg file
 
     For all edges between a pair of nodes u and v there must be one edge with key 0.
 
     Parameters
     ----------
-    street_network : str
+    growable_network : str
         The street network will be loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that a osmnx street network g has after saving its undirected version via ox.io.save_graph_geopackage(). For example:
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
         >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
@@ -426,8 +426,8 @@ def import_network(street_network, import_path=settings.import_path):
         Convex hull of the street network
     """
 
-    nodes = gpd.read_file(import_path+street_network, layer='nodes')
-    edges = gpd.read_file(import_path+street_network, layer='edges')
+    nodes = gpd.read_file(import_path+growable_network, layer='nodes')
+    edges = gpd.read_file(import_path+growable_network, layer='edges')
 
     # Set indices as required by osmnx.convert.graph_from_gdfs
     # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
@@ -492,7 +492,7 @@ def download_network(city_query, network_type='drive', custom_filter=None, retai
     Parameters
     ----------
     city_query : str
-        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary or street_network is set.
+        Name of the city that the analysis should be performed on. Overruled (for data fetching) if city_boundary or growable_network is set.
     network_type : {'all', 'all_public', 'bike', 'drive', 'drive_service', 'walk'} 
         What type of street network to retrieve if custom_filter is None.
     custom_filter : (str | list[str] | None)
