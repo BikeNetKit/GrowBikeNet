@@ -6,5 +6,5 @@ dependencies:
   - matplotlib
   - osmnx>=2
   - scipy
-  - tqdm
   - geojson
+  - tqdm
