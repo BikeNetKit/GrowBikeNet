@@ -7,7 +7,7 @@ import osmnx as ox
 import geopandas as gpd
 import pandas as pd
 import warnings
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import time
 import datetime
 from growbikenet.functions import (

@@ -19,7 +19,7 @@ from shapely.geometry import Point, LineString, MultiLineString
 from shapely.affinity import rotate
 from shapely.strtree import STRtree
 from pyproj import Transformer
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 def _validate_settings():
