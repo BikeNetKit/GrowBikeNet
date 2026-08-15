@@ -49,8 +49,8 @@ source_suffix = {
 }
 nb_execution_mode = 'auto'
 nb_execution_allow_errors = False # Let's be strict so we don't publish completely broken docs
-nb_execution_timeout = 120
-nb_output_stderr = 'show' # For debugging, it is better to 'show'! If errors should be hidden, 'remove'
+nb_execution_timeout = 5 # 120 for rebuild, 5 for preexecuted
+nb_output_stderr = 'remove' # For debugging, it is better to 'show'! If errors should be hidden, 'remove'
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
