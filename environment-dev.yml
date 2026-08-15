@@ -11,15 +11,13 @@ dependencies:
 
   # additional to the non-dev env
   - ipykernel
+  - ipywidgets
   - pytest
   - pytest-mpl
   - pytest-cov
   - sphinx
   - numpydoc
   - myst-nb
-  - nbsphinx
-  - jupyter_sphinx
-  - myst-parser
   - pre-commit
   - jupyterlab
   - pixi-kernel

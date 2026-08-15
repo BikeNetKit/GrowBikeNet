@@ -37,16 +37,19 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "numpydoc",
-    "nbsphinx",
-    "jupyter_sphinx", # See: https://github.com/jupyter-widgets/ipywidgets/blob/80921ac9f9a18c43b02918ce3913818c188ae34c/docs/source/conf.py#L42C5-L42C30
+    "myst_nb",
     "matplotlib.sphinxext.plot_directive",
     "IPython.sphinxext.ipython_console_highlighting",
-    "myst_parser",
     "sphinx_copybutton",
 ]
+source_suffix = {
+    '.rst': 'restructuredtext',
+    '.ipynb': 'myst-nb',
+    '.myst': 'myst-nb',
+}
+nb_execution_mode = "auto"
 
-nbsphinx_allow_errors = True # Let's be strict so we don't publish completely broken docs
-nbsphinx_widgets_path = "_static/widgets"
+nb_execution_allow_errors = False # Let's be strict so we don't publish completely broken docs
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 

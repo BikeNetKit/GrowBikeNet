@@ -1,2 +1,4 @@
 # SCM syntax highlighting & preventing 3-way merges
 pixi.lock merge=binary linguist-language=YAML linguist-generated=true -diff
+# Disable nbstripout for any file in the docs directory, see https://github.com/kynan/nbstripout#excluding-files-and-folders
+docs/** filter= diff= 
