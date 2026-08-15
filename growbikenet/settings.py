@@ -27,16 +27,16 @@ silent : bool, default False
     If set to True, suppresses all user feedback. Useful for batch exports.
 viz : dict
     Dictionary of visualization settings:
-    "bike_to_grow" : dict
-        Dictionary of properties for the bicycle network to grow but not yet grown
-    "bike_grown" : dict
-        Dictionary of properties for the bicycle network grown
-    "bike_existing" : dict
-        Dictionary of properties for the existing bicycle network
-    "seed_point" : dict
-        Dictionary of properties for the seed points. Set "markersize" to 0 to hide them.
-    "crs" : str, default 'auto'
-        The CRS used for plotting. Option 'auto' sets a local azimuthal projection centered on the network. Otherwise, for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) also produce good results.
+    - "bike_to_grow" : dict
+    Dictionary of properties for the bicycle network to grow but not yet grown.
+    - "bike_grown" : dict
+    Dictionary of properties for the bicycle network grown.
+    - "bike_existing" : dict
+    Dictionary of properties for the existing bicycle network.
+    - "seed_point" : dict
+    Dictionary of properties for the seed points. Set "markersize" to 0 to hide them.
+    - "crs" : str, default 'auto'
+    The CRS used for plotting. Option 'auto' sets a local azimuthal projection centered on the network. Otherwise, for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) also produce good results.
 """
 
 crs_result = '4326'

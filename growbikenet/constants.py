@@ -24,7 +24,7 @@ _PRESET_TAGS : dict
 _PHI_LIMITS : list[float]
     Two orientation order limits between street networks with:
     1) negligible grid elements, 2) some grid elements, 3) grid.
-    We aimed to use the tercile limits from the paper [3]_ (Fig 2), but the values here are lower for unknown reasons, also with the unweighted version. Also, it was aimed to have Barcelona in the grid category. For these reasons, the limits were lowered.
+    We aimed to use the tercile limits from the paper [1]_ (Fig 2), but the values here are lower for unknown reasons, also with the unweighted version. Also, it was aimed to have Barcelona in the grid category. For these reasons, the limits were lowered.
 _SEED_POINT_SNAP_DISTANCE_FACTOR : float
     Factor to multiply seed_point_grid_spacing with, to determine auto value of seed_point_snap_distance
 _EXISTING_NETWORK_SPACING_FACTOR : float
@@ -33,6 +33,10 @@ _BUFFER_SEED_POINTS_EXNW_FACTOR : float
     Factor to multiply existing_network_spacing with, to determine which previously determined seed points (grid or rail) to drop that are too close to the extra existing network points
 _BEARING_BINS : int
     Number of bins to determine bearing. e.g. 72 will create 5 degrees bins
+
+References
+----------
+.. [1] G. Boeing, "Urban spatial order: Street network orientation, configuration, and entropy", Applied Network Science 4, 67 (2019)
 """
 
 PBI_CUSTOM_FILTER = [

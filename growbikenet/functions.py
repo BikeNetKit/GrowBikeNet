@@ -1218,7 +1218,7 @@ def _order_df(df, method):
     method: str
         Method used to order edges. Must be 'betweenness' (default), 'closeness', or 'random'.
 
-    Results
+    Returns
     -------
     df: pandas.DataFrame
         Dataframe sorted by specified ordering method.
