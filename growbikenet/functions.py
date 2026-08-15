@@ -19,7 +19,7 @@ from shapely.geometry import Point, LineString, MultiLineString
 from shapely.affinity import rotate
 from shapely.strtree import STRtree
 from pyproj import Transformer
-from tqdm import tqdm
+from tqdm.auto import tqdm
 
 
 def _validate_settings():
@@ -1218,7 +1218,7 @@ def _order_df(df, method):
     method: str
         Method used to order edges. Must be 'betweenness' (default), 'closeness', or 'random'.
 
-    Results
+    Returns
     -------
     df: pandas.DataFrame
         Dataframe sorted by specified ordering method.

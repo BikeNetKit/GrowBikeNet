@@ -11,5 +11,5 @@ After having checked the :doc:`mwe`, the following pages walk you through the id
    3. Existing bike network <usage_03_existing_bike_network>
    4. Data export and visualization <usage_04_data_export_and_visualization>
    5. Data imports for city definition <usage_05_data_imports_for_city_definition>
-   6. Data imports for city definition <usage_06_data_imports_for_prioritizing_growth>
+   6. Data imports for prioritizing growth <usage_06_data_imports_for_prioritizing_growth>
    7. Settings and constants <usage_07_settings_and_constants>
