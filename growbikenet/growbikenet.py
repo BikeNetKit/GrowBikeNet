@@ -105,7 +105,7 @@ def growbikenet(
         - 'city_boundary' : str | None, default None
             If not set to None, the study area is selected from the (Multi)Polygon provided in the city_boundary shape or gpkg file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, './tests/test_data/copenhagen_city_boundary.shp'.
         - 'growable_network' : str | None, default None
-            If not set to None, the growable street network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network ``g`` has after saved via ``ox.io.save_graph_geopackage()``. For example:
+            If not set to None, the growable street network is loaded from this file. Must be a gpkg file in unprojected CRS EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network ``g`` has after saved via ``ox.io.save_graph_geopackage()``. For example:
 
             >>> g = ox.graph_from_place("Barcelona", network_type='drive')
             >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
@@ -115,13 +115,13 @@ def growbikenet(
 
             >>> g = ox.graph_from_place("Barcelona", custom_filter=gbn.constants.GROWABLE_NETWORK_CUSTOM_FILTER)
         - 'bike_network' : str | None, default None
-            If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ``ox.io.save_graph_geopackage()``.
+            If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected CRS EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ``ox.io.save_graph_geopackage()``.
         - 'seed_points' : str | None, default None
-            If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, './tests/test_data/oelde_seed_points.shp'. `seed_point_type` must be set to 'file'. The name of the seed points in the exported file name is controlled via `settings.seed_point_type_name`.
+            If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected CRS EPSG:4326 containing only point objects. For example, './tests/test_data/oelde_seed_points.shp'. `seed_point_type` must be set to 'file'. The name of the seed points in the exported file name is controlled via `settings.seed_point_type_name`.
         - 'point_data' : str | None, default None
-            If not set to None, an additional data set of points will be loaded from this file, representing point events like traffic crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int 'num' column that encodes the number of point events. The data set is used to re-prioritize the ordering of the network links, controlled with `settings.import_data_impact` and `settings.import_data_trip_point_balance`, following [2]_.
+            If not set to None, an additional data set of points will be loaded from this file, representing point events like traffic crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected CRS EPSG:4326 containing only point objects, optionally with an int 'num' column that encodes the number of point events. The data set is used to re-prioritize the ordering of the network links, controlled with `settings.import_data_impact` and `settings.import_data_trip_point_balance`, following [2]_.
         - 'trip_data' : str | None, default None
-            If not set to None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: ``o_lat, o_lon, d_lat, d_lon``. Optionally there can be an int 'num' field that encodes the number of trips between each origin and destination. The data set is used to re-prioritize the ordering of the network links, controlled with `settings.import_data_impact` and `settings.import_data_trip_point_balance`, following [2]_.
+            If not set to None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected CRS EPSG:4326 containing the following fields: ``o_lat, o_lon, d_lat, d_lon``. Optionally there can be an int 'num' field that encodes the number of trips between each origin and destination. The data set is used to re-prioritize the ordering of the network links, controlled with `settings.import_data_impact` and `settings.import_data_trip_point_balance`, following [2]_.
     seed_point_tags : None | dict[str, bool | str | list[str]], default None
         If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, ``seed_point_tags={'railway': ['station', 'halt']}`` retrieves exactly the same as ``seed_point_type='rail'``.
 
