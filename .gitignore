@@ -6,6 +6,7 @@ examples/*.gpkg
 /*gpkg
 docs/source/*.gpkg
 docs/source/executed_notebooks/
+docs/jupyter_execute/
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,macos,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,python,macos,windows
