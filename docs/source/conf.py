@@ -47,6 +47,7 @@ source_suffix = {
     '.ipynb': 'myst-nb',
     '.myst': 'myst-nb',
 }
+myst_enable_extensions = ["html_admonition"]
 nb_execution_mode = 'auto'
 nb_execution_allow_errors = False # Let's be strict so we don't publish completely broken docs
 nb_execution_timeout = 5 # 120 for rebuild, 5 for preexecuted
