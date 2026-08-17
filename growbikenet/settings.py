@@ -2,7 +2,7 @@
 
 crs_result : str, default '4326'
     EPSG code of the coordinate reference system for the resulting geodataframe
-    and exported data. If '4326' (WGS84) and export_file_format is set to 
+    and exported data. If '4326' (WGS84) and `export_file_format` is set to 
     'geojson', data is exported via the RFC7946 standard.
 export_path : dict(str)
     Paths to results and plots folders to save data and plots.
