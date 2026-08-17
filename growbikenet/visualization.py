@@ -12,25 +12,28 @@ from tqdm import tqdm
 
 
 def generate_plots(edges_ordered, nodes, ordering, with_existing_bike_network):
-    """Plot frames of a growing bicycle network 
+    """Plot frames of a growing bicycle network .
 
-    Results are png files saved into settings.export_path['plots'].
+    Results are png files saved into `settings.export_path['plots']`.
 
     Parameters
     ----------
     edges_ordered : geopandas.geodataframe.GeoDataFrame
-        Ordered geodataframe of all edges in street network, representing a growing bicycle network
+        Ordered geodataframe of all edges in street network, representing a 
+        growing bicycle network.
     nodes : geopandas.geodataframe.GeoDataFrame
-        Set of seed points snapped to the street network, representing the growing bicycle network nodes
+        Set of seed points snapped to the street network, representing the 
+        growing bicycle network nodes.
     ordering : str
         Method used to order edges.
     with_existing_bike_network : bool
-        Boolean deciding whether the plot is with or without existing bike network.
+        Boolean deciding whether the plot is with or without existing bike 
+        network.
 
     Returns
     -------
     figs : list
-        List of figure handles
+        List of figure handles.
     """
 
     # Set plot CRS

@@ -10,9 +10,9 @@ GRID_SPACING_QUADRANGULATE : int, default 1000
     Grid spacing in meters for quadrangulation that ensures that any point in the city is always within buffer distance b=500m of the network (if seed points snap perfectly).
 GRID_SPACING_TRIANGLE : int, default 1154
     Grid spacing in meters for triangle grid that ensures that any point in the city is always within buffer distance b=500m of the network (if seed points snap perfectly).
-GROWABLE_NETWORK_CUSTOM_FILTER : list[str] | None
+GROWABLE_NETWORK_CUSTOM_FILTER : list[str] or None
     Custom filter for all infrastructure elements that are considered as growable by growbikenet. By default, growbikenet uses a custom filter to retrieve the combined drive and pbi (protected bicycle infrastructure) network. To only consider the drive network, set `GROWABLE_NETWORK_CUSTOM_FILTER` to None and `GROWABLE_NETWORK_TYPE` to 'drive'. However, doing so can lead to issues: https://github.com/BikeNetKit/GrowBikeNet/issues/255. 
-GROWABLE_NETWORK_TYPE : str ('drive' | 'all' | 'all_public' | 'bike' | 'drive_service' | 'walk'), default 'drive' 
+GROWABLE_NETWORK_TYPE : {'drive', 'all', 'all_public', 'bike', 'drive_service', 'walk'}, default 'drive' 
         What type of street network to retrieve for the growable network if `GROWABLE_NETWORK_CUSTOM_FILTER` is None.
 REORDER : bool, default True
     Decision whether ordering should be reordered after edge removal, as edge removal can leave gaps.

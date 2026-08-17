@@ -151,7 +151,7 @@ def slugify(s):
     -----
     A clean global solution would be using unidecode, but we do not want
     extra dependencies for this. We assume European city names in latin
-    alphabet, some special letters like Hungarian long ö already mapped.
+    alphabet, some special letters like Hungarian ő already mapped.
     """
     s = s.lower().strip()
     s = re.sub(r'[\s-]+', '', s) # Remove white spaces, -
@@ -533,16 +533,16 @@ def download_network(city_query, network_type='drive', custom_filter=None, retai
     city_query : str
         Name of the city that the analysis should be performed on. Overruled 
         (for data fetching) if `city_boundary` or `growable_network` is set.
-    network_type : str ('drive' | 'all' | 'all_public' | 'bike' | 
-    'drive_service' | 'walk'), default 'drive'
+    network_type : {'drive', 'all', 'all_public', 'bike', 
+    'drive_service', 'walk'}, default 'drive'
         What type of street network to retrieve if `custom_filter` is None.
-    custom_filter : (None | str | list[str]), default None
+    custom_filter : None or str or list[str], default None
         A custom ways filter to be used instead of the `network_type` presets.
     retain_all : bool, default True
         If True, return the entire graph even if it is not connected, useful 
         for disconnected bicycle networks. If False, retain only the largest 
         weakly connected component, useful for road networks.
-    city_boundary_geometry : (None | shapely.Polygon | shapely.MultiPolygon), 
+    city_boundary_geometry : None or shapely.Polygon or shapely.MultiPolygon, 
     default None
         If not set to None, the study area is selected from this geometry.
 
@@ -694,7 +694,7 @@ def update_with_existing_bike_network(city_query, g_undir, import_files, city_bo
         with the path of a bicycle network to import. Must be a gpkg file in 
         unprojected CRS EPSG:4326 with layers nodes and edges, with the 
         structure that an undirected osmnx bike network has after saved via ``ox.io.save_graph_geopackage()``.
-    city_boundary_geometry : (None | shapely.Polygon | shapely.MultiPolygon), 
+    city_boundary_geometry : None or shapely.Polygon or shapely.MultiPolygon, 
     default None
         If not set to None, the study area is selected from this geometry.
 
@@ -846,7 +846,7 @@ def _get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poi
         Distance between seed points, in meters.
     principal_bearing : float
         Principal bearing (most common bearing of streets).
-    seed_point_type : str ('grid_square' | 'grid_triangle'), default 
+    seed_point_type : {'grid_square', 'grid_triangle'}, default 
     'grid_square'
         Type of seed points.
 
@@ -950,10 +950,10 @@ def _get_tags_seed_points(city_query, tags, city_boundary_geometry=None):
         Name of the city that the analysis should be performed on. This is the 
         query string used to fetch the data from nominatim. Overruled (for data 
         fetching) if `city_boundary_geometry` is set.
-    tags : None | dict[str, bool | str | list[str]], default None
+    tags : None or dict[str, bool or str or list[str]], default None
         Geocodable tags, see [3]_. For example, tags={"railway": ["station", 
         "halt"]} will retrieve exactly the same as seed_point_type='rail'.
-    city_boundary_geometry : (shapely Polygon | shapely MultiPolygon | None), 
+    city_boundary_geometry : None or shapely Polygon or shapely MultiPolygon, 
     default None
         If not set to None, the study area is selected from this geometry.
 
@@ -1263,7 +1263,7 @@ def df_from_graph(A, method):
     ----------
     A : networkx.graph
         Graph created from triangulation edge list.
-    method : str ('betweenness' | 'closeness' | 'random')
+    method : {'betweenness', 'closeness', 'random'}
         Method used to order the edges.
 
     Returns
@@ -1305,7 +1305,7 @@ def _order_df(df, method):
     df : pandas.DataFrame
         Dataframe with source and target information for each edge, as well as 
         edge attributes as columns.
-    method : str ('betweenness' | 'closeness' | 'random')
+    method : {'betweenness', 'closeness', 'random'}
         Method used to order the edges.
 
     Returns
