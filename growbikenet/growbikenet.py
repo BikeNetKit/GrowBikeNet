@@ -54,73 +54,135 @@ def growbikenet(
     import_files={},
     seed_point_tags=None,
 ):
-    """Creates a list of urban street network edges ordered by an ordering method.
+    """Creates a list of urban street network edges ordered by an ordering 
+    method.
 
-    The edges form a subnetwork of a city's street network, interpreted as a growing bicycle network following [1]_. By default, growth is from scratch, but the existing bicycle network can also be used as a starting point [2]_. The original paper [1]_ uses minimum weight triangulation, but Delaunay triangulation is implemented much faster and in practice gives identical results. Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
+    The edges form a subnetwork of a city's street network, interpreted as a 
+    growing bicycle network following [1]_. By default, growth is from scratch, 
+    but the existing bicycle network can also be used as a starting point [2]_.
 
     Parameters
     ----------
     city_query : str
-        Search string for the city that the analysis should be performed on. This is the query used to fetch the data from nominatim. Overruled for data fetching if city_boundary or growable_network is set.
-    ordering : str, default 'betweenness'
-        Method used to order edges. Must be 'betweenness' (default), 'closeness', or 'random'.
-    seed_point_type : str ('auto' | 'grid_square' | 'grid_triangle' | 'rail' | 'school' | 'park' | 'file' | 'tags'), default 'auto'
-        If set to 'auto', selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [3]_.
-        If set to 'grid_square', creates a square grid. 
-        If set to 'grid_triangle', creates a triangle grid. In this case, seed_point_linking must not be set to 'quadrangulate'.
-        If set to 'rail', uses railway stations and halts.
-        If set to 'school', uses kindergartens, schools, colleges, and universities.
-        If set to 'park', uses parks, gardens, nature reserves, and public bathing places.
-        If set to 'file', imports seed_point. In this case, the name of the seed points in the exported file name is controlled via settings.seed_point_type_name.
-        If set to 'tags', uses geocodable seed_point_tags, see [4]_. 
-    seed_point_grid_spacing : 'auto' | int, default 'auto'
-        If seed_point_type is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters.
-        Auto-value for seed_point_type 'grid_square' with seed_point_linking 'triangulate_delaunay': 1707
-        Auto-value for seed_point_type 'grid_square' with seed_point_linking 'quadrangulate': 1000
-        Auto-value for seed_point_type 'grid_triangle': 1154
-        Auto-value otherwise: 1707
-        These values ensure that any point in the city is always within 500m of the network (under perfect conditions). For case 1707, see [1]_.
-    seed_point_linking : str ('auto' | 'triangulate_delaunay' | 'quadrangulate'), default 'auto'
-        The algorithm for linking up the seed points into an unrouted, abstract network.
-        If set to 'auto', selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
-        If set to 'triangulate_delaunay', uses Delaunay triangulation.
-        If set to 'quadrangulate', uses quadrangulation, which only works for seed_point_type 'grid_square' and existing_network_spacing None. Useful for grid-like street networks like Manhattan or Barcelona.
-    existing_network_spacing : None | 'auto' | int, default None
-        Spacing between seed points, in meters, only on the existing bicycle network. If not set to a positive integer, the existing network is ignored. existing_network_spacing is recommended to be smaller than seed_point_grid_spacing, ideally around 50%, to ensure that the existing bicycle network is built first. Option 'auto' sets existing_network_spacing to 50% of the seed_point_grid_spacing.
+        Search string for the city that the analysis should be performed on. 
+        This is the query used to fetch the data from nominatim. Overruled for 
+        data fetching if `city_boundary` or `growable_network` is set.
+    ordering : {'betweenness', 'closeness', 'random'}, default 'betweenness'
+        Method used to order the edges.
+    seed_point_type : {'auto', 'grid_square', 'grid_triangle', 'rail', 'school', 'park', 'file', 'tags'}, default 'auto'
+
+        - 'auto' selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [3]_.
+        - 'grid_square' creates a square grid. 
+        - 'grid_triangle' creates a triangle grid. In this case, `seed_point_linking` must not be set to 'quadrangulate'.
+        - 'rail', uses railway stations and halts.
+        - 'school' uses kindergartens, schools, colleges, and universities.
+        - 'park' uses parks, gardens, nature reserves, and public bathing places.
+        - 'file' imports seed_point. In this case, the name of the seed points in the exported file name is controlled via `settings.seed_point_type_name`.
+        - 'tags' uses geocodable `seed_point_tags`, see [4]_. 
+    seed_point_grid_spacing : 'auto' or int, default 'auto'
+        If `seed_point_type` is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters. Auto-values for `seed_point_type`.
+
+        - 'grid_square' with seed_point_linking 'triangulate_delaunay': 1707
+        - 'grid_square' with seed_point_linking 'quadrangulate': 1000
+        - 'grid_triangle': 1154
+        - otherwise: 1707
+
+        These values ensure that any point in the city is always within 500m of 
+        the network (under perfect conditions). For the explanation of case 
+        1707 see [1]_.
+    seed_point_linking : {'auto', 'triangulate_delaunay', 'quadrangulate'}, default 'auto'
+        The algorithm for linking up the seed points into an unrouted, abstract 
+        network.
+
+        - 'auto' selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
+        - 'triangulate_delaunay' uses Delaunay triangulation.
+        - 'quadrangulate' uses quadrangulation, which only works for `seed_point_type` 'grid_square' and `existing_network_spacing` None. Useful for grid-like street networks like Manhattan or Barcelona.
+    existing_network_spacing : None or 'auto' or int, default None
+        Spacing between seed points, in meters, only on the existing bicycle 
+        network. If set to None, the existing network is ignored. `existing_network_spacing` is recommended to be smaller than `seed_point_grid_spacing`, ideally around 50%, to ensure that the 
+        existing bicycle network is built first. Option 'auto' sets `existing_network_spacing` to 50% of the `seed_point_grid_spacing`. 
+        Independent of `existing_network_spacing`, all bicycle components 
+        shorter than `constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH` are 
+        ignored.
     export_data : bool, default True
-        If set to True, data is saved to a file. The filename is [slug]-growbikenet-[ordering]-from_scratch|from_bikenw-[seed_point_type]-with_overlaps|no_overlaps.[settings.export_file_format], depending on the parameters, and where [slug] is a string id made out of city_query or city_id.
-    city_id : str | None, default None
-        If set, the slugified city_id is used in the filename of the data export. For example, a city_id "Athens" will slugify into "athens" in filenames. If set to None, the slugified city_query is used in the filename of the data export. It is useful to set a city_id for cities where the city_query is not the city name, for example to set for a city_query "Municipality of Athens" the city_id to "Athens".
+        If set to True, data is saved to a file. The filename is ``[slug]-growbikenet-[ordering]-from_scratch|from_bikenw-[seed_point_type]-with_overlaps|no_overlaps.[settings.export_file_format]``, depending on the respective parameters, and 
+        where ``[slug]`` is a string id made out of `city_query` (or `city_id` 
+        if set).
+    city_id : None or str, default None
+        If set, the slugified `city_id` is used in the filename of the data 
+        export. For example, a `city_id` "Athens" will slugify into "athens" in 
+        filenames. If set to None, the slugified `city_query` is used in the 
+        filename of the data export. It is useful to set a `city_id` for cities 
+        where the `city_query` is not the city name, for example to set for a 
+        `city_query` "Municipality of Athens" the `city_id` to "Athens".
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
     allow_edge_overlaps : bool, default False
-        If set to False, removes edge overlaps in consecutive growth stages and deletes growth stages that do not add anything new.
+        If set to False, removes edge overlaps in consecutive growth stages and 
+        deletes growth stages that do not add anything new.
     import_files: dict, default {}
         The following key:value entries can be set:
-        - "city_boundary" : str | None, default None
-        If not set to None, the study area is selected from the (Multi)Polygon provided in the city_boundary shape or gpkg file, ideally in unprojected latitude-longitude degrees (EPSG:4326), but EPSG:3857 also works. For example, "./tests/test_data/copenhagen_city_boundary.shp".
-        - "growable_network" : str | None, default None
-        If not set to None, the growable street network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx street network g has after saved via ox.io.save_graph_geopackage(). For example:
-        >>> g = ox.graph_from_place("Barcelona", network_type='drive')
-        >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
-        >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg").
-        To download a growable network that also includes existing bicycle infrastructure, as growbikenet does by default, replace the first example line by this one:
-        >>> g = ox.graph_from_place("Barcelona", custom_filter=gbn.constants.GROWABLE_NETWORK_CUSTOM_FILTER)
-        - "bike_network" : str | None, default None
-        If not set to None, the existing bike network is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 with layers nodes and edges, with the structure that an undirected osmnx bike network has after saved via ox.io.save_graph_geopackage().
-        - "seed_points" : str | None, default None
-        If not set to None, the seed points is loaded from this file. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects. For example, "./tests/test_data/oelde_seed_points.shp". seed_point_type must be set to 'file'. The name of the seed points in the exported file name is controlled via settings.seed_point_type_name.
-        - "point_data" : str | None, default None
-        If not set to None, an additional data set of points will be loaded from this file, representing point events like traffic crashes or citizen feedback to improve bike infrastructure. Must be a gpkg file in unprojected crs EPSG:4326 containing only point objects, optionally with an int "num" column that encodes the number of point events. The data set is used to re-prioritize the ordering of the network links, controlled with settings.import_data_impact and settings.import_data_trip_point_balance, following [2]_.
-        - "trip_data" : str | None, default None
-        If not set to None, an additional data set of trips will be loaded from this file, representing trip events for prioritizing bike infrastructure growth. Must be a csv file in unprojected crs EPSG:4326 containing the following fields: o_lat, o_lon, d_lat, d_lon. Optionally there can be an int "num" field that encodes the number of trips between each origin and destination. The data set is used to re-prioritize the ordering of the network links, controlled with settings.import_data_impact and settings.import_data_trip_point_balance, following [2]_.
-    seed_point_tags : None | dict[str, bool | str | list[str]], default None
-        If not None, must be a geocodable seed_point_tags, see [4]_, and seed_point_type must be set to 'tags'. For example, seed_point_tags={"railway": ["station", "halt"]} retrieves exactly the same as seed_point_type='rail'.
+
+        - 'city_boundary' : None or str, default None
+            If not set to None, the study area is selected from the 
+            (Multi)Polygon provided in the city_boundary shape or gpkg file, 
+            ideally in unprojected latitude-longitude degrees (EPSG:4326), but 
+            EPSG:3857 also works. For example, './tests/test_data/copenhagen_city_boundary.shp'.
+        - 'growable_network' : None or str, default None
+            If not set to None, the growable street network is loaded from this 
+            file. Must be a gpkg file in unprojected CRS EPSG:4326 with layers 
+            nodes and edges, with the structure that an undirected OSMnx street 
+            network ``g`` has after saved via 
+            ``ox.io.save_graph_geopackage()``. For example:
+
+            >>> g = ox.graph_from_place("Barcelona", network_type='drive')
+            >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
+            >>> ox.io.save_graph_geopackage(g, 'Barcelona_streets.gpkg')
+
+            To download a growable network that also includes existing bicycle infrastructure, as growbikenet does by default, replace the first 
+            line in the above example by this line:
+
+            >>> g = ox.graph_from_place("Barcelona", custom_filter=gbn.constants.GROWABLE_NETWORK_CUSTOM_FILTER)
+        - 'bike_network' : None or str, default None
+            If not set to None, the existing bike network is loaded from this 
+            file. Must be a gpkg file in unprojected CRS EPSG:4326 with layers 
+            nodes and edges, with the structure that an undirected OSMnx bike 
+            network has after saved via ``ox.io.save_graph_geopackage()``.
+        - 'seed_points' : None or str, default None
+            If not set to None, the seed points is loaded from this file. Must 
+            be a gpkg file in unprojected CRS EPSG:4326 containing only point 
+            objects. For example, './tests/test_data/oelde_seed_points.shp'. `seed_point_type` must be set to 'file'. The name of the seed 
+            points in the exported file name is controlled via `settings.seed_point_type_name`.
+        - 'point_data' : None or str, default None
+            If not set to None, an additional data set of points will be loaded 
+            from this file, representing point events like traffic crashes or 
+            citizen feedback to improve bike infrastructure. Must be a gpkg 
+            file in unprojected CRS EPSG:4326 containing only point objects, 
+            optionally with an int ``num`` column that encodes the number of 
+            point events. The data set is used to re-prioritize the ordering of 
+            the network links, controlled with `settings.import_data_impact` 
+            and `settings.import_data_trip_point_balance`, following [2]_.
+        - 'trip_data' : None or str, default None
+            If not set to None, an additional data set of trips will be loaded 
+            from this file, representing trip events for prioritizing bike 
+            infrastructure growth. Must be a csv file in unprojected CRS 
+            EPSG:4326 containing the following fields: 
+            ``o_lat, o_lon, d_lat, d_lon``. Optionally there can be an int 
+            ``num`` field that encodes the number of trips between each origin 
+            and destination. The data set is used to re-prioritize the ordering 
+            of the network links, controlled with `settings.import_data_impact` 
+            and `settings.import_data_trip_point_balance`, following [2]_.
+    seed_point_tags : None or dict[str, bool or str or list[str]], default None
+        If not None, must be a geocodable `seed_point_tags`, see [4]_, and 
+        `seed_point_type` must be set to 'tags'. For example, 
+        ``seed_point_tags={'railway': ['station', 'halt']}`` retrieves exactly 
+        the same as ``seed_point_type='rail'``.
 
     Returns
     -------
     edges_ordered : geopandas.geodataframe.GeoDataFrame
-        Geodataframe of all edges in street network ordered by the ordering method.
+        Geodataframe of all edges in street network ordered by the `ordering` 
+        method.
 
     Examples
     --------
@@ -128,23 +190,34 @@ def growbikenet(
 
     >>> edges_ordered = gbn.growbikenet("Lyon")
 
-    Grow a bicycle network from scratch in Copenhagen, providing a study area polygon to include also Frederiksberg and Amager.
+    Grow a bicycle network from scratch in Copenhagen, providing a study area 
+    polygon to include also Frederiksberg and Amager.
 
-    >>> edges_ordered = gbn.growbikenet("Copenhagen", import_files={'city_boundary':"./tests/test_data/copenhagen_city_boundary.shp"}) 
+    >>> edges_ordered = gbn.growbikenet("Copenhagen", import_files={'city_boundary':'./tests/test_data/copenhagen_city_boundary.shp'}) 
 
-    Expand the existing bicycle network of Lyon, connecting all educational institutions.
+    Expand the existing bicycle network of Lyon, connecting all educational 
+    institutions.
 
     >>> edges_ordered = gbn.growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
 
-    Grow a bicycle network in Oelde from scratch, working offline by importing the street network and custom seed points from file.
+    Grow a bicycle network in Oelde from scratch, working offline by importing 
+    the street network and custom seed points from file.
 
-    >>> edges_ordered = gbn.growbikenet("Oelde", seed_point_type='file', import_files={'growable_network':"./tests/test_data/oelde_growable_network.gpkg", 'seed_points':"./tests/test_data/oelde_seed_points.gpkg"})
+    >>> edges_ordered = gbn.growbikenet("Oelde", seed_point_type='file', import_files={'growable_network':'./tests/test_data/oelde_growable_network.gpkg', 'seed_points':'./tests/test_data/oelde_seed_points.gpkg'})
+
+    Notes
+    -----
+    The original paper [1]_ uses minimum weight triangulation, but Delaunay 
+    triangulation is implemented much faster and in practice gives identical 
+    results. Triangulation and metrics (betweenness, closeness) are calculated 
+    for the unrouted, abstract network for which egde lengths are taken from 
+    the routed network.
 
     References
     ----------
-    .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, "Growing urban bicycle networks", Scientific Reports 12, 6765 (2022)
-    .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, "Data-driven micromobility network planning for demand and safety", Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
-    .. [3] G. Boeing, "Urban spatial order: Street network orientation, configuration, and entropy", Applied Network Science 4, 67 (2019)
+    .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, `Growing urban bicycle networks`, Scientific Reports 12, 6765 (2022)
+    .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, `Data-driven micromobility network planning for demand and safety`, Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
+    .. [3] G. Boeing, `Urban spatial order: Street network orientation, configuration, and entropy`, Applied Network Science 4, 67 (2019)
     .. [4] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
     """
     starttime = time.time()
@@ -335,7 +408,7 @@ def growbikenet(
             disable=settings.silent,
         )
 
-    # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
+    # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
     grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
     progress_bar.update(1)
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
