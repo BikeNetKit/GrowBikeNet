@@ -421,7 +421,7 @@ def add_point_data_to_net(points, edges, crs_projected=constants._CRS_CALCULATIO
     return edges_with_data
 
 
-def import_network(growable_network, import_path=None):
+def import_network(growable_network, import_path=settings.import_path):
     """Import and project a street network from gpkg file.
 
     Parameters
@@ -455,8 +455,6 @@ def import_network(growable_network, import_path=None):
     key 0.
     """
 
-    if import_path is None:
-        import_path = settings.import_path
     nodes = gpd.read_file(import_path+growable_network, layer='nodes')
     edges = gpd.read_file(import_path+growable_network, layer='edges')
 
