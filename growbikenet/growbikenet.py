@@ -69,8 +69,7 @@ def growbikenet(
         data fetching if `city_boundary` or `growable_network` is set.
     ordering : {'betweenness', 'closeness', 'random'}, default 'betweenness'
         Method used to order the edges.
-    seed_point_type : {'auto', 'grid_square', 'grid_triangle', 'rail', 
-    'school', 'park', 'file', 'tags'}, default 'auto'
+    seed_point_type : {'auto', 'grid_square', 'grid_triangle', 'rail', 'school', 'park', 'file', 'tags'}, default 'auto'
 
         - 'auto' selects 'grid_square' or 'grid_triangle' automatically 
         depending on the street network's orientation entropy, see [3]_.
@@ -98,8 +97,7 @@ def growbikenet(
         These values ensure that any point in the city is always within 500m of 
         the network (under perfect conditions). For the explanation of case 
         1707 see [1]_.
-    seed_point_linking : {'auto', 'triangulate_delaunay', 'quadrangulate'}, 
-    default 'auto'
+    seed_point_linking : {'auto', 'triangulate_delaunay', 'quadrangulate'}, default 'auto'
         The algorithm for linking up the seed points into an unrouted, abstract 
         network.
 
@@ -171,7 +169,7 @@ def growbikenet(
             from this file, representing point events like traffic crashes or 
             citizen feedback to improve bike infrastructure. Must be a gpkg 
             file in unprojected CRS EPSG:4326 containing only point objects, 
-            optionally with an int 'num' column that encodes the number of 
+            optionally with an int ``num`` column that encodes the number of 
             point events. The data set is used to re-prioritize the ordering of 
             the network links, controlled with `settings.import_data_impact` 
             and `settings.import_data_trip_point_balance`, following [2]_.
@@ -181,12 +179,12 @@ def growbikenet(
             infrastructure growth. Must be a csv file in unprojected CRS 
             EPSG:4326 containing the following fields: 
             ``o_lat, o_lon, d_lat, d_lon``. Optionally there can be an int 
-            'num' field that encodes the number of trips between each origin 
+            ``num`` field that encodes the number of trips between each origin 
             and destination. The data set is used to re-prioritize the ordering 
             of the network links, controlled with `settings.import_data_impact` 
             and `settings.import_data_trip_point_balance`, following [2]_.
     seed_point_tags : None or dict[str, bool or str or list[str]], default None
-        If not None, must be a geocodable seed_point_tags, see [4]_, and 
+        If not None, must be a geocodable `seed_point_tags`, see [4]_, and 
         `seed_point_type` must be set to 'tags'. For example, 
         ``seed_point_tags={'railway': ['station', 'halt']}`` retrieves exactly 
         the same as ``seed_point_type='rail'``.
@@ -194,7 +192,7 @@ def growbikenet(
     Returns
     -------
     edges_ordered : geopandas.geodataframe.GeoDataFrame
-        Geodataframe of all edges in street network ordered by the ordering 
+        Geodataframe of all edges in street network ordered by the `ordering` 
         method.
 
     Examples

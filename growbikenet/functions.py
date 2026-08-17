@@ -258,16 +258,16 @@ def add_trip_data_to_net(trips, A, crs_projected=constants._CRS_CALCULATIONS, ma
     Only consider trips where both origins and nodes are matched within
     `matching_distance`. Then, for each trip, find the shortest path over the
     edges from matched origin node to matched destination node, and add 1 (or
-    optionally 'num' if column provided in trips) to the affected edges.
+    optionally ``num`` if column provided in trips) to the affected edges.
 
     Parameters
     ----------
     trips : pandas DataFrame
         A dataframe of unprojected origin-destination coordinates (columns: 
         ``o_lat, o_lon, d_lat, d_lon``), with each row encoding a trip, in 
-        unprojected CRS EPSG:4326. Optional with a column 'num' containing an 
-        integer. This could be (number of) trip events. If 'num' column is not 
-        provided, assumes 1 per trip.
+        unprojected CRS EPSG:4326. Optional with a column ``num`` containing an 
+        integer. This could be (number of) trip events. If ``num`` column is 
+        not provided, assumes 1 per trip.
     A: networkx.graph
         Graph created from triangulation edge list.
     crs_projected : str
@@ -280,9 +280,9 @@ def add_trip_data_to_net(trips, A, crs_projected=constants._CRS_CALCULATIONS, ma
     -------
     graph_with_data : networkx.graph
         The same graph created from triangulation edges list, but with a new
-        edge attribute 'num_trips' populated with the summed up 'num' values of 
-        all trips where both origins and destinations could be matched to the 
-        closest network nodes within `matching_distance`. 
+        edge attribute 'num_trips' populated with the summed up ``num`` values 
+        of all trips where both origins and destinations could be matched to 
+        the closest network nodes within `matching_distance`. 
     """
 
     graph_with_data = A.copy()
@@ -346,9 +346,9 @@ def add_point_data_to_net(points, edges, crs_projected=constants._CRS_CALCULATIO
     ----------
     points : geopandas.geodataframe.GeoDataFrame
         A geodataframe of unprojected point geometries, optional having a 
-        column 'num' containing an integer. This could be (number of) point 
+        column ``num`` containing an integer. This could be (number of) point 
         events like crashes or citizen feedback to improve bike infrastructure. 
-        If a 'num' column is not provided, assumes 1 per point.
+        If a ``num`` column is not provided, assumes 1 per point.
     edges : geopandas.geodataframe.GeoDataFrame
         A geodataframe of projected spatial network edges. This is the routed 
         network of seed points.
@@ -361,9 +361,9 @@ def add_point_data_to_net(points, edges, crs_projected=constants._CRS_CALCULATIO
     Returns
     -------
     edges_with_data : geopandas.geodataframe.GeoDataFrame
-        The same spatial network edges, but with a new int column 'num_points' 
-        populated with the summed up 'num' values of all points, matched to the 
-        closest links if within `matching_distance`. 
+        The same spatial network edges, but with a new int column 
+        ``num_points`` populated with the summed up ``num`` values of all 
+        points, matched to the closest links if within `matching_distance`. 
     """
 
     edges_with_data = edges.copy()
@@ -533,8 +533,7 @@ def download_network(city_query, network_type='drive', custom_filter=None, retai
     city_query : str
         Name of the city that the analysis should be performed on. Overruled 
         (for data fetching) if `city_boundary` or `growable_network` is set.
-    network_type : {'drive', 'all', 'all_public', 'bike', 
-    'drive_service', 'walk'}, default 'drive'
+    network_type : {'drive', 'all', 'all_public', 'bike', 'drive_service', 'walk'}, default 'drive'
         What type of street network to retrieve if `custom_filter` is None.
     custom_filter : None or str or list[str], default None
         A custom ways filter to be used instead of the `network_type` presets.
@@ -846,8 +845,7 @@ def _get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_poi
         Distance between seed points, in meters.
     principal_bearing : float
         Principal bearing (most common bearing of streets).
-    seed_point_type : {'grid_square', 'grid_triangle'}, default 
-    'grid_square'
+    seed_point_type : {'grid_square', 'grid_triangle'}, default 'grid_square'
         Type of seed points.
 
     Returns
