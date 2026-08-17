@@ -25,10 +25,6 @@ from tqdm.auto import tqdm
 def _validate_settings():
     """ Check if user settings input is valid. If not, raise an exception or 
     warning.
-    
-    Parameters
-    ----------
-    See settings
 
     Returns
     -------
@@ -177,7 +173,7 @@ def _resolve_auto_parameters(
     
     Parameters
     ----------
-    seed_point_* and existing_network_spacing and import_files from `growbikenet.growbikenet()`.
+    seed_point_* and existing_network_spacing and import_files from growbikenet.growbikenet().
     
     Additionally:
     phi : float
@@ -270,9 +266,9 @@ def add_trip_data_to_net(trips, A, crs_projected=constants._CRS_CALCULATIONS, ma
         not provided, assumes 1 per trip.
     A: networkx.graph
         Graph created from triangulation edge list.
-    crs_projected : str
+    crs_projected : str, default `constants._CRS_CALCULATIONS`
         CRS that is used to project spatial data for calculations.
-    matching_distance : int
+    matching_distance : int, default `settings.import_trip_data_snap_distance`
         Matching distance in meters. Set via 
         `settings.import_trip_data_snap_distance`.
 
@@ -431,9 +427,9 @@ def import_network(growable_network, import_path=settings.import_path):
     Parameters
     ----------
     growable_network : str
-        The street network will be loaded from this file. Must be a gpkg file 
+        The street network is loaded from this file. Must be a gpkg file 
         in unprojected CRS EPSG:4326 with layers nodes and edges, with the 
-        structure that a osmnx street network ``g`` has after saving its 
+        structure that a OSMnx street network ``g`` has after saving its 
         undirected version via ``ox.io.save_graph_geopackage()``. For example:
 
         >>> g = ox.graph_from_place("Barcelona", network_type='drive')
@@ -525,8 +521,7 @@ def prepare_nodes_edges(nodes, edges, crs_projected=constants._CRS_CALCULATIONS)
 def download_network(city_query, network_type='drive', custom_filter=None, retain_all=True, city_boundary_geometry=None):
     """Download and prepare a street network from OSM via OSMnx.
 
-    Downloads a network with a given network_type and custom_filter using ``ox.graph_from_place()``. Then, stores the undirected OSM data in gdfs and 
-    projects using `constants._CRS_CALCULATIONS`.
+    Downloads a network with a given `network_type` and `custom_filter` using ``ox.graph_from_place()``. Then, stores the undirected OSM data in geodataframes and projects using `constants._CRS_CALCULATIONS`.
 
     Parameters
     ----------
@@ -567,7 +562,7 @@ def download_network(city_query, network_type='drive', custom_filter=None, retai
 
     g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
 
-    # Export osmnx data to gdfs
+    # Export OSMnx data to gdfs
     nodes, edges = nx_to_nodes_edges(g_undir)
     return nodes, edges, g_undir
 
@@ -692,7 +687,7 @@ def update_with_existing_bike_network(city_query, g_undir, import_files, city_bo
         Dictionary containing the key "bike_network" and value None or a string 
         with the path of a bicycle network to import. Must be a gpkg file in 
         unprojected CRS EPSG:4326 with layers nodes and edges, with the 
-        structure that an undirected osmnx bike network has after saved via ``ox.io.save_graph_geopackage()``.
+        structure that an undirected OSMnx bike network has after saved via ``ox.io.save_graph_geopackage()``.
     city_boundary_geometry : None or shapely.Polygon or shapely.MultiPolygon, 
     default None
         If not set to None, the study area is selected from this geometry.
@@ -1353,7 +1348,7 @@ def node_to_edge_attributes(values_nodes, edges):
 
 
 def add_path_to_df(df, edges, g_undir):
-    """Map each unrouted edge to a merged geometry of corresponding osmnx 
+    """Map each unrouted edge to a merged geometry of corresponding OSMnx 
     edges (routed on `g_undir`).
 
     Parameters

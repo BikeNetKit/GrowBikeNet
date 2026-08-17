@@ -71,23 +71,16 @@ def growbikenet(
         Method used to order the edges.
     seed_point_type : {'auto', 'grid_square', 'grid_triangle', 'rail', 'school', 'park', 'file', 'tags'}, default 'auto'
 
-        - 'auto' selects 'grid_square' or 'grid_triangle' automatically 
-        depending on the street network's orientation entropy, see [3]_.
+        - 'auto' selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [3]_.
         - 'grid_square' creates a square grid. 
-        - 'grid_triangle' creates a triangle grid. In this case, 
-        `seed_point_linking` must not be set to 'quadrangulate'.
+        - 'grid_triangle' creates a triangle grid. In this case, `seed_point_linking` must not be set to 'quadrangulate'.
         - 'rail', uses railway stations and halts.
         - 'school' uses kindergartens, schools, colleges, and universities.
-        - 'park' uses parks, gardens, nature reserves, and public bathing 
-        places.
-        - 'file' imports seed_point. In this case, the name of the seed points 
-        in the exported file name is controlled via 
-        `settings.seed_point_type_name`.
+        - 'park' uses parks, gardens, nature reserves, and public bathing places.
+        - 'file' imports seed_point. In this case, the name of the seed points in the exported file name is controlled via `settings.seed_point_type_name`.
         - 'tags' uses geocodable `seed_point_tags`, see [4]_. 
     seed_point_grid_spacing : 'auto' or int, default 'auto'
-        If `seed_point_type` is set to 'grid_square' or 'grid_triangle', this 
-        is the spacing between seed points, in meters. Auto-values for 
-        `seed_point_type`.
+        If `seed_point_type` is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters. Auto-values for `seed_point_type`.
 
         - 'grid_square' with seed_point_linking 'triangulate_delaunay': 1707
         - 'grid_square' with seed_point_linking 'quadrangulate': 1000
@@ -101,13 +94,9 @@ def growbikenet(
         The algorithm for linking up the seed points into an unrouted, abstract 
         network.
 
-        - 'auto' selects 'triangulate_delaunay' or 'quadrangulate' 
-        automatically depending on the street network's orientation entropy, 
-        see [3]_.
+        - 'auto' selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
         - 'triangulate_delaunay' uses Delaunay triangulation.
-        - 'quadrangulate' uses quadrangulation, which only works for 
-        `seed_point_type` 'grid_square' and `existing_network_spacing` None. 
-        Useful for grid-like street networks like Manhattan or Barcelona.
+        - 'quadrangulate' uses quadrangulation, which only works for `seed_point_type` 'grid_square' and `existing_network_spacing` None. Useful for grid-like street networks like Manhattan or Barcelona.
     existing_network_spacing : None or 'auto' or int, default None
         Spacing between seed points, in meters, only on the existing bicycle 
         network. If set to None, the existing network is ignored. `existing_network_spacing` is recommended to be smaller than `seed_point_grid_spacing`, ideally around 50%, to ensure that the 
@@ -142,7 +131,7 @@ def growbikenet(
         - 'growable_network' : None or str, default None
             If not set to None, the growable street network is loaded from this 
             file. Must be a gpkg file in unprojected CRS EPSG:4326 with layers 
-            nodes and edges, with the structure that an undirected osmnx street 
+            nodes and edges, with the structure that an undirected OSMnx street 
             network ``g`` has after saved via 
             ``ox.io.save_graph_geopackage()``. For example:
 
@@ -157,7 +146,7 @@ def growbikenet(
         - 'bike_network' : None or str, default None
             If not set to None, the existing bike network is loaded from this 
             file. Must be a gpkg file in unprojected CRS EPSG:4326 with layers 
-            nodes and edges, with the structure that an undirected osmnx bike 
+            nodes and edges, with the structure that an undirected OSMnx bike 
             network has after saved via ``ox.io.save_graph_geopackage()``.
         - 'seed_points' : None or str, default None
             If not set to None, the seed points is loaded from this file. Must 
@@ -419,7 +408,7 @@ def growbikenet(
             disable=settings.silent,
         )
 
-    # Map each unrouted edge to a merged geometry of corresponding osmnx edges (routed on g_undir)
+    # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
     grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
     progress_bar.update(1)
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
