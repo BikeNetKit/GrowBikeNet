@@ -1,4 +1,4 @@
-"""Utility functions for growbikenet."""
+"""Utility functions for `growbikenet`."""
 
 from . import constants
 from . import settings
@@ -62,7 +62,7 @@ def _validate_parameters(
     
     Parameters
     ----------
-    Same as growbikenet.growbikenet()
+    Same as `growbikenet.growbikenet()`
     Additionally:
     constants._PRESET_TAGS : dict
         Dictionary of preset seed point tags.
@@ -173,7 +173,7 @@ def _resolve_auto_parameters(
     
     Parameters
     ----------
-    seed_point_* and existing_network_spacing and import_files from growbikenet.growbikenet().
+    seed_point_* and existing_network_spacing and import_files from `growbikenet.growbikenet()`.
     
     Additionally:
     phi : float
