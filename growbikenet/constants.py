@@ -1,4 +1,4 @@
-"""Global constants for growbikenet that can be tweaked during development, but 
+"""Global constants for `growbikenet` that can be tweaked during development, but 
 should not be changed later by the user. Especially technical or internal 
 constants start with an underscore.
 
@@ -21,8 +21,8 @@ GRID_SPACING_TRIANGLE : int, default 1154
     snap perfectly).
 GROWABLE_NETWORK_CUSTOM_FILTER : list[str] or None
     Custom filter for all infrastructure elements that are considered as 
-    growable by growbikenet. By default, growbikenet uses a custom filter to 
-    retrieve the combined drive and pbi (protected bicycle infrastructure) 
+    growable by `growbikenet`. By default, `growbikenet` uses a custom filter 
+    to retrieve the combined drive and pbi (protected bicycle infrastructure) 
     network. To only consider the drive network, set 
     `GROWABLE_NETWORK_CUSTOM_FILTER` to None and `GROWABLE_NETWORK_TYPE` to 
     'drive'. However, doing so can lead to issues: 

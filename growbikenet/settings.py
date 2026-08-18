@@ -1,4 +1,4 @@
-"""Global settings for growbikenet that can be configured by the user.
+"""Global settings for `growbikenet` that can be configured by the user.
 
 crs_result : str, default '4326'
     EPSG code of the coordinate reference system for the resulting geodataframe
@@ -21,7 +21,7 @@ import_data_trip_point_balance : float, default 0.5
     point data is imported, this variable is treated as 0 - meaning in such a 
     case the data impact is controlled only by `settings.import_data_impact`.
 import_path : str
-    Path to import files (as defined in growbikenet's import_files parameter).
+    Path to import files (as defined in `growbikenet`'s import_files parameter).
 import_point_data_snap_distance : int, default 500
     Maximum distance between point data and network links for snapping, in 
     meters.
