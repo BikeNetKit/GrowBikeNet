@@ -819,10 +819,8 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
     seed_points_snapped = seed_points_exnw.overlay(seed_points_snapped, how='union')
 
     # Bring back to original form (geometry and osmid columns, osmid index)
-    # This is a bit of a mess but it works. Simplify it in the future.
-    seed_points_snapped.loc[seed_points_snapped['osmid_1'].isnull(), 'osmid_1'] = seed_points_snapped['osmid_2'] # _1 comes from one side, _2 from the other. One has NaNs, the other too. https://stackoverflow.com/a/60132614
-    seed_points_snapped = seed_points_snapped[['osmid_1','geometry']]
-    seed_points_snapped.rename(columns={"osmid_1": "osmid"}, inplace=True)
+    seed_points_snapped['osmid'] = seed_points_snapped.apply(lambda row: row['osmid_2'] if pd.isnull(row['osmid_1']) else row['osmid_1'], axis=1) # _1 comes from one side, _2 from the other. When one is Nan, the other is a number.
+    seed_points_snapped = seed_points_snapped[['osmid','geometry']]
     seed_points_snapped.set_index("osmid", drop=False, inplace=True)
     return seed_points_snapped, existing_network_spacing
 
