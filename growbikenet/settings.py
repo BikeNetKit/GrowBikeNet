@@ -1,5 +1,8 @@
 """Global settings for `growbikenet` that can be configured by the user.
 
+allow_edge_overlaps : bool, default False
+    If set to False, removes edge overlaps in consecutive growth stages and 
+    deletes growth stages that do not add anything new.
 crs_result : str, default '4326'
     EPSG code of the coordinate reference system for the resulting geodataframe
     and exported data. If '4326' (WGS84) and `export_file_format` is set to 
@@ -57,6 +60,7 @@ viz : dict
         The CRS used for plotting. Option 'auto' sets a local azimuthal projection centered on the network. Otherwise, for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) also produce good results.
 """
 
+allow_edge_overlaps = False
 crs_result = '4326'
 export_path = {
     "results":"./results/",

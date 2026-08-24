@@ -50,7 +50,6 @@ def growbikenet(
     export_data=True,
     city_id=None,
     export_plots=False,
-    allow_edge_overlaps=False,
     import_files={},
     seed_point_tags=None,
 ):
@@ -105,9 +104,9 @@ def growbikenet(
         shorter than `constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH` are 
         ignored.
     export_data : bool, default True
-        If set to True, data is saved to a file. The filename is ``[slug]-growbikenet-[ordering]-from_scratch|from_bikenw-[seed_point_type]-with_overlaps|no_overlaps.[settings.export_file_format]``, depending on the respective parameters, and 
-        where ``[slug]`` is a string id made out of `city_query` (or `city_id` 
-        if set).
+        If set to True, data is saved to a file. The filename is ``[slug]-growbikenet-[ordering]-from_scratch|from_bikenw-[seed_point_type].[settings.export_file_format]``, 
+        depending on the respective parameters, and where ``[slug]`` is a 
+        string id made out of `city_query` (or `city_id` if set).
     city_id : None or str, default None
         If set, the slugified `city_id` is used in the filename of the data 
         export. For example, a `city_id` "Athens" will slugify into "athens" in 
@@ -117,9 +116,6 @@ def growbikenet(
         `city_query` "Municipality of Athens" the `city_id` to "Athens".
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
-    allow_edge_overlaps : bool, default False
-        If set to False, removes edge overlaps in consecutive growth stages and 
-        deletes growth stages that do not add anything new.
     import_files: dict, default {}
         The following key:value entries can be set:
 
@@ -233,7 +229,6 @@ def growbikenet(
         export_data,
         city_id,
         export_plots,
-        allow_edge_overlaps,
         import_files,
         seed_point_tags,
     )
@@ -517,11 +512,8 @@ def growbikenet(
     progress_bar.close()
 
     ### Remove edge overlaps
-    if not allow_edge_overlaps:
+    if not settings.allow_edge_overlaps:
         edges_ordered = _remove_edge_overlaps(edges_ordered) # Can take a while, could be sped up.
-        overlap_string = "no_overlaps"
-    else:
-        overlap_string = "with_overlaps"
 
     # Add lengths and cumulative lengths, rounded to integer meters
     edges_ordered['length'] = edges_ordered.geometry.length
@@ -551,7 +543,7 @@ def growbikenet(
         else:
             seed_point_string = seed_point_type
         export_data_filename = (
-            slugify(city_string) + "-growbikenet-" + ordering + "-" + exnw_string + "-" + seed_point_string + "-" + overlap_string + "." + settings.export_file_format
+            slugify(city_string) + "-growbikenet-" + ordering + "-" + exnw_string + "-" + seed_point_string + "." + settings.export_file_format
         )
 
     ### Export data
