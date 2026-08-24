@@ -53,7 +53,6 @@ def _validate_parameters(
         export_data,
         city_id,
         export_plots,
-        allow_edge_overlaps,
         import_files,
         seed_point_tags,
     ):
