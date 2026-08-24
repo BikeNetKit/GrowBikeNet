@@ -1237,9 +1237,9 @@ def _remove_edge_overlaps(edges_in):
             disable=settings.silent,
         ):
         grown_net_new = grown_net | row.geometry # Calculate union
-        if grown_net_new.length > grown_net.length: # Something was added
-            grown_net_diff = row.geometry - grown_net # Calculate difference
-            # print(row.geometry, grown_net, grown_net_diff)
+        grown_net_diff = row.geometry - grown_net
+        # Calculate difference
+        if grown_net_new.length > grown_net.length and grown_net_diff.length: # Something was added. TO DO: Investigate why the second condition is needed.
             edges_out.loc[row.Index, ['geometry']] = grown_net_diff # Add difference
             grown_net = grown_net_new # Only update if something was added
         else: # There was nothing added, so we delete the row
