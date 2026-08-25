@@ -712,23 +712,26 @@ def update_with_existing_bike_network(city_query, g_undir, import_files, city_bo
         # Due to retain_all=True, this fetches all the connected components
         nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_query, custom_filter=constants.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
 
-    g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
-
     # Intermezzo: Get filtered existing network by component length
-    nodes_exnw_filtered, _, _ = filter_network_by_component_length(g_undir_exnw)
+    nodes_exnw_filtered, _, g_undir_exnw_filtered = filter_network_by_component_length(g_undir_exnw)
+
+    g_undir = nx.compose(g_undir_exnw_filtered, g_undir) # Merge to be sure we have everything from both
 
     # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
     # We delete those parts next:
     # Take largest connected component lcc of the merged network
     lcc = max(nx.connected_components(g_undir), key=len)
     g_undir = g_undir.subgraph(lcc).copy() 
-    # Restrict nodes and edges of the existing bike net to this lcc
-    valid_node_osmids = g_undir.nodes()
-    nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
-    nodes_exnw_filtered = nodes_exnw_filtered[nodes_exnw_filtered['osmid'].isin(valid_node_osmids)]
-    # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
-    edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
-    edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
+
+    if not nx.is_empty(g_undir_exnw_filtered): # If g_undir_exnw_filtered is empty, then there is no existing network to restrict to the lcc
+
+        # Restrict nodes and edges of the existing bike net to this lcc
+        valid_node_osmids = g_undir.nodes()
+        nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
+        nodes_exnw_filtered = nodes_exnw_filtered[nodes_exnw_filtered['osmid'].isin(valid_node_osmids)]
+        # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
+        edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
+        edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
     nodes, edges = nx_to_nodes_edges(g_undir)
 
     return nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered
