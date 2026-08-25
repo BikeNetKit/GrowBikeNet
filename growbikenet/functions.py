@@ -668,7 +668,7 @@ def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     return seed_points_exnw
 
 
-def update_with_existing_bike_network(city_query, g_undir, import_files, city_boundary_geometry=None):
+def update_with_existing_bike_network(city_query, g_undir, existing_network_spacing, import_files, city_boundary_geometry=None):
     """Update street network with existing bike network.
 
     Downloads a network of protected bike infrastructure from OSM (retaining 
@@ -732,9 +732,12 @@ def update_with_existing_bike_network(city_query, g_undir, import_files, city_bo
         # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
         edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
         edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
+    else: 
+        existing_network_spacing = None
+
     nodes, edges = nx_to_nodes_edges(g_undir)
 
-    return nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered
+    return nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw_filtered, nodes_exnw_filtered, existing_network_spacing
 
 
 def filter_network_by_component_length(g_undir):

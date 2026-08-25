@@ -298,7 +298,7 @@ def growbikenet(
         progress_bar.update(1)
 
     if existing_network_spacing is not None: # update g_undir: add the existing bike network
-        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_query, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered, existing_network_spacing = update_with_existing_bike_network(city_query, g_undir, existing_network_spacing, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
     progress_bar.close()
 
