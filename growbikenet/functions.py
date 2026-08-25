@@ -729,10 +729,9 @@ def update_with_existing_bike_network(city_query, g_undir, import_files, city_bo
     # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
     edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
     edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
-
     nodes, edges = nx_to_nodes_edges(g_undir)
 
-    return nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw_filtered, nodes_exnw_filtered
+    return nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered
 
 
 def filter_network_by_component_length(g_undir):
