@@ -668,7 +668,7 @@ def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
     return seed_points_exnw
 
 
-def update_with_existing_bike_network(city_query, g_undir, existing_network_spacing, import_files, city_boundary_geometry=None):
+def update_with_existing_bike_network(city_query, g_undir, import_files, city_boundary_geometry=None):
     """Update street network with existing bike network.
 
     Downloads a network of protected bike infrastructure from OSM (retaining 
@@ -722,22 +722,18 @@ def update_with_existing_bike_network(city_query, g_undir, existing_network_spac
     # Take largest connected component lcc of the merged network
     lcc = max(nx.connected_components(g_undir), key=len)
     g_undir = g_undir.subgraph(lcc).copy() 
-
-    if not nx.is_empty(g_undir_exnw_filtered): # If g_undir_exnw_filtered is empty, then there is no existing network to restrict to the lcc
-
-        # Restrict nodes and edges of the existing bike net to this lcc
-        valid_node_osmids = g_undir.nodes()
-        nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
-        nodes_exnw_filtered = nodes_exnw_filtered[nodes_exnw_filtered['osmid'].isin(valid_node_osmids)]
-        # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
-        edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
-        edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
-    else: 
-        existing_network_spacing = None
+    # Restrict nodes and edges of the existing bike net to this lcc
+    valid_node_osmids = g_undir.nodes()
+    nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
+    #if not nx.is_empty(g_undir_exnw_filtered): # If g_undir_exnw_filtered is empty, then there is no filtered network to restrict to the lcc
+    nodes_exnw_filtered = nodes_exnw_filtered[nodes_exnw_filtered['osmid'].isin(valid_node_osmids)]
+    # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
+    edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
+    edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('v').isin(valid_node_osmids)]
 
     nodes, edges = nx_to_nodes_edges(g_undir)
 
-    return nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw_filtered, nodes_exnw_filtered, existing_network_spacing
+    return nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw_filtered, nodes_exnw_filtered
 
 
 def filter_network_by_component_length(g_undir):
@@ -814,7 +810,7 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
     # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
     seed_points_exnw = _get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
     if len(seed_points_exnw) == 0: # Nothing happens, so set existing_network_spacing to None
-        return seed_points_snapped, None
+        return seed_points_snapped
 
     seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
 
@@ -833,7 +829,7 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
     seed_points_snapped['osmid'] = seed_points_snapped.apply(lambda row: row['osmid_2'] if pd.isnull(row['osmid_1']) else row['osmid_1'], axis=1) # _1 comes from one side, _2 from the other. When one is Nan, the other is a number.
     seed_points_snapped = seed_points_snapped[['osmid','geometry']]
     seed_points_snapped.set_index("osmid", drop=False, inplace=True)
-    return seed_points_snapped, existing_network_spacing
+    return seed_points_snapped
 
 
 def _get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type='grid_square'):
