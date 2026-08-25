@@ -712,10 +712,10 @@ def update_with_existing_bike_network(city_query, g_undir, import_files, city_bo
         # Due to retain_all=True, this fetches all the connected components
         nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_query, custom_filter=constants.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
 
-    g_undir = nx.compose(g_undir_exnw, g_undir) # Merge to be sure we have everything from both
-
     # Intermezzo: Get filtered existing network by component length
-    nodes_exnw_filtered, _, _ = filter_network_by_component_length(g_undir_exnw)
+    nodes_exnw_filtered, _, g_undir_exnw_filtered = filter_network_by_component_length(g_undir_exnw)
+
+    g_undir = nx.compose(g_undir_exnw_filtered, g_undir) # Merge to be sure we have everything from both
 
     # Now we could have some leftover bike infra that is disconnected from the street network and thus not routable.
     # We delete those parts next:
@@ -763,15 +763,21 @@ def filter_network_by_component_length(g_undir):
             g_undir_filtered = nx.union(g_undir_filtered, c)
         else:
             break
-    # Get nodes_exnw_filtered
-    nodes_filtered, edges_filtered = ox.graph_to_gdfs(
-        g_undir_filtered,
-        nodes=True,
-        edges=True,
-        node_geometry=True,
-        fill_edge_geometry=True
-        )
-    nodes_filtered, _ = prepare_nodes_edges(nodes_filtered, gpd.GeoDataFrame())
+
+    # If all components of g_undir have length < constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH, then the graph is empty
+    if not nx.is_empty(g_undir_filtered): 
+        # Get nodes_exnw_filtered
+        nodes_filtered, edges_filtered = ox.graph_to_gdfs(
+            g_undir_filtered,
+            nodes=True,
+            edges=True,
+            node_geometry=True,
+            fill_edge_geometry=True
+            )
+        nodes_filtered, _ = prepare_nodes_edges(nodes_filtered, gpd.GeoDataFrame())
+    else:
+        nodes_filtered = gpd.GeoDataFrame(columns = ['y', 'x', 'timestamp', 'street_count', 'geometry', 'osmid'], geometry='geometry', crs=constants._CRS_CALCULATIONS).set_index('osmid', drop=False)
+        edges_filtered = gpd.GeoDataFrame(columns = ['highway', 'osmid', 'length', 'oneway', 'from', 'to', 'geometry', 'u', 'v', 'key'], geometry='geometry', crs=constants._CRS_CALCULATIONS).set_index(['u','v','key'])
     return nodes_filtered, edges_filtered, g_undir_filtered
 
 
@@ -801,8 +807,8 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
 
     # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
     seed_points_exnw = _get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
-    if len(seed_points_exnw) == 0: # Nothing happens, so set existing_network_spacing to None
-        return seed_points_snapped, None
+    if len(seed_points_exnw) == 0: # Nothing happens
+        return seed_points_snapped
 
     seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
 
@@ -821,7 +827,7 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
     seed_points_snapped['osmid'] = seed_points_snapped.apply(lambda row: row['osmid_2'] if pd.isnull(row['osmid_1']) else row['osmid_1'], axis=1) # _1 comes from one side, _2 from the other. When one is Nan, the other is a number.
     seed_points_snapped = seed_points_snapped[['osmid','geometry']]
     seed_points_snapped.set_index("osmid", drop=False, inplace=True)
-    return seed_points_snapped, existing_network_spacing
+    return seed_points_snapped
 
 
 def _get_grid_seed_points(edges, seed_point_spacing, principal_bearing, seed_point_type='grid_square'):
