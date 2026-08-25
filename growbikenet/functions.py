@@ -769,15 +769,21 @@ def filter_network_by_component_length(g_undir):
             g_undir_filtered = nx.union(g_undir_filtered, c)
         else:
             break
-    # Get nodes_exnw_filtered
-    nodes_filtered, edges_filtered = ox.graph_to_gdfs(
-        g_undir_filtered,
-        nodes=True,
-        edges=True,
-        node_geometry=True,
-        fill_edge_geometry=True
-        )
-    nodes_filtered, _ = prepare_nodes_edges(nodes_filtered, gpd.GeoDataFrame())
+
+    # If all components of g_undir have length < constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH, then the graph is empty
+    if not nx.is_empty(g_undir_filtered): 
+        # Get nodes_exnw_filtered
+        nodes_filtered, edges_filtered = ox.graph_to_gdfs(
+            g_undir_filtered,
+            nodes=True,
+            edges=True,
+            node_geometry=True,
+            fill_edge_geometry=True
+            )
+        nodes_filtered, _ = prepare_nodes_edges(nodes_filtered, gpd.GeoDataFrame())
+    else:
+        nodes_filtered = gpd.GeoDataFrame(columns = ['y', 'x', 'timestamp', 'street_count', 'geometry', 'osmid'], geometry='geometry', crs=constants._CRS_CALCULATIONS).set_index('osmid', drop=False)
+        edges_filtered = gpd.GeoDataFrame(columns = ['highway', 'osmid', 'length', 'oneway', 'from', 'to', 'geometry', 'u', 'v', 'key'], geometry='geometry', crs=constants._CRS_CALCULATIONS).set_index(['u','v','key'])
     return nodes_filtered, edges_filtered, g_undir_filtered
 
 
