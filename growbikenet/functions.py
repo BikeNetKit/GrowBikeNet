@@ -807,7 +807,7 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
 
     # If the existing bicycle network is used, create extra seed points on it. They are by construction already snapped.
     seed_points_exnw = _get_existing_network_seed_points(nodes_exnw, existing_network_spacing)
-    if len(seed_points_exnw) == 0: # Nothing happens, so set existing_network_spacing to None
+    if len(seed_points_exnw) == 0: # Nothing happens
         return seed_points_snapped
 
     seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
