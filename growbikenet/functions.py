@@ -725,7 +725,6 @@ def update_with_existing_bike_network(city_query, g_undir, import_files, city_bo
     # Restrict nodes and edges of the existing bike net to this lcc
     valid_node_osmids = g_undir.nodes()
     nodes_exnw = nodes_exnw[nodes_exnw['osmid'].isin(valid_node_osmids)]
-    #if not nx.is_empty(g_undir_exnw_filtered): # If g_undir_exnw_filtered is empty, then there is no filtered network to restrict to the lcc
     nodes_exnw_filtered = nodes_exnw_filtered[nodes_exnw_filtered['osmid'].isin(valid_node_osmids)]
     # edges_exnw has a MultiIndex ('u','v'), so we must use get_level_values, see https://stackoverflow.com/a/18835121
     edges_exnw = edges_exnw.iloc[edges_exnw.index.get_level_values('u').isin(valid_node_osmids)]
