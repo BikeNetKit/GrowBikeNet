@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 0.13.1 (2026-08-26)
+
+- 🐛 Deleted zero length geometries
+- 🐛 Accounted for all edge cases of bike network components, tested on 403 cities
+- 🐛 Added length check for snapped seed points
+- ♻️ Simplified `_update_seed_points_with_existing_bike_network()`
+- ♻️ Moved `allow_edge_overlaps` to settings
+- 📝 Added css for docs dataframes and polished docs
+- 📝 Added usage docs 6 and 7, completing docs
+
 ## Version 0.13.0 (2026-08-14)
 
 - 🐛 Changed street network to growable network
