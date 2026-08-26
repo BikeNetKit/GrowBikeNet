@@ -665,6 +665,7 @@ def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
         if len(node_current)>0: # Current nodes could already be depleted here. Then loop will stop.
             node_current = nodes_exnw[nodes_exnw.osmid == node_current["osmid_right"].values[0]]
 
+    seed_points_exnw.set_index("osmid", drop=False, inplace=True)
     return seed_points_exnw
 
 
@@ -812,21 +813,24 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
 
     seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
 
-    # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
-    buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing*constants._BUFFER_SEED_POINTS_EXNW_FACTOR))
-    buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
-    buffer_seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
+    if len(seed_points_snapped) != 0:
+        # Afterwards, drop all previously determined seed points (grid or rail) that are now too close to these extra points.
+        buffer_seed_points_exnw = gpd.GeoDataFrame(seed_points_exnw.buffer(existing_network_spacing*constants._BUFFER_SEED_POINTS_EXNW_FACTOR))
+        buffer_seed_points_exnw = buffer_seed_points_exnw.rename(columns={0:'geometry'}).set_geometry('geometry') # https://gis.stackexchange.com/questions/266098/how-to-convert-a-geoseries-to-a-geodataframe-with-geopandas
+        buffer_seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
 
-    # Delete the seed points that are too close to seed_points_exnw via its buffer
-    seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
+        # Delete the seed points that are too close to seed_points_exnw via its buffer
+        seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
 
-    # Merge original snapped points with new existing network points (=already snapped)
-    seed_points_snapped = seed_points_exnw.overlay(seed_points_snapped, how='union')
+        # Merge original snapped points with new existing network points (=already snapped)
+        seed_points_snapped = seed_points_exnw.overlay(seed_points_snapped, how='union')
 
-    # Bring back to original form (geometry and osmid columns, osmid index)
-    seed_points_snapped['osmid'] = seed_points_snapped.apply(lambda row: row['osmid_2'] if pd.isnull(row['osmid_1']) else row['osmid_1'], axis=1) # _1 comes from one side, _2 from the other. When one is Nan, the other is a number.
-    seed_points_snapped = seed_points_snapped[['osmid','geometry']]
-    seed_points_snapped.set_index("osmid", drop=False, inplace=True)
+        # Bring back to original form (geometry and osmid columns, osmid index)
+        seed_points_snapped['osmid'] = seed_points_snapped.apply(lambda row: row['osmid_2'] if pd.isnull(row['osmid_1']) else row['osmid_1'], axis=1) # _1 comes from one side, _2 from the other. When one is Nan, the other is a number.
+        seed_points_snapped = seed_points_snapped[['osmid','geometry']]
+        seed_points_snapped.set_index("osmid", drop=False, inplace=True)
+    else:
+        seed_points_snapped = seed_points_exnw
     return seed_points_snapped
 
 
