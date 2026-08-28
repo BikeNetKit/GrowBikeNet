@@ -241,6 +241,12 @@ def growbikenet(
         print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
         print("----------------------------------------------╮")
     
+    # Ask whether constants._CRS_CALCULATIONS was 'auto' ahead of network 
+    # construction, as 'auto' is resolved inside `prepare_nodes_edges()`.
+    if constants._CRS_CALCULATIONS == 'auto':
+        crs_calculations_was_auto = True
+    else:
+        crs_calculations_was_auto = False
 
     ### Import data files
     num_data_files = int(bool(import_files['point_data'])) + int(bool(import_files['trip_data']))
@@ -297,12 +303,13 @@ def growbikenet(
         nodes, edges, g_undir = download_network(city_query, network_type=constants.GROWABLE_NETWORK_TYPE, custom_filter=constants.GROWABLE_NETWORK_CUSTOM_FILTER, retain_all=False, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
 
-    if existing_network_spacing is not None: # update g_undir: add the existing bike network
+    # Update g_undir: Add the existing bike network
+    if existing_network_spacing is not None: 
         nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_query, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
     progress_bar.close()
 
-    # Now that the graph is ready, decide auto values
+    # Now that the graph is ready, resolve auto values
     ox.bearing.add_edge_bearings(g_undir)
     phi = orientation_order(g_undir)
     seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = _resolve_auto_parameters(
@@ -610,6 +617,10 @@ def growbikenet(
         )
         if crs_was_auto: # Reset auto crs
             settings.viz["crs"] = 'auto'
+
+    # Reset constants._CRS_CALCULATIONS if it was auto
+    if crs_calculations_was_auto:
+        constants._CRS_CALCULATIONS = 'auto'
 
     if not settings.silent:
         print("----------------------------------------------╯")
