@@ -1511,3 +1511,87 @@ def _get_weighted_distances(B, num_types):
         dist_weighted_by_types_dict[k] = d/(1+settings.import_data_impact*(num_types_per_km_dict[k]/max_n))
 
     return dist_weighted_by_types_dict
+
+
+
+def map_edges_to_bike_infrastructure(g):
+    """
+    map if edges in graph have bike infrastructure as specified in config.py
+
+    Parameters
+    ----------
+    g :networkx.MultiDiGraph
+        simplified graph representing the street network
+
+    Returns
+    -------
+    g : networkx.MultiDiGraph
+        simplified graph representing the street network, with added binary edge attribute "pbi"
+    """
+
+    # add binary edge attribute "pbi" (protected bike infra: True/False)
+    for edge in g.edges(keys=True):
+        if g.edges[edge].get("cycleway") in config.cycleway_bike_infra:
+            g.edges[edge]["pbi"] = 1
+        elif g.edges[edge].get("cycleway:right") in config.cycleway_right_bike_infra:
+            g.edges[edge]["pbi"] = 1
+        elif g.edges[edge].get("cycleway:left") in config.cycleway_left_bike_infra:
+            g.edges[edge]["pbi"] = 1
+        elif g.edges[edge].get("cycleway:both") in config.cycleway_both_bike_infra:
+            g.edges[edge]["pbi"] = 1
+        elif g.edges[edge].get("highway") in config.highway_bike_infra:
+            g.edges[edge]["pbi"] = 1
+        else:
+            g.edges[edge]["pbi"] = 0
+    return g
+
+def bike_infra_mapping_gdf(g, edges_gdf):
+    """
+    add binary edge attribute pbi to edges_gdf
+
+    Parameters
+    ----------
+    g : networkx.MultiDiGraph
+        simplified graph representing the street network, with added binary edge attribute "pbi"
+    edges_gdf: geopandas.GeoDataFrame
+        edges representing the street network
+
+    Returns
+    -------
+    edges_gdf: geopandas.GeoDataFrame
+        edges representing the street network with added binary attribute "pbi"
+    """
+    # Build dict of edge attribute
+    attr_dict = {
+        (u, v, k): data['pbi']
+        for u, v, k, data in g.edges(keys=True, data=True)
+    }
+
+    # Map to GeoDataFrame
+    edges_gdf['pbi'] = edges_gdf.index.map(attr_dict)
+    return edges_gdf
+
+def weigh_edges(G, penalty):
+    """
+    adds weight parameter to all edges in G, which is calculated by multiplying the length of the edge with the corresponding penalty value
+
+    Parameters
+    ----------
+    G: networkx.Graph
+        undirected simple graph representing the street network
+    penalty: dictionary
+        dictionary of penalty values, dependent on if edge has bike infrastructure or not
+
+    Returns
+    -------
+    G: networkx.Graph
+        undirected simple graph representing the street network with weighted edges
+    """
+    for edge in G.edges:
+        # compute edge weight
+        edge_pbi = G.edges[edge]["pbi"]
+        edge_length = G.edges[edge]["length"]
+        edge_weight = edge_length * penalty[edge_pbi]
+        # add as attribute
+        G.edges[edge]["weight"] = edge_weight
+    return G
