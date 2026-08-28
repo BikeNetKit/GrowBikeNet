@@ -416,11 +416,7 @@ def growbikenet(
     # Add pbi and weight before calculating shortest paths
     g_undir = map_edges_to_bike_infrastructure(g_undir)
     edges = bike_infra_mapping_gdf(g_undir, edges)
-    g_undir = weigh_edges(g_undir, {0: 1.25, 1: 1})
-    
-    # for e in g_undir.edges(data=True):
-    #     print(e)
-    #     sys.exit()
+    g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
 
     # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
     grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
