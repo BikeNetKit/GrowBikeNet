@@ -9,7 +9,6 @@ import pandas as pd
 import warnings
 from tqdm.auto import tqdm
 import time
-import datetime
 from growbikenet.functions import (
     _validate_settings,
     _validate_parameters,
@@ -41,6 +40,8 @@ from growbikenet.functions import (
     weigh_edges,
     _print_header,
     _print_footer,
+    _import_data_files,
+    _acquire_network,
 )
 from growbikenet.visualization import generate_plots
 
@@ -250,65 +251,10 @@ def growbikenet(
         crs_calculations_was_auto = False
 
     ### Import data files
-    num_data_files = int(bool(import_files['point_data'])) + int(bool(import_files['trip_data']))
-    point_data = None
-    trip_data = None
-    if num_data_files:
-        progress_bar = tqdm(
-            desc="{:<23}".format("Importing data files"),
-            total=num_data_files,
-            unit="file",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent
-        )
-        if import_files['point_data']:
-            point_data = gpd.read_file(settings.import_path+import_files['point_data'])
-            progress_bar.update(1)
-        if import_files['trip_data']:
-            trip_data = pd.read_csv(settings.import_path+import_files['trip_data'])
-            progress_bar.update(1)
-        progress_bar.close()
+    num_data_files, point_data, trip_data = _import_data_files(import_files)
 
-    if import_files['growable_network'] is not None:
-        ### Import and preprocess data from file
-        city_boundary_exists = True
-        progress_bar = tqdm(
-            desc="{:<23}".format("Importing network data"),
-            total=1+int(bool(existing_network_spacing)),
-            unit="network",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
-        nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['growable_network'])
-        city_boundary_geometry = city_boundary_gdf.geometry[0]
-        progress_bar.update(1)
-    else:
-        ### Download and preprocess data from OSM
-        city_boundary_exists = True
-        progress_bar = tqdm(
-            desc="{:<23}".format("Downloading OSM data"),
-            total=1+int(bool(existing_network_spacing)),
-            unit="network",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
-        # Get city boundary 
-        if import_files['city_boundary']:
-            city_boundary_shp = gpd.read_file(settings.import_path+import_files['city_boundary'])
-            city_boundary_gdf = city_boundary_shp.iloc[[0]]    
-        else:
-            city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_query)
-        city_boundary_geometry = city_boundary_gdf.geometry[0]
-        # Fetch growable network data from osmnx
-        # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = download_network(city_query, network_type=constants.GROWABLE_NETWORK_TYPE, custom_filter=constants.GROWABLE_NETWORK_CUSTOM_FILTER, retain_all=False, city_boundary_geometry=city_boundary_geometry)
-        progress_bar.update(1)
-
-    # Update g_undir: Add the existing bike network
-    if existing_network_spacing is not None: 
-        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_query, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
-        progress_bar.update(1)
-    progress_bar.close()
+    ### Acquire network
+    city_boundary_exists, nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered, city_boundary_geometry, city_boundary_gdf = _acquire_network(import_files, existing_network_spacing, city_query)
 
     # Now that the graph is ready, resolve auto values
     ox.bearing.add_edge_bearings(g_undir)
