@@ -36,6 +36,9 @@ from growbikenet.functions import (
     add_trip_data_to_net,
     slugify,
     _get_weighted_distances,
+    map_edges_to_bike_infrastructure,
+    bike_infra_mapping_gdf,
+    weigh_edges,
 )
 from growbikenet.visualization import generate_plots
 
@@ -409,6 +412,15 @@ def growbikenet(
             bar_format='{l_bar}{bar:16}{r_bar}',
             disable=settings.silent,
         )
+
+    # Add pbi and weight before calculating shortest paths
+    g_undir = map_edges_to_bike_infrastructure(g_undir)
+    edges = bike_infra_mapping_gdf(g_undir, edges)
+    g_undir = weigh_edges(g_undir, {0: 1.25, 1: 1})
+    
+    # for e in g_undir.edges(data=True):
+    #     print(e)
+    #     sys.exit()
 
     # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
     grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)

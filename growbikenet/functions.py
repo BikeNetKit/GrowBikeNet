@@ -2,6 +2,7 @@
 
 from . import constants
 from . import settings
+from . import config
 import os
 from collections import defaultdict
 import re
@@ -1403,7 +1404,7 @@ def add_path_to_df(df, edges, g_undir):
                 G=g_undir,
                 source=int(row.source),
                 target=int(row.target),
-                weight="length",
+                weight="weight",
             )
         )
     df["path_nodes"] = paths
