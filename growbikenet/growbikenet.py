@@ -559,13 +559,21 @@ def growbikenet(
         seed_points_snapped_filtered.to_crs(epsg=settings.crs_result, inplace=True)
         if city_boundary_exists:
             city_boundary_gdf.to_crs(epsg=settings.crs_result, inplace=True)
-        if settings.export_file_format == "geojson":
+        if settings.export_file_format == "geojson": # To do: Simplify ugly code duplications and make this an IO function
             if settings.crs_result == '4326': # Export with RFC7946="YES"
-                edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
+                if existing_network_spacing:
+                    edges_ordered.iloc[[0]].to_file(settings.export_path['results']+slugify(city_string)+"-existing_bike_network.geojson", driver="GeoJSON", RFC7946="YES")
+                    edges_ordered.iloc[1:-1].to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
+                else:
+                    edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
                 seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_string+".geojson", driver="GeoJSON", RFC7946="YES")
                 if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON", RFC7946="YES")
-            else: # To do, maybe: Clean up ugly code duplication
-                edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
+            else:
+                if existing_network_spacing:
+                    edges_ordered.iloc[[0]].to_file(settings.export_path['results']+slugify(city_string)+"-existing_bike_network.geojson", driver="GeoJSON")
+                    edges_ordered.iloc[1:-1].to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
+                else:
+                    edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
                 seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_string+".geojson", driver="GeoJSON")
                 if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
         elif settings.export_file_format == "gpkg":
