@@ -39,6 +39,8 @@ from growbikenet.functions import (
     map_edges_to_bike_infrastructure,
     bike_infra_mapping_gdf,
     weigh_edges,
+    _print_header,
+    _print_footer,
 )
 from growbikenet.visualization import generate_plots
 
@@ -238,11 +240,7 @@ def growbikenet(
     
     np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
 
-    if not settings.silent:
-        print("==============================================")
-        print("RUNNING GROWBIKENET FOR CITY: " + city_query)
-        print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
-        print("----------------------------------------------╮")
+    _print_header(city_query, ordering, seed_point_type, existing_network_spacing)
     
     # Ask whether constants._CRS_CALCULATIONS was 'auto' ahead of network 
     # construction, as 'auto' is resolved inside `prepare_nodes_edges()`.
@@ -632,18 +630,7 @@ def growbikenet(
     if crs_calculations_was_auto:
         constants._CRS_CALCULATIONS = 'auto'
 
-    if not settings.silent:
-        print("----------------------------------------------╯")
-        if export_data:
-            print("Data exported to "+settings.export_path['results'])
-        if export_plots:
-            print("Plots exported to "+settings.export_path['plots'])
-        if export_data or export_plots:
-            print("----------------------------------------------")
-
     endtime = time.time()
-    if not settings.silent:
-        print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
-        print("==============================================")
+    _print_footer(export_data, export_plots, endtime, starttime)
 
     return edges_ordered

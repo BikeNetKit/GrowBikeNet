@@ -21,6 +21,7 @@ from shapely.affinity import rotate
 from shapely.strtree import STRtree
 from pyproj import Transformer
 from tqdm.auto import tqdm
+import datetime
 
 
 def _validate_settings():
@@ -245,6 +246,30 @@ def _resolve_auto_parameters(
         settings.import_data_trip_point_balance = 1
 
     return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
+
+
+def _print_header(city_query, ordering, seed_point_type, existing_network_spacing):
+    """Print header.
+    """
+    if not settings.silent:
+        print("==============================================")
+        print("RUNNING GROWBIKENET FOR CITY: " + city_query)
+        print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
+        print("----------------------------------------------╮")
+
+def _print_footer(export_data, export_plots, endtime, starttime):
+    """Print footer.
+    """
+    if not settings.silent:
+        print("----------------------------------------------╯")
+        if export_data:
+            print("Data exported to "+settings.export_path['results'])
+        if export_plots:
+            print("Plots exported to "+settings.export_path['plots'])
+        if export_data or export_plots:
+            print("----------------------------------------------")
+        print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
+        print("==============================================")
 
 
 def add_trip_data_to_net(trips, A, crs_calculations=constants._CRS_CALCULATIONS, matching_distance=settings.import_trip_data_snap_distance):
