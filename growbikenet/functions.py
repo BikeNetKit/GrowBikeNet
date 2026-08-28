@@ -168,11 +168,11 @@ def _resolve_auto_parameters(
         phi,
         import_files,
     ):
-    """Resolve auto parameters, their inconsistencies, and settings.
+    """Resolve auto parameters their inconsistencies, and settings.
     
     Parameters
     ----------
-    seed_point_* and existing_network_spacing and import_files from `growbikenet.growbikenet()`.
+    Several parameters from `growbikenet.growbikenet()`.
     
     Additionally:
     phi : float
@@ -180,7 +180,7 @@ def _resolve_auto_parameters(
 
     Returns
     -------
-    seed_point_* and existing_network_spacing from `growbikenet.growbikenet()`.
+    Several parameters from `growbikenet.growbikenet()`.
     """
     
     if import_files['seed_points']:
@@ -246,7 +246,7 @@ def _resolve_auto_parameters(
     return seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing
 
 
-def add_trip_data_to_net(trips, A, crs_projected=constants._CRS_CALCULATIONS, matching_distance=settings.import_trip_data_snap_distance):
+def add_trip_data_to_net(trips, A, crs_calculations=constants._CRS_CALCULATIONS, matching_distance=settings.import_trip_data_snap_distance):
     """Match trip data to network edges.
 
     First, match origin and destination points given in trips to the nodes.
@@ -265,7 +265,7 @@ def add_trip_data_to_net(trips, A, crs_projected=constants._CRS_CALCULATIONS, ma
         not provided, assumes 1 per trip.
     A: networkx.graph
         Graph created from triangulation edge list.
-    crs_projected : str, default `constants._CRS_CALCULATIONS`
+    crs_calculations : str, default `constants._CRS_CALCULATIONS`
         CRS that is used to project spatial data for calculations.
     matching_distance : int, default `settings.import_trip_data_snap_distance`
         Matching distance in meters. Set via 
@@ -282,7 +282,7 @@ def add_trip_data_to_net(trips, A, crs_projected=constants._CRS_CALCULATIONS, ma
 
     graph_with_data = A.copy()
 
-    transformer = Transformer.from_crs("EPSG:4326", crs_projected, always_xy=True)
+    transformer = Transformer.from_crs("EPSG:4326", crs_calculations, always_xy=True)
 
     # If column "num" is not provided assume 1 trip per origin-destination (OD) pair
     if 'num' in trips.columns:
@@ -334,7 +334,7 @@ def add_trip_data_to_net(trips, A, crs_projected=constants._CRS_CALCULATIONS, ma
     return graph_with_data
 
 
-def add_point_data_to_net(points, edges, crs_projected=constants._CRS_CALCULATIONS, matching_distance=settings.import_point_data_snap_distance):
+def add_point_data_to_net(points, edges, crs_calculations=constants._CRS_CALCULATIONS, matching_distance=settings.import_point_data_snap_distance):
     """Match point data to network edges.
 
     Parameters
@@ -347,7 +347,7 @@ def add_point_data_to_net(points, edges, crs_projected=constants._CRS_CALCULATIO
     edges : geopandas.geodataframe.GeoDataFrame
         A geodataframe of projected spatial network edges. This is the routed 
         network of seed points.
-    crs_projected : str, default `constants._CRS_CALCULATIONS`
+    crs_calculations : str, default `constants._CRS_CALCULATIONS`
         CRS that is used to project OSM data for calculations.
     matching_distance : int, default `settings.import_point_data_snap_distance`
         Matching distance in meters. Set via 
@@ -363,7 +363,7 @@ def add_point_data_to_net(points, edges, crs_projected=constants._CRS_CALCULATIO
 
     edges_with_data = edges.copy()
 
-    points_projected = points.to_crs(crs_projected)
+    points_projected = points.to_crs(crs_calculations)
 
     # If column "num" is not provided assume 1 event per point
     if 'num' in points_projected.columns:
@@ -468,12 +468,34 @@ def import_network(growable_network, import_path=settings.import_path):
     city_boundary_gdf = gpd.GeoDataFrame(gpd.GeoSeries(nodes.union_all().convex_hull), geometry=0, crs=nodes.crs) # We do this before the projection of nodes below
     # To do: To be super-correct, the hull should be buffered by settings.seed_point_snap_distance (in degrees due to being unprojected)
 
-    nodes, edges = prepare_nodes_edges(nodes, edges)
+    nodes, edges = prepare_nodes_edges(nodes, edges, constants._CRS_CALCULATIONS)
 
     return nodes, edges, g_undir, city_boundary_gdf
 
 
-def prepare_nodes_edges(nodes, edges, crs_projected=constants._CRS_CALCULATIONS):
+def _resolve_crs_calculations(gdf, crs_calculations=constants._CRS_CALCULATIONS):
+    """ Resolve constants._CRS_CALCULATIONS = 'auto'
+    
+    Parameters
+    ----------
+    gdf : geopandas.geodataframe.GeoDataFrame
+        A geodataframe from which to estimate the UTM CRS
+    crs_calculations : str
+        A given CRS, or 'auto'. If 'auto', it is resolved to an estimated UTM.
+        In this case, it also sets `constants._CRS_CALCULATIONS` to the UTM.
+
+    Returns
+    -------
+    crs_calculations : str
+        If it was set to 'auto', the estimated UTM, otherwise identical to the
+        input `crs_calculations`.
+    """
+    if crs_calculations == 'auto':
+        crs_calculations = gdf.estimate_utm_crs()
+        constants._CRS_CALCULATIONS = crs_calculations
+    return crs_calculations
+
+def prepare_nodes_edges(nodes, edges, crs_calculations=constants._CRS_CALCULATIONS):
     """Project and prepare nodes and edges for further use.
     
     Parameters
@@ -482,7 +504,7 @@ def prepare_nodes_edges(nodes, edges, crs_projected=constants._CRS_CALCULATIONS)
         OSM nodes, unprojected.
     edges : geopandas.geodataframe.GeoDataFrame
         OSM edges, unprojected.
-    crs_projected : str, default `constants._CRS_CALCULATIONS`
+    crs_calculations : str, default `constants._CRS_CALCULATIONS`
         EPSG code of the CRS that is used to project OSM data for calculations. 
         
     Returns
@@ -497,6 +519,7 @@ def prepare_nodes_edges(nodes, edges, crs_projected=constants._CRS_CALCULATIONS)
     For all edges between a pair of nodes u and v there must be one edge with 
     key 0.
     """
+    crs_calculations = _resolve_crs_calculations(nodes, crs_calculations)
 
     if not edges.empty:
         # Drop edges with key != 0, effectively making it a non-multigraph
@@ -508,9 +531,9 @@ def prepare_nodes_edges(nodes, edges, crs_projected=constants._CRS_CALCULATIONS)
         # ``osmnx.convert.to_digraph()``, independent of the key.
 
         # Project geometries of nodes, edges
-        edges = edges.to_crs(crs_projected)
+        edges = edges.to_crs(crs_calculations)
 
-    nodes = nodes.to_crs(crs_projected)
+    nodes = nodes.to_crs(crs_calculations)
 
     # Add osm ID as column to node gdf
     nodes["osmid"] = nodes.index
@@ -589,7 +612,7 @@ def nx_to_nodes_edges(G):
     fill_edge_geometry=True
     )
 
-    nodes, edges = prepare_nodes_edges(nodes, edges)
+    nodes, edges = prepare_nodes_edges(nodes, edges, constants._CRS_CALCULATIONS)
     return nodes, edges
     
 
@@ -775,7 +798,7 @@ def filter_network_by_component_length(g_undir):
             node_geometry=True,
             fill_edge_geometry=True
             )
-        nodes_filtered, _ = prepare_nodes_edges(nodes_filtered, gpd.GeoDataFrame())
+        nodes_filtered, _ = prepare_nodes_edges(nodes_filtered, gpd.GeoDataFrame(), constants._CRS_CALCULATIONS)
     else:
         nodes_filtered = gpd.GeoDataFrame(columns = ['y', 'x', 'timestamp', 'street_count', 'geometry', 'osmid'], geometry='geometry', crs=constants._CRS_CALCULATIONS).set_index('osmid', drop=False)
         edges_filtered = gpd.GeoDataFrame(columns = ['highway', 'osmid', 'length', 'oneway', 'from', 'to', 'geometry', 'u', 'v', 'key'], geometry='geometry', crs=constants._CRS_CALCULATIONS).set_index(['u','v','key'])
@@ -820,6 +843,7 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
         buffer_seed_points_exnw.to_crs(constants._CRS_CALCULATIONS, inplace=True)
 
         # Delete the seed points that are too close to seed_points_exnw via its buffer
+        seed_points_snapped.to_crs(constants._CRS_CALCULATIONS, inplace=True)
         seed_points_snapped = seed_points_snapped.overlay(buffer_seed_points_exnw, how='difference')
 
         # Merge original snapped points with new existing network points (=already snapped)
