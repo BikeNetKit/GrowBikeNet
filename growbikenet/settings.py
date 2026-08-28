@@ -11,9 +11,8 @@ export_path : dict(str)
     Paths to results and plots folders to save data and plots.
 export_file_format : {'gpkg', 'geojson'}, default 'gpkg'
     File format for the data export, relevant if `export_data` is set to True. 
-    If exporting as geojson, generates extra files for seed points and city 
-    boundary. If exporting as gkpg, these are added all in one file as extra 
-    layers.
+    If exporting as geojson, generates extra files for seed points, city 
+    boundary, and existing bicycle network (if relevant). If exporting as gkpg, these are added all in one file as extra layers.
 import_data_impact : float, default 9
     Impact of imported trip or point data on results. Must be non-negative.
 import_data_trip_point_balance : float, default 0.5
