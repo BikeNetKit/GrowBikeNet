@@ -515,6 +515,8 @@ def growbikenet(
 
     edges_ordered = gpd.GeoDataFrame(edges_ordered, crs=constants._CRS_CALCULATIONS, geometry="geometry")
 
+    # To do: re-route edges dynamically, accounting for growing edges becoming pbi=1
+
     # Add existing bike network on top, https://stackoverflow.com/a/43408736
     if existing_network_spacing:
         existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ordered.columns}, index=[-1], crs=constants._CRS_CALCULATIONS)

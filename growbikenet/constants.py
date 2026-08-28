@@ -60,10 +60,10 @@ _BUFFER_SEED_POINTS_EXNW_FACTOR : float, default 0.5
     to the extra existing network points.
 _BEARING_BINS : int, default 72
     Number of bins to determine bearing. e.g. 72 will create 5 degrees bins.
-_ROUTING_PENALTY : dict, default {0: 1.25, 1: 1}
+_ROUTING_PENALTY : dict, default {0: 1.5, 1: 1}
     Factor to multiply length of non-pbi/pbi for routing, to avoid routing
     through parallel streets when slightly longer pbi is available. By 
-    default, non-pbi counts as 25% longer than pbi.
+    default, non-pbi counts as 50% longer than pbi.
 
 References
 ----------
@@ -125,4 +125,4 @@ _BUFFER_SEED_POINTS_EXNW_FACTOR = 0.5
 
 _BEARING_BINS = 72
 
-_ROUTING_PENALTY = {0: 1.25, 1: 1}
+_ROUTING_PENALTY = {0: 1.5, 1: 1}
