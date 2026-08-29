@@ -44,6 +44,7 @@ from growbikenet.functions import (
     _acquire_network,
     _create_seed_points,
     initialize_progress_bar,
+    _snap_filter_seed_points,
 )
 from growbikenet.visualization import generate_plots
 
@@ -273,34 +274,13 @@ def growbikenet(
 
     ### Create seed points
     progress_bar = initialize_progress_bar("Creating seed points", 3+int(bool(existing_network_spacing))) # 3 or 4
-    seed_points = _create_seed_points(seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry)
-    progress_bar.update(1)
+    seed_points = _create_seed_points(progress_bar, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry)
     
-    # Snap seed points to OSM nodes
-    seed_points_snapped = snap_points_to_osm_nodes(seed_points, nodes)
-    if seed_point_linking == 'quadrangulate': # Map geometry to osmid
-        mapping = {row.geometry_generated: row.osmid for row in seed_points_snapped.itertuples()}
-        nx.relabel_nodes(seed_network, mapping, copy=False)
-    progress_bar.update(1)
-    seed_points_snapped_filtered = filter_points_distant_from_osm_nodes(seed_points_snapped, settings.seed_point_snap_distance)
-    if seed_point_linking == 'quadrangulate': # Remove all filtered out nodes
-        filtered_nodes = set(seed_points_snapped.osmid) - set(seed_points_snapped_filtered.osmid)
-        seed_network.remove_nodes_from(filtered_nodes)
-        seed_network = seed_network.subgraph(sorted(nx.connected_components(seed_network), key=len, reverse=True)[0]) # Keep only the largest connected component (the network might have fallen apart)
-    progress_bar.update(1)
+    # Snap and filter seed points to OSM nodes
+    seed_points_snapped_filtered = _snap_filter_seed_points(progress_bar, seed_points, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered)
 
-    if existing_network_spacing is not None:
-        seed_points_snapped_filtered = _update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing)
-        progress_bar.update(1)
-    progress_bar.close()
-
-
-    # Abort if less than 3 seed points. Triangulation needs at least 3.
-    if len(seed_points_snapped_filtered) < 3:
-        raise RuntimeError("Found less than 3 seed points, but more are needed.")
-
+    ### *angulate
     if seed_point_linking != 'quadrangulate':
-        ### Triangulate
         # Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
         progress_bar = initialize_progress_bar("Triangulation", 1)
         # Create unrouted network with delaunay triangulation edges

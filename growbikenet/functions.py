@@ -338,7 +338,7 @@ def _acquire_network(import_files, existing_network_spacing, city_query):
     return city_boundary_exists, nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered, city_boundary_geometry, city_boundary_gdf
 
 
-def _create_seed_points(seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry):
+def _create_seed_points(progress_bar, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry):
     """Create seed points.
     """
     if seed_point_type == 'grid_square' or seed_point_type == 'grid_triangle':
@@ -357,7 +357,34 @@ def _create_seed_points(seed_point_type, g_undir, edges, nodes, seed_point_grid_
 
     if seed_point_type == 'tags' or seed_point_type in constants._PRESET_TAGS:
         seed_points = _get_tags_seed_points(city_query, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
+    progress_bar.update(1)
     return seed_points
+
+
+def _snap_filter_seed_points(progress_bar, seed_points, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered):
+    """Snap and filter seed points.
+    """
+    seed_points_snapped = snap_points_to_osm_nodes(seed_points, nodes)
+    if seed_point_linking == 'quadrangulate': # Map geometry to osmid
+        mapping = {row.geometry_generated: row.osmid for row in seed_points_snapped.itertuples()}
+        nx.relabel_nodes(seed_network, mapping, copy=False)
+    progress_bar.update(1)
+    seed_points_snapped_filtered = filter_points_distant_from_osm_nodes(seed_points_snapped, settings.seed_point_snap_distance)
+    if seed_point_linking == 'quadrangulate': # Remove all filtered out nodes
+        filtered_nodes = set(seed_points_snapped.osmid) - set(seed_points_snapped_filtered.osmid)
+        seed_network.remove_nodes_from(filtered_nodes)
+        seed_network = seed_network.subgraph(sorted(nx.connected_components(seed_network), key=len, reverse=True)[0]) # Keep only the largest connected component (the network might have fallen apart)
+    progress_bar.update(1)
+
+    if existing_network_spacing is not None:
+        seed_points_snapped_filtered = _update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing)
+        progress_bar.update(1)
+    progress_bar.close()
+
+    # Abort if less than 3 seed points. Triangulation needs at least 3.
+    if len(seed_points_snapped_filtered) < 3:
+        raise RuntimeError("Found less than 3 seed points, but more are needed.")
+    return seed_points_snapped_filtered
 
 
 def add_trip_data_to_net(trips, A, crs_calculations=constants._CRS_CALCULATIONS, matching_distance=settings.import_trip_data_snap_distance):
