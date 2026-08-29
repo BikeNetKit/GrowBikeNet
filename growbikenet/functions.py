@@ -252,24 +252,36 @@ def _print_header(city_query, ordering, seed_point_type, existing_network_spacin
     """Print header.
     """
     if not settings.silent:
-        print("==============================================")
+        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"=")
         print("RUNNING GROWBIKENET FOR CITY: " + city_query)
         print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
-        print("----------------------------------------------╮")
+        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"-"+"╮")
 
 def _print_footer(export_data, export_plots, endtime, starttime):
     """Print footer.
     """
     if not settings.silent:
-        print("----------------------------------------------╯")
+        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"-"+"╯")
         if export_data:
             print("Data exported to "+settings.export_path['results'])
         if export_plots:
             print("Plots exported to "+settings.export_path['plots'])
         if export_data or export_plots:
-            print("----------------------------------------------")
+            print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"-")
         print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
-        print("==============================================")
+        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"=")
+
+def initialize_progress_bar(desc_string, total=1, unit="step"):
+    """Initialize tqdm progress bar.
+    """
+    desc_pre = "{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}"
+    return tqdm(
+        desc=desc_pre.format(desc_string),
+        total=total,
+        unit=unit,
+        bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
+        disable=settings.silent,
+    )
 
 def _import_data_files(import_files):
     """Import data files.
@@ -278,13 +290,7 @@ def _import_data_files(import_files):
     point_data = None
     trip_data = None
     if num_data_files:
-        progress_bar = tqdm(
-            desc="{:<23}".format("Importing data files"),
-            total=num_data_files,
-            unit="file",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent
-        )
+        progress_bar = initialize_progress_bar("Importing data files", num_data_files, "file")
         if import_files['point_data']:
             point_data = gpd.read_file(settings.import_path+import_files['point_data'])
             progress_bar.update(1)
@@ -301,26 +307,14 @@ def _acquire_network(import_files, existing_network_spacing, city_query):
     if import_files['growable_network'] is not None:
         ### Import and preprocess data from file
         city_boundary_exists = True
-        progress_bar = tqdm(
-            desc="{:<23}".format("Importing network data"),
-            total=1+int(bool(existing_network_spacing)),
-            unit="network",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
+        progress_bar = initialize_progress_bar("Importing network data", 1+int(bool(existing_network_spacing)), "network")
         nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['growable_network'])
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         progress_bar.update(1)
     else:
         ### Download and preprocess data from OSM
         city_boundary_exists = True
-        progress_bar = tqdm(
-            desc="{:<23}".format("Downloading OSM data"),
-            total=1+int(bool(existing_network_spacing)),
-            unit="network",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
+        progress_bar = initialize_progress_bar("Downloading OSM data", 1+int(bool(existing_network_spacing)), "network")
         # Get city boundary 
         if import_files['city_boundary']:
             city_boundary_shp = gpd.read_file(settings.import_path+import_files['city_boundary'])
@@ -342,6 +336,28 @@ def _acquire_network(import_files, existing_network_spacing, city_query):
     progress_bar.close()
 
     return city_boundary_exists, nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered, city_boundary_geometry, city_boundary_gdf
+
+
+def _create_seed_points(seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry):
+    """Create seed points.
+    """
+    if seed_point_type == 'grid_square' or seed_point_type == 'grid_triangle':
+        # Bearings work on unprojected graph
+        principal_bearing = get_principal_bearing(g_undir)
+
+        # But this is on the projected edges now
+        seed_points, seed_network = _get_grid_seed_points(
+            edges, seed_point_grid_spacing, principal_bearing, seed_point_type
+        ) # The seed_network is only relevant for quadrangulation
+    elif seed_point_type in constants._PRESET_TAGS:
+        seed_point_tags = constants._PRESET_TAGS[seed_point_type]
+    elif seed_point_type == 'file':
+        seed_points = gpd.read_file(settings.import_path+import_files['seed_points'])
+        seed_points = _prepare_seed_points(seed_points)
+
+    if seed_point_type == 'tags' or seed_point_type in constants._PRESET_TAGS:
+        seed_points = _get_tags_seed_points(city_query, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
+    return seed_points
 
 
 def add_trip_data_to_net(trips, A, crs_calculations=constants._CRS_CALCULATIONS, matching_distance=settings.import_trip_data_snap_distance):
@@ -1356,13 +1372,14 @@ def _remove_edge_overlaps(edges_in):
     """
     edges_out = edges_in.copy()
     grown_net = MultiLineString()
+    desc_pre = "{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}"
     for row in tqdm(
         edges_in.itertuples(),
-            desc="{:<23}".format("Removing edge overlaps"),
+            desc=desc_pre.format("Removing edge overlaps"),
             leave=True,
             unit="edge",
             total=len(list(edges_in.itertuples())),
-            bar_format='{l_bar}{bar:16}{r_bar}',
+            bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
             disable=settings.silent,
         ):
         grown_net_new = grown_net | row.geometry # Calculate union
