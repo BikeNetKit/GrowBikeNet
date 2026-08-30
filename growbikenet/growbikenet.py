@@ -226,6 +226,7 @@ def growbikenet(
     .. [4] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
     """
     starttime = time.time()
+    np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
 
     _validate_settings()
     import_files = _validate_parameters(
@@ -241,12 +242,9 @@ def growbikenet(
         import_files,
         seed_point_tags,
     )
-    
-    np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
-
-    _print_header(city_query, ordering, seed_point_type, existing_network_spacing)
-    
     setting_was_auto = _remember_auto_settings()
+    
+    _print_header(city_query, ordering, seed_point_type, existing_network_spacing)
 
     ### Import data files
     num_data_files, point_data, trip_data = _import_data_files(import_files)
