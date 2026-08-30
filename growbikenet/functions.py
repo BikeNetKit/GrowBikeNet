@@ -408,6 +408,26 @@ def _angulate_seed_points(seed_point_linking, seed_points_snapped_filtered, seed
     return grown_bikenet_edges_abstract
 
 
+def _remember_auto_settings():
+    """Remember auto settings and constants, to set back later to auto.
+    """
+    setting_was_auto = {'crs_calculations': False, 'crs_viz': False}
+    # Ask whether constants._CRS_CALCULATIONS was 'auto' ahead of network 
+    # construction, as 'auto' is resolved inside `prepare_nodes_edges()`.
+    if constants._CRS_CALCULATIONS == 'auto':
+        setting_was_auto['crs_calculations'] = True
+    if settings.viz["crs"] == 'auto':
+        setting_was_auto['crs_viz'] = True
+    return setting_was_auto
+
+def _reset_auto_settings(setting_was_auto):
+    """Reset settings and constants to auto.
+    """
+    if setting_was_auto['crs_calculations']:
+        constants._CRS_CALCULATIONS = 'auto'
+    if setting_was_auto['crs_viz']:
+        settings.viz["crs"] = 'auto'
+
 def add_trip_data_to_net(trips, A, crs_calculations=constants._CRS_CALCULATIONS, matching_distance=settings.import_trip_data_snap_distance):
     """Match trip data to network edges.
 

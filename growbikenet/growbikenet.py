@@ -43,6 +43,8 @@ from growbikenet.functions import (
     initialize_progress_bar,
     _snap_filter_seed_points,
     _angulate_seed_points,
+    _remember_auto_settings,
+    _reset_auto_settings,
 )
 from growbikenet.visualization import generate_plots
 
@@ -244,12 +246,7 @@ def growbikenet(
 
     _print_header(city_query, ordering, seed_point_type, existing_network_spacing)
     
-    # Ask whether constants._CRS_CALCULATIONS was 'auto' ahead of network 
-    # construction, as 'auto' is resolved inside `prepare_nodes_edges()`.
-    if constants._CRS_CALCULATIONS == 'auto':
-        crs_calculations_was_auto = True
-    else:
-        crs_calculations_was_auto = False
+    setting_was_auto = _remember_auto_settings()
 
     ### Import data files
     num_data_files, point_data, trip_data = _import_data_files(import_files)
@@ -484,11 +481,8 @@ def growbikenet(
         os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
         
         if settings.viz["crs"] == "auto": # Make it local azimuthal by default
-            crs_was_auto = True # Needed to reset afterwards
             network_center = edges_ordered.to_crs(constants._CRS_CALCULATIONS).dissolve().centroid.to_crs('4326') # Calculate centroid in projected CRS, then go back to unprojected CRS for lat lon
             settings.viz["crs"] = f"+proj=aeqd +R=6371000 +units=m +lat_0={network_center.y[0]} +lon_0={network_center.x[0]}" # The first coordinate x is the latitude
-        else:
-            crs_was_auto = False # Needed to reset afterwards
 
         generate_plots(
             edges_ordered,
@@ -499,9 +493,7 @@ def growbikenet(
         if crs_was_auto: # Reset auto crs
             settings.viz["crs"] = 'auto'
 
-    # Reset constants._CRS_CALCULATIONS if it was auto
-    if crs_calculations_was_auto:
-        constants._CRS_CALCULATIONS = 'auto'
+    _reset_auto_settings(setting_was_auto)
 
     endtime = time.time()
     _print_footer(export_data, export_plots, endtime, starttime)
