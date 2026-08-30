@@ -250,7 +250,7 @@ def growbikenet(
     ### Acquire network
     city_boundary_exists, nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered, city_boundary_geometry, city_boundary_gdf = _acquire_network(import_files, existing_network_spacing, city_query)
 
-    # Now that the graph is ready, resolve auto values
+    # Now that the graph is ready, resolve auto parameters
     ox.bearing.add_edge_bearings(g_undir)
     seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = _resolve_auto_parameters(
         seed_point_type,
@@ -260,8 +260,8 @@ def growbikenet(
         orientation_order(g_undir), # phi
         import_files,
     )
-    # At this point no value should be on 'auto' any longer and inconsistencies 
-    # should be resolved.
+    # At this point no parameter should be on 'auto' any longer and 
+    # inconsistencies should be resolved.
 
     ### Create seed points
     progress_bar = initialize_progress_bar("Creating seed points", 3+int(bool(existing_network_spacing))) # 3 or 4

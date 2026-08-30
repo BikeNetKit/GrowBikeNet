@@ -31,7 +31,8 @@ def _validate_settings():
     Returns
     -------
     setting_was_auto : dict
-        Dictionary remembering which setting or constant was set to auto.
+        Dictionary remembering which setting or constant was set to auto, so 
+        it can be reset to auto in the end.
     """
 
     if type(constants._CRS_CALCULATIONS) is not str:
