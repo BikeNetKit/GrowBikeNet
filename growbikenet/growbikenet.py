@@ -15,9 +15,6 @@ from growbikenet.functions import (
     orientation_order,
     _resolve_auto_parameters,
     get_principal_bearing,
-    _prepare_seed_points,
-    _get_grid_seed_points,
-    _get_tags_seed_points,
     snap_points_to_osm_nodes,
     filter_points_distant_from_osm_nodes,
     _create_delaunay_edges,
@@ -45,6 +42,7 @@ from growbikenet.functions import (
     _create_seed_points,
     initialize_progress_bar,
     _snap_filter_seed_points,
+    _angulate_seed_points,
 )
 from growbikenet.visualization import generate_plots
 
@@ -274,26 +272,13 @@ def growbikenet(
 
     ### Create seed points
     progress_bar = initialize_progress_bar("Creating seed points", 3+int(bool(existing_network_spacing))) # 3 or 4
-    seed_points = _create_seed_points(progress_bar, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry)
+    seed_points, seed_network = _create_seed_points(progress_bar, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry)
     
     # Snap and filter seed points to OSM nodes
     seed_points_snapped_filtered = _snap_filter_seed_points(progress_bar, seed_points, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered)
 
     ### *angulate
-    if seed_point_linking != 'quadrangulate':
-        # Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
-        progress_bar = initialize_progress_bar("Triangulation", 1)
-        # Create unrouted network with delaunay triangulation edges
-        grown_bikenet_edges_abstract = _create_delaunay_edges(seed_points_snapped_filtered)
-    else: # Build the same dataframe structure for the abstract network from the seed_network.edges
-        progress_bar = initialize_progress_bar("Quadrangulation", 1)
-        grown_bikenet_edges_abstract = pd.DataFrame({
-            'pair': seed_network.edges,
-            'source': [e[0] for e in seed_network.edges],
-            'target': [e[1] for e in seed_network.edges]
-            }) # Afterwards, all steps are identical
-    progress_bar.update(1)
-    progress_bar.close()
+    grown_bikenet_edges_abstract = _angulate_seed_points(seed_point_linking, seed_points_snapped_filtered, seed_network)
 
     ### Get routed geometry (LineString) for each abstract edge (row)
     progress_bar = initialize_progress_bar("Routing", 3)

@@ -341,6 +341,7 @@ def _acquire_network(import_files, existing_network_spacing, city_query):
 def _create_seed_points(progress_bar, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry):
     """Create seed points.
     """
+    seed_network = nx.Graph() # This is only relevant for some methods
     if seed_point_type == 'grid_square' or seed_point_type == 'grid_triangle':
         # Bearings work on unprojected graph
         principal_bearing = get_principal_bearing(g_undir)
@@ -358,7 +359,7 @@ def _create_seed_points(progress_bar, seed_point_type, g_undir, edges, nodes, se
     if seed_point_type == 'tags' or seed_point_type in constants._PRESET_TAGS:
         seed_points = _get_tags_seed_points(city_query, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
     progress_bar.update(1)
-    return seed_points
+    return seed_points, seed_network
 
 
 def _snap_filter_seed_points(progress_bar, seed_points, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered):
@@ -385,6 +386,26 @@ def _snap_filter_seed_points(progress_bar, seed_points, nodes, seed_point_linkin
     if len(seed_points_snapped_filtered) < 3:
         raise RuntimeError("Found less than 3 seed points, but more are needed.")
     return seed_points_snapped_filtered
+
+
+def _angulate_seed_points(seed_point_linking, seed_points_snapped_filtered, seed_network):
+    """Triangulate or quadrangulate seed points or seed point network.
+    """
+    if seed_point_linking != 'quadrangulate':
+        # Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
+        progress_bar = initialize_progress_bar("Triangulation", 1)
+        # Create unrouted network with delaunay triangulation edges
+        grown_bikenet_edges_abstract = _create_delaunay_edges(seed_points_snapped_filtered)
+    else: # Build the same dataframe structure for the abstract network from the seed_network.edges
+        progress_bar = initialize_progress_bar("Quadrangulation", 1)
+        grown_bikenet_edges_abstract = pd.DataFrame({
+            'pair': seed_network.edges,
+            'source': [e[0] for e in seed_network.edges],
+            'target': [e[1] for e in seed_network.edges]
+            }) # Afterwards, all steps are identical
+    progress_bar.update(1)
+    progress_bar.close()
+    return grown_bikenet_edges_abstract
 
 
 def add_trip_data_to_net(trips, A, crs_calculations=constants._CRS_CALCULATIONS, matching_distance=settings.import_trip_data_snap_distance):
