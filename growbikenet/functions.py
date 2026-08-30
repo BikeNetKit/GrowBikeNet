@@ -30,7 +30,8 @@ def _validate_settings():
 
     Returns
     -------
-    True
+    setting_was_auto : dict
+        Dictionary remembering which setting or constant was set to auto.
     """
 
     if type(constants._CRS_CALCULATIONS) is not str:
@@ -42,7 +43,15 @@ def _validate_settings():
         raise TypeError("settings.seed_point_snap_distance must be 'auto' or an integer")
     if type(settings.seed_point_snap_distance) is int and settings.seed_point_snap_distance <= 0:
         raise ValueError("settings.seed_point_snap_distance must be a positive integer")
-    return True
+
+    setting_was_auto = {'crs_calculations': False, 'crs_viz': False}
+    # Ask whether constants._CRS_CALCULATIONS was 'auto' ahead of network 
+    # construction, as 'auto' is resolved inside `prepare_nodes_edges()`.
+    if constants._CRS_CALCULATIONS == 'auto':
+        setting_was_auto['crs_calculations'] = True
+    if settings.viz["crs"] == 'auto':
+        setting_was_auto['crs_viz'] = True
+    return setting_was_auto
 
 
 def _validate_parameters(
@@ -407,18 +416,6 @@ def _angulate_seed_points(seed_point_linking, seed_points_snapped_filtered, seed
     progress_bar.close()
     return grown_bikenet_edges_abstract
 
-
-def _remember_auto_settings():
-    """Remember auto settings and constants, to set back later to auto.
-    """
-    setting_was_auto = {'crs_calculations': False, 'crs_viz': False}
-    # Ask whether constants._CRS_CALCULATIONS was 'auto' ahead of network 
-    # construction, as 'auto' is resolved inside `prepare_nodes_edges()`.
-    if constants._CRS_CALCULATIONS == 'auto':
-        setting_was_auto['crs_calculations'] = True
-    if settings.viz["crs"] == 'auto':
-        setting_was_auto['crs_viz'] = True
-    return setting_was_auto
 
 def _reset_auto_settings(setting_was_auto):
     """Reset settings and constants to auto.

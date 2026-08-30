@@ -43,7 +43,6 @@ from growbikenet.functions import (
     initialize_progress_bar,
     _snap_filter_seed_points,
     _angulate_seed_points,
-    _remember_auto_settings,
     _reset_auto_settings,
 )
 from growbikenet.visualization import generate_plots
@@ -228,7 +227,7 @@ def growbikenet(
     starttime = time.time()
     np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
 
-    _validate_settings()
+    setting_was_auto = _validate_settings()
     import_files = _validate_parameters(
         city_query,
         ordering,
@@ -242,7 +241,6 @@ def growbikenet(
         import_files,
         seed_point_tags,
     )
-    setting_was_auto = _remember_auto_settings()
     
     _print_header(city_query, ordering, seed_point_type, existing_network_spacing)
 
