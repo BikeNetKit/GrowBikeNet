@@ -8,7 +8,7 @@ edges_ordered = gbn.growbikenet("Podgorica",
                                existing_network_spacing='auto',
                                import_files={'growable_network':'podgorica_growable_network.gpkg',
                                'bike_network':'podgorica_bike_network.gpkg'},
-                               export_plots=False,
+                               export_plots=True,
                                )
 
 

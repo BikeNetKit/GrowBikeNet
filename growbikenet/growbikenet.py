@@ -43,6 +43,7 @@ from growbikenet.functions import (
     _print_header,
     _print_footer,
     _remove_edge_overlaps,
+    _reroute,
     _reset_auto_settings,
     _resolve_auto_parameters,
     _route,
@@ -262,9 +263,12 @@ def growbikenet(
     B, metric_weight = _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data)
 
     ### Compute edge metrics
-    edges_ordered = _compute_edge_metrics(ordering, B, metric_weight, )
+    edges_ordered = _compute_edge_metrics(ordering, B, metric_weight)
 
     # To do: re-route edges dynamically, accounting for growing edges becoming pbi=1
+    g_undir = _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract)
+    B, metric_weight = _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data, True)
+    edges_ordered = _compute_edge_metrics(ordering, B, metric_weight)
 
     # Postprocess edges, like removing overlaps
     edges_ordered = _postprocess_edges(existing_network_spacing, edges_exnw, edges_ordered)

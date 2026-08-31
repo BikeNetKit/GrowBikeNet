@@ -431,14 +431,17 @@ def _reset_auto_settings(setting_was_auto):
     if setting_was_auto['crs_viz']:
         settings.viz["crs"] = 'auto'
 
-def _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data):
+def _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data, rerouted = False):
     """Weigh edges, route, make graph object, add point and trip data.
     """
     progress_bar = initialize_progress_bar("Routing", 3)
 
     # Add pbi and weight before calculating shortest paths
-    g_undir = map_edges_to_bike_infrastructure(g_undir)
+    if not rerouted:
+        g_undir = map_edges_to_bike_infrastructure(g_undir)
     edges = bike_infra_mapping_gdf(g_undir, edges)
+    print(len(edges['pbi']==1))
+    print(len([_ for _,_,e in g_undir.edges(data=True) if e['pbi'] == 1]))
     g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
 
     # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
@@ -506,6 +509,15 @@ def _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_fil
     progress_bar.close()
 
     return B, metric_weight
+
+
+def _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
+    """Reroute all edges, set pbi iteratively.
+    """
+    for e in edges_ordered.itertuples(index=False):
+        # print(e.source, e.target)
+        g_undir = set_path_to_pbi(grown_bikenet_edges_abstract, e.source, e.target, edges, g_undir)
+    return g_undir
 
 
 def _compute_edge_metrics(ordering, B, metric_weight):
@@ -1706,6 +1718,45 @@ def add_path_to_df(df, edges, g_undir):
     df["path_edges"] = df.path_nodes.apply(lambda x: _get_correct_edgetuples(edges, x))
     return df
 
+def set_path_to_pbi(df, source, target, edges, g):
+    """Map an unrouted edge to a merged geometry of corresponding OSMnx 
+    edges (routed on `g`), and set g's edges pbi to 1.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Dataframe with information about edges.
+    edges : geopandas.geodataframe.GeoDataFrame
+        The street network, in a projected CRS.
+    g_undir : networkx.graph undirected
+        Graph to use for routing.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        Dataframe with added path nodes and path edges.
+    """
+    path = nx.shortest_path(
+        G=g,
+        source=int(source),
+        target=int(target),
+        weight="weight",
+    )
+    edgelist_prelim = zip(path, path[1:])
+    edgelist_final = []
+    for edge_prelim in edgelist_prelim:
+        if edge_prelim in edges.index:
+            edgelist_final.append(edge_prelim)
+        else:
+            edgelist_final.append(tuple([edge_prelim[1], edge_prelim[0]]))
+    # for e in g.edges(data=True):
+    #     print(e)
+    #     sys.exit()
+    for edge in edgelist_final:
+        g.edges[edge+(0,)]["pbi"] = 1
+    
+    return g
+
 
 def create_gdf_with_geoms(df, edges):
     """Merge path geometries and create geodataframe.
@@ -1807,7 +1858,6 @@ def _get_weighted_distances(B, num_types):
         dist_weighted_by_types_dict[k] = d/(1+settings.import_data_impact*(num_types_per_km_dict[k]/max_n))
 
     return dist_weighted_by_types_dict
-
 
 
 def map_edges_to_bike_infrastructure(g):
