@@ -377,7 +377,7 @@ def _create_seed_points(existing_network_spacing, seed_point_type, g_undir, edge
     return seed_points, seed_network, progress_bar
 
 
-def _snap_filter_seed_points(progress_bar, seed_points, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered):
+def _snap_filter_seed_points(progress_bar, seed_points, seed_network, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered):
     """Snap and filter seed points.
     """
     seed_points_snapped = snap_points_to_osm_nodes(seed_points, nodes)
@@ -1927,7 +1927,6 @@ def _prepare_export(export_data, export_plots, city_id, city_query, existing_net
     """
     if export_data or export_plots:
         os.makedirs(settings.export_path['results'], exist_ok=True)
-        # Note: city_string is slugified later
         if city_id is None:
             city_string = slugify(city_query)
         else:
@@ -1941,9 +1940,15 @@ def _prepare_export(export_data, export_plots, city_id, city_query, existing_net
         else:
             seed_point_string = seed_point_type
         export_data_filename = city_string + "-growbikenet-" + ordering + "-" + exnw_string + "-" + seed_point_string + "." + settings.export_file_format
-        return export_data_filename, city_string, exnw_string, seed_point_string
+        export_strings = {
+            "export_data_filename": export_data_filename,
+            "city_string": city_string,
+            "exnw_string": exnw_string,
+            "seed_point_string": seed_point_string,
+        }
+        return export_strings
 
-def export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary_exists, city_boundary_gdf, existing_network_spacing, edges_ordered, export_data_filename, city_string, exnw_string, seed_point_string):
+def export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary_exists, city_boundary_gdf, existing_network_spacing, edges_ordered, export_strings):
     """Export data.
     """
     
@@ -1956,35 +1961,35 @@ def export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary
             progress_bar = initialize_progress_bar("Exporting data", 2+int(bool(existing_network_spacing))+int(city_boundary_exists), "file")
             if settings.crs_result == '4326': # Export with RFC7946="YES"
                 if existing_network_spacing:
-                    edges_ordered.iloc[[0]].to_file(settings.export_path['results']+city_string+"-existing_bike_network.geojson", driver="GeoJSON", RFC7946="YES")
+                    edges_ordered.iloc[[0]].to_file(settings.export_path['results']+export_strings['city_string']+"-existing_bike_network.geojson", driver="GeoJSON", RFC7946="YES")
                     progress_bar.update(1)
-                    edges_ordered.iloc[1:-1].to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
+                    edges_ordered.iloc[1:-1].to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON", RFC7946="YES")
                     progress_bar.update(1)
                 else:
-                    edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
+                    edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON", RFC7946="YES")
                     progress_bar.update(1)
-                seed_points_snapped_filtered.to_file(settings.export_path['results']+city_string+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_string+".geojson", driver="GeoJSON", RFC7946="YES")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-seed_points-"+export_strings['exnw_string']+"-"+export_strings['seed_point_string']+".geojson", driver="GeoJSON", RFC7946="YES")
                 progress_bar.update(1)
                 if city_boundary_exists: 
-                    city_boundary_gdf.to_file(settings.export_path['results']+city_string+"-city_boundary.geojson", driver="GeoJSON", RFC7946="YES")
+                    city_boundary_gdf.to_file(settings.export_path['results']+export_strings['city_string']+"-city_boundary.geojson", driver="GeoJSON", RFC7946="YES")
                     progress_bar.update(1)
             else:
                 if existing_network_spacing:
-                    edges_ordered.iloc[[0]].to_file(settings.export_path['results']+city_string+"-existing_bike_network.geojson", driver="GeoJSON")
+                    edges_ordered.iloc[[0]].to_file(settings.export_path['results']+export_strings['city_string']+"-existing_bike_network.geojson", driver="GeoJSON")
                     progress_bar.update(1)
-                    edges_ordered.iloc[1:-1].to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
+                    edges_ordered.iloc[1:-1].to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON")
                     progress_bar.update(1)
                 else:
-                    edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
+                    edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON")
                     progress_bar.update(1)
-                seed_points_snapped_filtered.to_file(settings.export_path['results']+city_string+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_string+".geojson", driver="GeoJSON")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-seed_points-"+export_strings['exnw_string']+"-"+export_strings['seed_point_string']+".geojson", driver="GeoJSON")
                 progress_bar.update(1)
                 if city_boundary_exists: 
-                    city_boundary_gdf.to_file(settings.export_path['results']+city_string+"-city_boundary.geojson", driver="GeoJSON")
+                    city_boundary_gdf.to_file(settings.export_path['results']+export_strings['city_string']+"-city_boundary.geojson", driver="GeoJSON")
                     progress_bar.update(1)
         elif settings.export_file_format == "gpkg":
             progress_bar = initialize_progress_bar("Exporting data", 1, "file")
-            f = settings.export_path['results']+export_data_filename
+            f = settings.export_path['results']+export_strings['export_data_filename']
             if os.path.exists(f):
                 os.remove(f) # mode="w" does not work for to_file with gpkg. It always appends. Therefore, existing file needs to be deleted.
             if existing_network_spacing:
