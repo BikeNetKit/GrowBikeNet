@@ -22,6 +22,7 @@ from shapely.strtree import STRtree
 from pyproj import Transformer
 from tqdm.auto import tqdm
 import datetime
+from growbikenet.visualization import generate_plots
 
 
 def _validate_settings():
@@ -1871,3 +1872,21 @@ def export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary
             if city_boundary_exists: city_boundary_gdf.to_file(f, driver="GPKG", layer="City boundary")
             progress_bar.update(1)
         progress_bar.close()
+
+def export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing):
+    """Export plots.
+    """
+    if export_plots:
+
+        os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
+        
+        if settings.viz["crs"] == "auto": # Make it local azimuthal by default
+            network_center = edges_ordered.to_crs(constants._CRS_CALCULATIONS).dissolve().centroid.to_crs('4326') # Calculate centroid in projected CRS, then go back to unprojected CRS for lat lon
+            settings.viz["crs"] = f"+proj=aeqd +R=6371000 +units=m +lat_0={network_center.y[0]} +lon_0={network_center.x[0]}" # The first coordinate x is the latitude
+
+        generate_plots(
+            edges_ordered,
+            seed_points_snapped_filtered,
+            ordering,
+            bool(existing_network_spacing),
+        )

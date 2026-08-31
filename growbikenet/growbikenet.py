@@ -47,8 +47,8 @@ from growbikenet.functions import (
     _postprocess_edges,
     _prepare_export,
     export_data_to_file,
+    export_plots_to_file,
 )
-from growbikenet.visualization import generate_plots
 
 
 def growbikenet(
@@ -390,32 +390,16 @@ def growbikenet(
 
     edges_ordered = _postprocess_edges(edges_ordered)
 
-    # Generate export data filename
+    # Generate export data filenames
     export_data_filename, city_string, exnw_string, seed_point_string = _prepare_export(export_data, export_plots, city_id, city_query, existing_network_spacing, seed_point_type, ordering)
 
     ### Export data
     export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary_exists, city_boundary_gdf, existing_network_spacing, edges_ordered, export_data_filename, city_string, exnw_string, seed_point_string)
 
-    if export_plots:
-        ### Visualize
-
-        os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
-        
-        if settings.viz["crs"] == "auto": # Make it local azimuthal by default
-            network_center = edges_ordered.to_crs(constants._CRS_CALCULATIONS).dissolve().centroid.to_crs('4326') # Calculate centroid in projected CRS, then go back to unprojected CRS for lat lon
-            settings.viz["crs"] = f"+proj=aeqd +R=6371000 +units=m +lat_0={network_center.y[0]} +lon_0={network_center.x[0]}" # The first coordinate x is the latitude
-
-        generate_plots(
-            edges_ordered,
-            seed_points_snapped_filtered,
-            ordering,
-            bool(existing_network_spacing),
-        )
-        if crs_was_auto: # Reset auto crs
-            settings.viz["crs"] = 'auto'
+    ### Export plots
+    export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing)
 
     _reset_auto_settings(setting_was_auto)
-
     endtime = time.time()
     _print_footer(export_data, export_plots, endtime, starttime)
 
