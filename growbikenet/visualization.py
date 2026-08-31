@@ -44,10 +44,9 @@ def generate_plots(edges_ordered, nodes, ordering, with_existing_bike_network):
     n = len(edges_ordered)+int(not with_existing_bike_network)
     figs = [0]*n
 
-    desc_pre = "{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}"
     for framenum in tqdm(
         list(range(n)), # An extra frame upfront is used to show the empty net, so we need to add an extra frame in the end.
-        desc=desc_pre.format("Generating plots"),
+        desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Generating plots"),
         leave=True,
         unit="plot",
         bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',

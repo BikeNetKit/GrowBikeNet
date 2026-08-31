@@ -284,9 +284,8 @@ def _print_footer(export_data, export_plots, endtime, starttime):
 def initialize_progress_bar(desc_string, total=1, unit="step"):
     """Initialize tqdm progress bar.
     """
-    desc_pre = "{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}"
     return tqdm(
-        desc=desc_pre.format(desc_string),
+        desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format(desc_string),
         total=total,
         unit=unit,
         bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
@@ -1438,10 +1437,9 @@ def _remove_edge_overlaps(edges_in):
     """
     edges_out = edges_in.copy()
     grown_net = MultiLineString()
-    desc_pre = "{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}"
     for row in tqdm(
         edges_in.itertuples(),
-            desc=desc_pre.format("Removing edge overlaps"),
+            desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Removing edge overlaps"),
             leave=True,
             unit="edge",
             total=len(list(edges_in.itertuples())),
