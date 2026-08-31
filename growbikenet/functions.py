@@ -1774,3 +1774,46 @@ def weigh_edges(G, penalty):
         # add as attribute
         G.edges[edge]["weight"] = edge_weight
     return G
+
+def _postprocess_edges(edges_ordered):
+    """Postprocess edges: Remove overlaps, add length metrics, reorder, 
+    reproject.
+    """
+
+    # Remove edge overlaps
+    if not settings.allow_edge_overlaps:
+        edges_ordered = _remove_edge_overlaps(edges_ordered) # Can take a while, could be sped up.
+
+    # Add lengths and cumulative lengths, rounded to integer meters
+    edges_ordered['length'] = edges_ordered.geometry.length
+    edges_ordered['length_cumulative'] = edges_ordered.geometry.length.cumsum()
+    edges_ordered = edges_ordered.astype({'length': int, 'length_cumulative': int})
+
+    if constants.REORDER:
+        edges_ordered['ordering'] = edges_ordered.index
+
+    # Back to unprojected (potentially). No more calculations after here.
+    edges_ordered.to_crs(epsg=settings.crs_result, inplace=True)
+
+    return edges_ordered
+
+def _prepare_export(export_data, export_plots, city_id, city_query, existing_network_spacing, seed_point_type, ordering):
+    """Prepare export: Create folder and filename for exported data
+    """
+    if export_data or export_plots:
+        os.makedirs(settings.export_path['results'], exist_ok=True)
+        # Note: city_string is slugified later
+        if city_id is None:
+            city_string = slugify(city_query)
+        else:
+            city_string = slugify(city_id)
+        if existing_network_spacing:
+            exnw_string = "from_bikenw"
+        else:
+            exnw_string = "from_scratch"
+        if seed_point_type == "file":
+            seed_point_string = slugify(settings.seed_point_type_name)
+        else:
+            seed_point_string = seed_point_type
+        export_data_filename = city_string + "-growbikenet-" + ordering + "-" + exnw_string + "-" + seed_point_string + "." + settings.export_file_format
+        return export_data_filename, city_string, exnw_string, seed_point_string
