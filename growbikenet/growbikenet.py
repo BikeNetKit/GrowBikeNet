@@ -9,38 +9,48 @@ import pandas as pd
 import warnings
 from tqdm.auto import tqdm
 import time
-import datetime
 from growbikenet.functions import (
-    _validate_settings,
-    _validate_parameters,
-    orientation_order,
-    _resolve_auto_parameters,
-    get_principal_bearing,
-    _prepare_seed_points,
-    _get_grid_seed_points,
-    _get_tags_seed_points,
-    snap_points_to_osm_nodes,
-    filter_points_distant_from_osm_nodes,
-    _create_delaunay_edges,
     add_path_to_df,
-    create_gdf_with_geoms,
-    node_to_edge_attributes,
-    df_from_graph,
-    _order_df,
-    download_network,
-    update_with_existing_bike_network,
-    _update_seed_points_with_existing_bike_network,
-    _remove_edge_overlaps,
-    import_network,
     add_point_data_to_net,
     add_trip_data_to_net,
-    slugify,
-    _get_weighted_distances,
-    map_edges_to_bike_infrastructure,
     bike_infra_mapping_gdf,
+    create_gdf_with_geoms,
+    df_from_graph,
+    download_network,
+    export_data_to_file,
+    export_plots_to_file,
+    filter_points_distant_from_osm_nodes,
+    get_principal_bearing,
+    import_network,
+    initialize_progress_bar,
+    map_edges_to_bike_infrastructure,
+    node_to_edge_attributes,
+    orientation_order,
+    slugify,
+    snap_points_to_osm_nodes,
+    update_with_existing_bike_network,
     weigh_edges,
+    _acquire_network,
+    _angulate_seed_points,
+    _compute_edge_metrics,
+    _create_delaunay_edges,
+    _create_seed_points,
+    _get_weighted_distances,
+    _import_data_files,
+    _order_df,
+    _postprocess_edges,
+    _prepare_export,
+    _print_header,
+    _print_footer,
+    _remove_edge_overlaps,
+    _reset_auto_settings,
+    _resolve_auto_parameters,
+    _route,
+    _snap_filter_seed_points,
+    _update_seed_points_with_existing_bike_network,
+    _validate_parameters,
+    _validate_settings,
 )
-from growbikenet.visualization import generate_plots
 
 
 def growbikenet(
@@ -219,431 +229,58 @@ def growbikenet(
     .. [3] G. Boeing, `Urban spatial order: Street network orientation, configuration, and entropy`, Applied Network Science 4, 67 (2019)
     .. [4] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
     """
+
+    # Setup
     starttime = time.time()
-
-    _validate_settings()
-    import_files = _validate_parameters(
-        city_query,
-        ordering,
-        seed_point_type,
-        seed_point_grid_spacing,
-        seed_point_linking,
-        existing_network_spacing,
-        export_data,
-        city_id,
-        export_plots,
-        import_files,
-        seed_point_tags,
-    )
-    
     np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
-
-    if not settings.silent:
-        print("==============================================")
-        print("RUNNING GROWBIKENET FOR CITY: " + city_query)
-        print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
-        print("----------------------------------------------╮")
-    
-    # Ask whether constants._CRS_CALCULATIONS was 'auto' ahead of network 
-    # construction, as 'auto' is resolved inside `prepare_nodes_edges()`.
-    if constants._CRS_CALCULATIONS == 'auto':
-        crs_calculations_was_auto = True
-    else:
-        crs_calculations_was_auto = False
+    setting_was_auto = _validate_settings()
+    import_files = _validate_parameters(city_query, ordering, seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing, export_data, city_id, export_plots, import_files, seed_point_tags)
+    _print_header(city_query, ordering, seed_point_type, existing_network_spacing)
 
     ### Import data files
-    num_data_files = int(bool(import_files['point_data'])) + int(bool(import_files['trip_data']))
-    point_data = None
-    trip_data = None
-    if num_data_files:
-        progress_bar = tqdm(
-            desc="{:<23}".format("Importing data files"),
-            total=num_data_files,
-            unit="file",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent
-        )
-        if import_files['point_data']:
-            point_data = gpd.read_file(settings.import_path+import_files['point_data'])
-            progress_bar.update(1)
-        if import_files['trip_data']:
-            trip_data = pd.read_csv(settings.import_path+import_files['trip_data'])
-            progress_bar.update(1)
-        progress_bar.close()
+    num_data_files, point_data, trip_data = _import_data_files(import_files)
 
-    if import_files['growable_network'] is not None:
-        ### Import and preprocess data from file
-        city_boundary_exists = True
-        progress_bar = tqdm(
-            desc="{:<23}".format("Importing network data"),
-            total=1+int(bool(existing_network_spacing)),
-            unit="network",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
-        nodes, edges, g_undir, city_boundary_gdf = import_network(import_files['growable_network'])
-        city_boundary_geometry = city_boundary_gdf.geometry[0]
-        progress_bar.update(1)
-    else:
-        ### Download and preprocess data from OSM
-        city_boundary_exists = True
-        progress_bar = tqdm(
-            desc="{:<23}".format("Downloading OSM data"),
-            total=1+int(bool(existing_network_spacing)),
-            unit="network",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
-        # Get city boundary 
-        if import_files['city_boundary']:
-            city_boundary_shp = gpd.read_file(settings.import_path+import_files['city_boundary'])
-            city_boundary_gdf = city_boundary_shp.iloc[[0]]    
-        else:
-            city_boundary_gdf = ox.geocoder.geocode_to_gdf(city_query)
-        city_boundary_geometry = city_boundary_gdf.geometry[0]
-        # Fetch growable network data from osmnx
-        # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = download_network(city_query, network_type=constants.GROWABLE_NETWORK_TYPE, custom_filter=constants.GROWABLE_NETWORK_CUSTOM_FILTER, retain_all=False, city_boundary_geometry=city_boundary_geometry)
-        progress_bar.update(1)
+    ### Download/Import network
+    city_boundary_exists, nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered, city_boundary_geometry, city_boundary_gdf = _acquire_network(import_files, existing_network_spacing, city_query)
 
-    # Update g_undir: Add the existing bike network
-    if existing_network_spacing is not None: 
-        nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered = update_with_existing_bike_network(city_query, g_undir, import_files=import_files, city_boundary_geometry=city_boundary_geometry)
-        progress_bar.update(1)
-    progress_bar.close()
+    # Now that the graph is ready, resolve auto parameters
+    seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = _resolve_auto_parameters(seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing, orientation_order(g_undir), import_files)
 
-    # Now that the graph is ready, resolve auto values
-    ox.bearing.add_edge_bearings(g_undir)
-    phi = orientation_order(g_undir)
-    seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = _resolve_auto_parameters(
-        seed_point_type,
-        seed_point_grid_spacing,
-        seed_point_linking,
-        existing_network_spacing,
-        phi,
-        import_files,
-    )
-    # At this point no value should be on 'auto' any longer and inconsistencies should be resolved.
-
+    # At this point no parameter should be on 'auto' any longer and 
+    # inconsistencies should be resolved.
 
     ### Create seed points
-    progress_bar = tqdm(
-            desc="{:<23}".format("Creating seed points"),
-            total=3+int(bool(existing_network_spacing)), # 3 or 4
-            unit="step",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
+    seed_points, seed_network, progress_bar = _create_seed_points(existing_network_spacing, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry)
+    
+    # Snap and filter seed points to OSM nodes
+    seed_points_snapped_filtered = _snap_filter_seed_points(progress_bar, seed_points, seed_network, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered)
 
-    if seed_point_type == 'grid_square' or seed_point_type == 'grid_triangle':
-        # Bearings work on unprojected graph
-        principal_bearing = get_principal_bearing(g_undir)
+    ### *angulate
+    grown_bikenet_edges_abstract = _angulate_seed_points(seed_point_linking, seed_points_snapped_filtered, seed_network)
 
-        # But this is on the projected edges now
-        seed_points, seed_network = _get_grid_seed_points(
-            edges, seed_point_grid_spacing, principal_bearing, seed_point_type
-        ) # The seed_network is only relevant for quadrangulation
-    elif seed_point_type in constants._PRESET_TAGS:
-        seed_point_tags = constants._PRESET_TAGS[seed_point_type]
-    elif seed_point_type == 'file':
-        seed_points = gpd.read_file(settings.import_path+import_files['seed_points'])
-        seed_points = _prepare_seed_points(seed_points)
+    ### Routing: Get routed geometry (LineString) for each abstract edge (row)
+    B, metric_weight = _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data)
 
-    if seed_point_type == 'tags' or seed_point_type in constants._PRESET_TAGS:
-        seed_points = _get_tags_seed_points(city_query, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
-    progress_bar.update(1)
-
-    # Snap seed points to OSM nodes
-    seed_points_snapped = snap_points_to_osm_nodes(seed_points, nodes)
-    if seed_point_linking == 'quadrangulate': # Map geometry to osmid
-        mapping = {row.geometry_generated: row.osmid for row in seed_points_snapped.itertuples()}
-        nx.relabel_nodes(seed_network, mapping, copy=False)
-    progress_bar.update(1)
-    seed_points_snapped_filtered = filter_points_distant_from_osm_nodes(seed_points_snapped, settings.seed_point_snap_distance)
-    if seed_point_linking == 'quadrangulate': # Remove all filtered out nodes
-        filtered_nodes = set(seed_points_snapped.osmid) - set(seed_points_snapped_filtered.osmid)
-        seed_network.remove_nodes_from(filtered_nodes)
-        seed_network = seed_network.subgraph(sorted(nx.connected_components(seed_network), key=len, reverse=True)[0]) # Keep only the largest connected component (the network might have fallen apart)
-    progress_bar.update(1)
-
-    if existing_network_spacing is not None:
-        seed_points_snapped_filtered = _update_seed_points_with_existing_bike_network(seed_points_snapped_filtered, nodes_exnw_filtered, existing_network_spacing)
-        progress_bar.update(1)
-    progress_bar.close()
-
-
-    # Abort if less than 3 seed points. Triangulation needs at least 3.
-    if len(seed_points_snapped_filtered) < 3:
-        raise RuntimeError("Found less than 3 seed points, but more are needed.")
-
-    if seed_point_linking != 'quadrangulate':
-        ### Triangulate
-        # Triangulation and metrics (betweenness, closeness) are calculated for the unrouted, abstract network for which egde lengths are taken from the routed network.
-        progress_bar = tqdm(
-                desc="{:<23}".format("Triangulation"),
-                total=1,
-                unit="step",
-                bar_format='{l_bar}{bar:16}{r_bar}',
-                disable=settings.silent,
-            )
-        # Create unrouted network with delaunay triangulation edges
-        grown_bikenet_edges_abstract = _create_delaunay_edges(seed_points_snapped_filtered)
-    else: # Build the same dataframe structure for the abstract network from the seed_network.edges
-        progress_bar = tqdm(
-                desc="{:<23}".format("Quadrangulation"),
-                total=1,
-                unit="step",
-                bar_format='{l_bar}{bar:16}{r_bar}',
-                disable=settings.silent,
-            )
-        grown_bikenet_edges_abstract = pd.DataFrame({
-            'pair': seed_network.edges,
-            'source': [e[0] for e in seed_network.edges],
-            'target': [e[1] for e in seed_network.edges]
-            }) # Afterwards, all steps are identical
-    progress_bar.update(1)
-    progress_bar.close()
-
-    ### Get routed geometry (LineString) for each abstract edge (row)
-    progress_bar = tqdm(
-            desc="{:<23}".format("Routing"),
-            total=3,
-            unit="step",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
-
-    # Add pbi and weight before calculating shortest paths
-    g_undir = map_edges_to_bike_infrastructure(g_undir)
-    edges = bike_infra_mapping_gdf(g_undir, edges)
-    g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
-
-    # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
-    grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
-    progress_bar.update(1)
-    grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
-    progress_bar.update(1)
-
-    # Add distances between source and target from geometry
-    grown_bikenet_edges["dist"] = grown_bikenet_edges["geometry"].length
-
-    node_lon = seed_points_snapped_filtered.geometry.x # Needed for add_trip_data_to_net()
-    node_lat = seed_points_snapped_filtered.geometry.y # Needed for add_trip_data_to_net()
-    edge_list = grown_bikenet_edges["pair"]
-    dist_list = grown_bikenet_edges["dist"]
-    dist_dict = dict(zip(edge_list, dist_list))
-    geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
-    # Add point data to edges
-    if point_data is not None:
-        grown_bikenet_edges = add_point_data_to_net(point_data, grown_bikenet_edges)
-        num_points_list = grown_bikenet_edges["num_points"]
-        num_points_dict = dict(zip(edge_list, num_points_list))
-
-    # Make graph object from edge list
-    B = nx.Graph() # B like bike network
-    B.add_nodes_from(seed_points_snapped_filtered.index)
-    nx.set_node_attributes(B, node_lon, "x") # Needed for add_trip_data_to_net()
-    nx.set_node_attributes(B, node_lat, "y") # Needed for add_trip_data_to_net()
-    B.add_edges_from(edge_list)
-    nx.set_edge_attributes(B, dist_dict, "distance")
-    nx.set_edge_attributes(B, geom_dict, "geometry")
-    if point_data is not None:
-        nx.set_edge_attributes(B, num_points_dict, "num_points")
-    B.graph["crs"] = constants._CRS_CALCULATIONS # Needed for add_trip_data_to_net()
-    B = B.subgraph(sorted(nx.connected_components(B), key=len, reverse=True)[0]) # Keep only the largest connected component (the network might have fallen apart)
-    seed_points_snapped_filtered = seed_points_snapped_filtered[seed_points_snapped_filtered.index.isin(B.nodes)] # Remove seed points from disconnected components
-
-    if num_data_files:
-        # Add trip data to edges
-        if trip_data is not None:
-            B = add_trip_data_to_net(trip_data, B)
-
-        # Compute weighted distances
-        if trip_data is not None:
-            dist_weighted_by_trips_dict = _get_weighted_distances(B, "num_trips") # d_trip in [2]_
-        if point_data is not None:
-            dist_weighted_by_points_dict = _get_weighted_distances(B, "num_points") # d_crash in [2]_
-
-        # Combine them
-        dist_weighted_dict = {}
-        if trip_data is not None and point_data is not None:
-            for k in dist_weighted_by_trips_dict:
-                dist_weighted_dict[k] = settings.import_data_trip_point_balance*dist_weighted_by_trips_dict[k] + (1-settings.import_data_trip_point_balance)*dist_weighted_by_points_dict[k] # d_{W} in [2]_
-        elif trip_data is not None and point_data is None:
-            dist_weighted_dict = dist_weighted_by_trips_dict
-        elif trip_data is None and point_data is not None:
-            dist_weighted_dict = dist_weighted_by_points_dict
-
-        metric_weight = "distance_weighted"
-        nx.set_edge_attributes(B, dist_weighted_dict, metric_weight)
-    else:
-        metric_weight = "distance"
-
-    progress_bar.update(1)
-    progress_bar.close()
-
-    ### Compute edge attributes
-    progress_bar = tqdm(
-            desc="{:<23}".format("Computing edge metrics"),
-            total=2,
-            unit="step",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
-
-    # The ordering=="random" case has no edge attributes and is handled in _order_df
-    if ordering == "betweenness":
-        # Add betweenness attributes to edges
-        bc_values = nx.edge_betweenness_centrality(
-            B, weight=metric_weight, normalized=True
-        )
-        nx.set_edge_attributes(B, bc_values, name="betweenness")
-    elif ordering == "closeness":
-        # Add closeness attributes to nodes and edges
-        cc_values_nodes = nx.closeness_centrality(B, distance=metric_weight)
-        nx.set_node_attributes(B, cc_values_nodes, name="closeness")
-        cc_values = node_to_edge_attributes(cc_values_nodes, B.edges)
-        nx.set_edge_attributes(B, cc_values, name="closeness")
-    progress_bar.update(1)
-
-    # Export attributes to gdfs:
-    # Create dataframe and add method as edge attribute
-    edges_ordered = df_from_graph(B, ordering)
-
-    # Rank edges by specified method
-    edges_ordered = _order_df(edges_ordered, ordering)
-
-    edges_ordered = gpd.GeoDataFrame(edges_ordered, crs=constants._CRS_CALCULATIONS, geometry="geometry")
+    ### Compute edge metrics
+    edges_ordered = _compute_edge_metrics(ordering, B, metric_weight, )
 
     # To do: re-route edges dynamically, accounting for growing edges becoming pbi=1
 
-    # Add existing bike network on top, https://stackoverflow.com/a/43408736
-    if existing_network_spacing:
-        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ordered.columns}, index=[-1], crs=constants._CRS_CALCULATIONS)
-        existing_bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
-        edges_ordered.loc[-1] = existing_bikenet.loc[-1]
-        edges_ordered.index = edges_ordered.index+1
-        edges_ordered.sort_index(inplace=True)
-        edges_ordered.crs = constants._CRS_CALCULATIONS
-    progress_bar.update(1)
-    progress_bar.close()
+    # Postprocess edges, like removing overlaps
+    edges_ordered = _postprocess_edges(existing_network_spacing, edges_exnw, edges_ordered)
 
-    ### Remove edge overlaps
-    if not settings.allow_edge_overlaps:
-        edges_ordered = _remove_edge_overlaps(edges_ordered) # Can take a while, could be sped up.
-
-    # Add lengths and cumulative lengths, rounded to integer meters
-    edges_ordered['length'] = edges_ordered.geometry.length
-    edges_ordered['length_cumulative'] = edges_ordered.geometry.length.cumsum()
-    edges_ordered = edges_ordered.astype({'length': int, 'length_cumulative': int})
-
-    if constants.REORDER:
-        edges_ordered['ordering'] = edges_ordered.index
-
-    # Back to unprojected (potentially). No more calculations after here.
-    edges_ordered.to_crs(epsg=settings.crs_result, inplace=True)
-
-    # Generate export data filename
-    if export_data or export_plots:
-        os.makedirs(settings.export_path['results'], exist_ok=True)
-        # Note: city_string is slugified later
-        if city_id is None:
-            city_string = city_query
-        else:
-            city_string = city_id
-        if existing_network_spacing:
-            exnw_string = "from_bikenw"
-        else:
-            exnw_string = "from_scratch"
-        if seed_point_type == "file":
-            seed_point_string = slugify(settings.seed_point_type_name)
-        else:
-            seed_point_string = seed_point_type
-        export_data_filename = (
-            slugify(city_string) + "-growbikenet-" + ordering + "-" + exnw_string + "-" + seed_point_string + "." + settings.export_file_format
-        )
+    # Generate export data filenames
+    export_strings = _prepare_export(export_data, export_plots, city_id, city_query, existing_network_spacing, seed_point_type, ordering)
 
     ### Export data
-    if export_data:
-        progress_bar = tqdm(
-            desc="{:<23}".format("Exporting data"),
-            total=1,
-            unit="step",
-            bar_format='{l_bar}{bar:16}{r_bar}',
-            disable=settings.silent,
-        )
-        seed_points_snapped_filtered.drop(["osmid"], axis=1, inplace=True)
-        seed_points_snapped_filtered.to_crs(epsg=settings.crs_result, inplace=True)
-        if city_boundary_exists:
-            city_boundary_gdf.to_crs(epsg=settings.crs_result, inplace=True)
-        if settings.export_file_format == "geojson": # To do: Simplify ugly code duplications and make this an IO function
-            if settings.crs_result == '4326': # Export with RFC7946="YES"
-                if existing_network_spacing:
-                    edges_ordered.iloc[[0]].to_file(settings.export_path['results']+slugify(city_string)+"-existing_bike_network.geojson", driver="GeoJSON", RFC7946="YES")
-                    edges_ordered.iloc[1:-1].to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
-                else:
-                    edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON", RFC7946="YES")
-                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_string+".geojson", driver="GeoJSON", RFC7946="YES")
-                if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON", RFC7946="YES")
-            else:
-                if existing_network_spacing:
-                    edges_ordered.iloc[[0]].to_file(settings.export_path['results']+slugify(city_string)+"-existing_bike_network.geojson", driver="GeoJSON")
-                    edges_ordered.iloc[1:-1].to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
-                else:
-                    edges_ordered.to_file(settings.export_path['results']+export_data_filename, driver="GeoJSON")
-                seed_points_snapped_filtered.to_file(settings.export_path['results']+slugify(city_string)+"-growbikenet-seed_points-"+exnw_string+"-"+seed_point_string+".geojson", driver="GeoJSON")
-                if city_boundary_exists: city_boundary_gdf.to_file(settings.export_path['results']+slugify(city_string)+"-city_boundary.geojson", driver="GeoJSON")
-        elif settings.export_file_format == "gpkg":
-            f = settings.export_path['results']+export_data_filename
-            if os.path.exists(f):
-                os.remove(f) # mode="w" does not work for to_file with gpkg. It always appends. Therefore, existing file needs to be deleted.
-            if existing_network_spacing:
-                edges_ordered.iloc[[0]].to_file(f, driver="GPKG", layer="Existing bike network") 
-                edges_ordered.iloc[1:-1].to_file(f, driver="GPKG", layer="Grown bike network")
-            else:
-                edges_ordered.to_file(f, driver="GPKG", layer="Grown bike network")
-            seed_points_snapped_filtered.to_file(f, driver="GPKG", layer="Seed points")
-            if city_boundary_exists: city_boundary_gdf.to_file(f, driver="GPKG", layer="City boundary")
-        progress_bar.update(1)
-        progress_bar.close()
+    export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary_exists, city_boundary_gdf, existing_network_spacing, edges_ordered, export_strings)
 
-    if export_plots:
-        ### Visualize
+    ### Export plots
+    export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing)
 
-        os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)
-        
-        if settings.viz["crs"] == "auto": # Make it local azimuthal by default
-            crs_was_auto = True # Needed to reset afterwards
-            network_center = edges_ordered.to_crs(constants._CRS_CALCULATIONS).dissolve().centroid.to_crs('4326') # Calculate centroid in projected CRS, then go back to unprojected CRS for lat lon
-            settings.viz["crs"] = f"+proj=aeqd +R=6371000 +units=m +lat_0={network_center.y[0]} +lon_0={network_center.x[0]}" # The first coordinate x is the latitude
-        else:
-            crs_was_auto = False # Needed to reset afterwards
-
-        generate_plots(
-            edges_ordered,
-            seed_points_snapped_filtered,
-            ordering,
-            bool(existing_network_spacing),
-        )
-        if crs_was_auto: # Reset auto crs
-            settings.viz["crs"] = 'auto'
-
-    # Reset constants._CRS_CALCULATIONS if it was auto
-    if crs_calculations_was_auto:
-        constants._CRS_CALCULATIONS = 'auto'
-
-    if not settings.silent:
-        print("----------------------------------------------╯")
-        if export_data:
-            print("Data exported to "+settings.export_path['results'])
-        if export_plots:
-            print("Plots exported to "+settings.export_path['plots'])
-        if export_data or export_plots:
-            print("----------------------------------------------")
-
+    # Cleanup, finalize
+    _reset_auto_settings(setting_was_auto)
     endtime = time.time()
-    if not settings.silent:
-        print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
-        print("==============================================")
+    _print_footer(export_data, export_plots, endtime, starttime)
 
     return edges_ordered
