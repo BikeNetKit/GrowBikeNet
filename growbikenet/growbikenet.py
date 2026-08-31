@@ -49,6 +49,7 @@ from growbikenet.functions import (
     export_data_to_file,
     export_plots_to_file,
     _route,
+    _compute_edge_metrics,
 )
 
 
@@ -249,8 +250,7 @@ def growbikenet(
     # inconsistencies should be resolved.
 
     ### Create seed points
-    progress_bar = initialize_progress_bar("Creating seed points", 3+int(bool(existing_network_spacing)))
-    seed_points, seed_network = _create_seed_points(progress_bar, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry)
+    seed_points, seed_network, progress_bar = _create_seed_points(existing_network_spacing, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry)
     
     # Snap and filter seed points to OSM nodes
     seed_points_snapped_filtered = _snap_filter_seed_points(progress_bar, seed_points, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered)
@@ -262,33 +262,8 @@ def growbikenet(
     B, metric_weight = _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data)
 
     ### Compute edge metrics
-    progress_bar = initialize_progress_bar("Computing edge metrics", 2)
+    edges_ordered = _compute_edge_metrics(ordering, B, metric_weight, )
 
-    # The ordering=="random" case has no edge attributes and is handled in _order_df
-    if ordering == "betweenness":
-        # Add betweenness attributes to edges
-        bc_values = nx.edge_betweenness_centrality(
-            B, weight=metric_weight, normalized=True
-        )
-        nx.set_edge_attributes(B, bc_values, name="betweenness")
-    elif ordering == "closeness":
-        # Add closeness attributes to nodes and edges
-        cc_values_nodes = nx.closeness_centrality(B, distance=metric_weight)
-        nx.set_node_attributes(B, cc_values_nodes, name="closeness")
-        cc_values = node_to_edge_attributes(cc_values_nodes, B.edges)
-        nx.set_edge_attributes(B, cc_values, name="closeness")
-    progress_bar.update(1)
-
-    # Export attributes to gdfs:
-    # Create dataframe and add method as edge attribute
-    edges_ordered = df_from_graph(B, ordering)
-
-    # Order edges by specified method
-    edges_ordered = _order_df(edges_ordered, ordering)
-
-    edges_ordered = gpd.GeoDataFrame(edges_ordered, crs=constants._CRS_CALCULATIONS, geometry="geometry")
-    progress_bar.update(1)
-    progress_bar.close()
     # To do: re-route edges dynamically, accounting for growing edges becoming pbi=1
 
     # Postprocess edges, like removing overlaps

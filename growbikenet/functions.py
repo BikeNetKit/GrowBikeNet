@@ -352,9 +352,10 @@ def _acquire_network(import_files, existing_network_spacing, city_query):
     return city_boundary_exists, nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered, city_boundary_geometry, city_boundary_gdf
 
 
-def _create_seed_points(progress_bar, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry):
+def _create_seed_points(existing_network_spacing, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry):
     """Create seed points.
     """
+    progress_bar = initialize_progress_bar("Creating seed points", 3+int(bool(existing_network_spacing)))
     seed_network = nx.Graph() # This is only relevant for some methods
     if seed_point_type == 'grid_square' or seed_point_type == 'grid_triangle':
         # Bearings work on unprojected graph
@@ -373,7 +374,7 @@ def _create_seed_points(progress_bar, seed_point_type, g_undir, edges, nodes, se
     if seed_point_type == 'tags' or seed_point_type in constants._PRESET_TAGS:
         seed_points = _get_tags_seed_points(city_query, tags=seed_point_tags, city_boundary_geometry=city_boundary_geometry)
     progress_bar.update(1)
-    return seed_points, seed_network
+    return seed_points, seed_network, progress_bar
 
 
 def _snap_filter_seed_points(progress_bar, seed_points, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered):
@@ -505,6 +506,40 @@ def _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_fil
     progress_bar.close()
 
     return B, metric_weight
+
+
+def _compute_edge_metrics(ordering, B, metric_weight):
+    """Compute edge metrics.
+    """
+    progress_bar = initialize_progress_bar("Computing edge metrics", 2)
+
+    # The ordering=="random" case has no edge attributes and is handled in _order_df
+    if ordering == "betweenness":
+        # Add betweenness attributes to edges
+        bc_values = nx.edge_betweenness_centrality(
+            B, weight=metric_weight, normalized=True
+        )
+        nx.set_edge_attributes(B, bc_values, name="betweenness")
+    elif ordering == "closeness":
+        # Add closeness attributes to nodes and edges
+        cc_values_nodes = nx.closeness_centrality(B, distance=metric_weight)
+        nx.set_node_attributes(B, cc_values_nodes, name="closeness")
+        cc_values = node_to_edge_attributes(cc_values_nodes, B.edges)
+        nx.set_edge_attributes(B, cc_values, name="closeness")
+    progress_bar.update(1)
+
+    # Export attributes to gdfs:
+    # Create dataframe and add method as edge attribute
+    edges_ordered = df_from_graph(B, ordering)
+
+    # Order edges by specified method
+    edges_ordered = _order_df(edges_ordered, ordering)
+
+    edges_ordered = gpd.GeoDataFrame(edges_ordered, crs=constants._CRS_CALCULATIONS, geometry="geometry")
+    progress_bar.update(1)
+    progress_bar.close()
+
+    return edges_ordered
 
 
 def add_trip_data_to_net(trips, A, crs_calculations=constants._CRS_CALCULATIONS, matching_distance=settings.import_trip_data_snap_distance):
