@@ -370,25 +370,16 @@ def growbikenet(
     # Create dataframe and add method as edge attribute
     edges_ordered = df_from_graph(B, ordering)
 
-    # Rank edges by specified method
+    # Order edges by specified method
     edges_ordered = _order_df(edges_ordered, ordering)
 
     edges_ordered = gpd.GeoDataFrame(edges_ordered, crs=constants._CRS_CALCULATIONS, geometry="geometry")
-
-    # To do: re-route edges dynamically, accounting for growing edges becoming pbi=1
-
-    # Add existing bike network on top, https://stackoverflow.com/a/43408736
-    if existing_network_spacing:
-        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ordered.columns}, index=[-1], crs=constants._CRS_CALCULATIONS)
-        existing_bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
-        edges_ordered.loc[-1] = existing_bikenet.loc[-1]
-        edges_ordered.index = edges_ordered.index+1
-        edges_ordered.sort_index(inplace=True)
-        edges_ordered.crs = constants._CRS_CALCULATIONS
     progress_bar.update(1)
     progress_bar.close()
+    # To do: re-route edges dynamically, accounting for growing edges becoming pbi=1
 
-    edges_ordered = _postprocess_edges(edges_ordered)
+    # Postprocess edges
+    edges_ordered = _postprocess_edges(existing_network_spacing, edges_exnw, edges_ordered)
 
     # Generate export data filenames
     export_data_filename, city_string, exnw_string, seed_point_string = _prepare_export(export_data, export_plots, city_id, city_query, existing_network_spacing, seed_point_type, ordering)
@@ -399,6 +390,7 @@ def growbikenet(
     ### Export plots
     export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing)
 
+    # Cleanup, finalize
     _reset_auto_settings(setting_was_auto)
     endtime = time.time()
     _print_footer(export_data, export_plots, endtime, starttime)

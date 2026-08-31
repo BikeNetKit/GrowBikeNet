@@ -1776,10 +1776,18 @@ def weigh_edges(G, penalty):
         G.edges[edge]["weight"] = edge_weight
     return G
 
-def _postprocess_edges(edges_ordered):
-    """Postprocess edges: Remove overlaps, add length metrics, reorder, 
-    reproject.
+def _postprocess_edges(existing_network_spacing, edges_exnw, edges_ordered):
+    """Postprocess edges: Add bike net on top, remove overlaps, add length 
+    metrics, reorder, reproject.
     """
+    # Add existing bike network on top, https://stackoverflow.com/a/43408736
+    if existing_network_spacing:
+        existing_bikenet = gpd.GeoDataFrame({c: None for c in edges_ordered.columns}, index=[-1], crs=constants._CRS_CALCULATIONS)
+        existing_bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
+        edges_ordered.loc[-1] = existing_bikenet.loc[-1]
+        edges_ordered.index = edges_ordered.index+1
+        edges_ordered.sort_index(inplace=True)
+        edges_ordered.crs = constants._CRS_CALCULATIONS
 
     # Remove edge overlaps
     if not settings.allow_edge_overlaps:
