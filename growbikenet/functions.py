@@ -8,6 +8,7 @@ from collections import defaultdict
 import re
 import numpy as np
 import pandas as pd
+pd.set_option('display.max_columns', None) # for debugging
 import geopandas as gpd
 import warnings
 import networkx as nx
@@ -431,17 +432,14 @@ def _reset_auto_settings(setting_was_auto):
     if setting_was_auto['crs_viz']:
         settings.viz["crs"] = 'auto'
 
-def _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data, rerouted = False):
+def _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data):
     """Weigh edges, route, make graph object, add point and trip data.
     """
     progress_bar = initialize_progress_bar("Routing", 3)
 
     # Add pbi and weight before calculating shortest paths
-    if not rerouted:
-        g_undir = map_edges_to_bike_infrastructure(g_undir)
+    g_undir = map_edges_to_bike_infrastructure(g_undir)
     edges = bike_infra_mapping_gdf(g_undir, edges)
-    print(len(edges['pbi']==1))
-    print(len([_ for _,_,e in g_undir.edges(data=True) if e['pbi'] == 1]))
     g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
 
     # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
@@ -513,11 +511,59 @@ def _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_fil
 
 def _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
     """Reroute all edges, set pbi iteratively.
+
+    The point of rerouting is to go through all abstract edges one by one in 
+    their determined ordering. In each step, reroute with pbi penalties, and 
+    then set the routed path to pbi. That way newly routed paths assume that
+    all previously routed paths are already pbi, and go more likely through 
+    those previous paths, preventing "nile delta" artefacts to some extent, and
+    making the resulting grown network shorter / more effective.
+
+    Parameters
+    ----------
+    edges_ordered : geopandas.geodataframe.GeoDataFrame
+        Geodataframe of all edges in street network ordered by the `ordering` 
+        method, in projected CRS `constants._CRS_CALCULATIONS`.
+    edges : geopandas.geodataframe.GeoDataFrame
+        Edges of the growable network, in projected CRS 
+        `constants._CRS_CALCULATIONS`.
+    g_undir : networkx.classes.multigraph.MultiGraph
+        NetworkX graph of growable network, undirected.
+    grown_bikenet_edges_abstract : pandas.DataFrame
+        Dataframe of abstract edges.
+
+    Returns
+    -------
+    edges_reordered : geopandas.geodataframe.GeoDataFrame
+        Geodataframe of all edges in street network ordered by the `ordering` 
+        method, and reordered to account for pbi dynamically, in projected CRS 
+        `constants._CRS_CALCULATIONS`. If `settings.reroute` is set to False,
+        returns the input `edges_ordered`.
     """
-    for e in edges_ordered.itertuples(index=False):
-        # print(e.source, e.target)
-        g_undir = set_path_to_pbi(grown_bikenet_edges_abstract, e.source, e.target, edges, g_undir)
-    return g_undir
+    if not settings.reroute: # Do nothing
+        return edges_ordered
+    else:
+        edges_reordered = edges_ordered.copy()
+
+        grown_bikenet_edges = gpd.GeoDataFrame()
+        grown_bikenet_edges_abstract_temp = pd.DataFrame().reindex(columns=grown_bikenet_edges_abstract.columns)
+        for edge in tqdm(
+            edges_ordered.itertuples(index=True),
+                desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Rerouting"),
+                leave=True,
+                unit="edge",
+                total=len(list(edges_ordered.itertuples())),
+                bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
+                disable=settings.silent,
+            ):
+            grown_bikenet_edges_abstract_onerow = grown_bikenet_edges_abstract.loc[edge.Index].to_frame().T.drop(columns=['path_nodes', 'path_edges'])
+            g_undir = set_path_to_pbi(edge.source, edge.target, edges, g_undir)
+            g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
+            grown_bikenet_edges_abstract_onerow = add_path_to_df(grown_bikenet_edges_abstract_onerow, edges, g_undir)
+            grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
+            edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edges.loc[edge.Index, "geometry"]
+            
+        return edges_reordered
 
 
 def _compute_edge_metrics(ordering, B, metric_weight):
@@ -1718,23 +1764,21 @@ def add_path_to_df(df, edges, g_undir):
     df["path_edges"] = df.path_nodes.apply(lambda x: _get_correct_edgetuples(edges, x))
     return df
 
-def set_path_to_pbi(df, source, target, edges, g):
+def set_path_to_pbi(source, target, edges, g):
     """Map an unrouted edge to a merged geometry of corresponding OSMnx 
     edges (routed on `g`), and set g's edges pbi to 1.
 
     Parameters
     ----------
-    df : pandas.DataFrame
-        Dataframe with information about edges.
     edges : geopandas.geodataframe.GeoDataFrame
         The street network, in a projected CRS.
-    g_undir : networkx.graph undirected
+    g : networkx.graph undirected
         Graph to use for routing.
 
     Returns
     -------
-    df : pandas.DataFrame
-        Dataframe with added path nodes and path edges.
+    g : networkx.graph undirected
+        Graph to use for routing, with edges set to pbi=1.
     """
     path = nx.shortest_path(
         G=g,
@@ -1749,9 +1793,6 @@ def set_path_to_pbi(df, source, target, edges, g):
             edgelist_final.append(edge_prelim)
         else:
             edgelist_final.append(tuple([edge_prelim[1], edge_prelim[0]]))
-    # for e in g.edges(data=True):
-    #     print(e)
-    #     sys.exit()
     for edge in edgelist_final:
         g.edges[edge+(0,)]["pbi"] = 1
     

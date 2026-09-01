@@ -32,6 +32,8 @@ import_trip_data_snap_distance : int, default 500
     meters.
 random_seed : int, default 43
     Random number generator seed for reproducibility
+reroute : bool, default True
+    Decide whether to add a rerouting step, which takes extra computations but removes unrealistic artefacts.
 seed_point_snap_distance : 'auto' or int, default 'auto'
     Maximum distance between raw seed points and osm nodes for snapping, 
     in meters.
@@ -72,6 +74,7 @@ import_path = "./"
 import_point_data_snap_distance = 500
 import_trip_data_snap_distance = 500
 random_seed = 43 # off-by-one error
+reroute = True
 seed_point_snap_distance = 'auto'
 seed_point_type_name = 'file'
 silent = False
