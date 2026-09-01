@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 0.14.0 (2026-09-01)
+
+- 🐛 Fixed bug with non-metric CRS, now estimating UTM
+- ✨ Added PBI routing accounting for existing bike network
+- ✨ Added PBI routing accounting dynamically for grown bike network
+- 🎨 Existing bike network is now exported as its own geojson file
+- ♻️ Refactored main growbikenet flow into functions
+- 💄 Made tqdm progress bars configurable via constants
+
 ## Version 0.13.1 (2026-08-26)
 
 - 🐛 Deleted zero length geometries
