@@ -3,11 +3,11 @@
 import growbikenet as gbn
 
 gbn.settings.export_file_format = "geojson"
-edges_ordered = gbn.growbikenet("Podgorica",
+edges_ordered = gbn.growbikenet("Frederiksberg municipality",
                                export_data=True,
                                existing_network_spacing='auto',
-                               import_files={'growable_network':'podgorica_growable_network.gpkg',
-                               'bike_network':'podgorica_bike_network.gpkg'},
+                               # import_files={'growable_network':'podgorica_growable_network.gpkg',
+                               # 'bike_network':'podgorica_bike_network.gpkg'},
                                export_plots=True,
                                )
 
