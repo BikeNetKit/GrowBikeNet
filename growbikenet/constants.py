@@ -114,7 +114,7 @@ GROWABLE_NETWORK_TYPE = 'drive'
 REORDER = True
 
 
-_CRS_CALCULATIONS = '3857'
+_CRS_CALCULATIONS = 'auto'
 _PRESET_TAGS = {
             "rail": {"railway": ["station", "halt"]},
             "school": {"amenity": ["kindergarten", "school", "college", "university"]},
