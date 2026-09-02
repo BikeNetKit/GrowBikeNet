@@ -29,6 +29,7 @@ settings.export_path = {
     "plots":"./results/plots/",
 }
 settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
+constants._CRS_CALCULATIONS = '3857' # Leave for testing temporarily at the old value. Change to auto when re-doing test data.
 
 # @pytest.fixture
 # def geom_1():
@@ -282,7 +283,7 @@ def routed_edges_with_crashes_data():
 
 def test_add_point_data_to_net_case_success_simple(routed_edges_crashes, crashes_data, routed_edges_with_crashes_data):
     assert_frame_equal(
-        add_point_data_to_net(crashes_data, routed_edges_crashes, '3857'),
+        add_point_data_to_net(crashes_data, routed_edges_crashes),
         routed_edges_with_crashes_data,
         check_dtype=False
     )
@@ -304,7 +305,7 @@ def turin_routed_edges_with_crashes_data():
     return g
 
 def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_routed_edges_crashes, turin_routed_edges_with_crashes_data):
-    result = add_point_data_to_net(turin_accidents_data, turin_routed_edges_crashes, '3857')
+    result = add_point_data_to_net(turin_accidents_data, turin_routed_edges_crashes)
 
     diff_mask = result['num_points'] != turin_routed_edges_with_crashes_data['num_points']
     if diff_mask.any():
@@ -314,7 +315,7 @@ def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_ro
         print(turin_routed_edges_with_crashes_data.loc[diff_mask, ['num_points']])
     
     assert_frame_equal(
-        add_point_data_to_net(turin_accidents_data, turin_routed_edges_crashes, '3857'),
+        add_point_data_to_net(turin_accidents_data, turin_routed_edges_crashes),
         turin_routed_edges_with_crashes_data,
         check_dtype=False
     )
@@ -480,7 +481,6 @@ def test_add_trip_data_to_net_case_success_simple(trips_data, triangulation_grap
     result = add_trip_data_to_net(
                 trips_data, 
                 triangulation_graph_trips,
-                '3857'
             )
     expected = triangulation_graph_with_trips_data
     assert result.nodes == expected.nodes, "Nodes are not the same"
@@ -537,7 +537,6 @@ def test_add_trip_data_to_net_case_success_turin(turin_trips_data, turin_triangu
     result = add_trip_data_to_net(
                 turin_trips_data, 
                 turin_triangulation_graph_trips,
-                '3857'
             )
     expected = turin_triangulation_graph_with_trips_data
     assert result.nodes == expected.nodes, "Nodes are not the same"
