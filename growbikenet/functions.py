@@ -202,14 +202,11 @@ def _resolve_auto_parameters(
         seed_point_linking = 'triangulate_delaunay' 
 
     if seed_point_type == 'auto':
-        if phi>constants._PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+        if phi>constants._PHI_LIMITS[1] and existing_network_spacing is None: # Case grid. For example, Barcelona, Manhattan. Incompatible with existing_network_spacing not None.
             seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'quadrangulate'
-                if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
-                    existing_network_spacing = None
-                    warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-        elif phi<=constants._PHI_LIMITS[1] and phi>constants._PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+        elif (phi>constants._PHI_LIMITS[1] and existing_network_spacing is not None) or (phi<=constants._PHI_LIMITS[1] and phi>constants._PHI_LIMITS[0]): # Case contains some grid elements. For example, Prague, Budapest. Or, it should have been quadrangulation but existing_network_spacing is not None.
             seed_point_type = 'grid_square'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
@@ -217,20 +214,17 @@ def _resolve_auto_parameters(
             seed_point_type = 'grid_triangle'
             if seed_point_linking == 'auto':
                 seed_point_linking = 'triangulate_delaunay'
-            elif seed_point_linking == 'quadrangulate': # Case incompatible auto-type and set linking
+            elif seed_point_linking == 'quadrangulate': # Quadrangulation incompatible with seed_point_type grid_triangle from auto
                 seed_point_linking = 'triangulate_delaunay'
-                warnings.warn("seed_point_linking 'quadrangulate' is incompatible with automatically selected seed_point_type. Changing seed_point_linking to 'triangulate_delaunay'.")
+                warnings.warn("seed_point_linking 'quadrangulate' is incompatible with automatically selected seed_point_type 'grid_triangle'. Changing seed_point_linking to 'triangulate_delaunay'.")
     else:
         if seed_point_linking == 'auto':
             if seed_point_type != 'grid_square': # Everything is triangulated, but the grid could also be quadrangulated
                 seed_point_linking = 'triangulate_delaunay'
-            else:
-                if phi>constants._PHI_LIMITS[1]: # Case grid. For example, Barcelona, Manhattan
+            else: # Case 'grid_square'
+                if phi>constants._PHI_LIMITS[1] and existing_network_spacing is None: # Case grid. For example, Barcelona, Manhattan. We can quadrangulate, except when existing_network_spacing is not None - in that case, just triangulate again.
                     seed_point_linking = 'quadrangulate'
-                    if existing_network_spacing is not None: # Case incompatible with existing_network_spacing not None 
-                        existing_network_spacing = None
-                        warnings.warn("Automatically chosen seed_point_linking 'quadrangulate' is incompatible with existing_network_spacing not set to None. Changing existing_network_spacing to None.")
-                elif phi<=constants._PHI_LIMITS[1] and phi>constants._PHI_LIMITS[0]: # Case contains some grid elements. For example, Prague, Budapest
+                else:
                     seed_point_linking = 'triangulate_delaunay'
 
     if seed_point_grid_spacing == 'auto': 
