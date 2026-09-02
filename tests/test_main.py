@@ -4,6 +4,7 @@ import osmnx as ox
 import growbikenet as gbn
 from pandas.testing import assert_frame_equal
 
+gbn.constants._CRS_CALCULATIONS = '3857' # Leave for testing temporarily at the old value. Change to auto when re-doing test data.
 gbn.settings.export_path = {
     "results":"./results/",
     "plots":"./results/plots/",
