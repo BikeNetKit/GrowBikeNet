@@ -1907,6 +1907,10 @@ def map_edges_to_bike_infrastructure(g):
             g.edges[edge]["pbi"] = 1
         elif g.edges[edge].get("highway") in config.highway_bike_infra:
             g.edges[edge]["pbi"] = 1
+        elif g.edges[edge].get("cyclestreet"):
+            g.edges[edge]["pbi"] = 1
+        elif g.edges[edge].get("highway") in config.highway_bike_infra_extended and g.edges[edge].get("bicycle") in config.bicycle_bike_infra and g.edges[edge].get("access") != 'private':
+            g.edges[edge]["pbi"] = 1
         else:
             g.edges[edge]["pbi"] = 0
     return g
