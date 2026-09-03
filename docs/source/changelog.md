@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 0.14.1 (2026-09-03)
+
+- 🐛 Fixed botched bugfix with non-metric CRS
+- 🐛 Extended PBI config to match custom filters
+
 ## Version 0.14.0 (2026-09-01)
 
 - 🐛 Fixed bug with non-metric CRS, now estimating UTM
