@@ -27,10 +27,10 @@ For alternative approaches, or for cities with more developed bicycle networks, 
 
 ### The easy way
 
-The recommended way to install GrowBikeNet is using [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html) (or the faster [`mamba`](https://mamba.readthedocs.io/en/latest/index.html)) via the `conda-forge` channel:
+The recommended way to install GrowBikeNet is using [`conda`](https://docs.conda.io/projects/conda/en/latest/index.html):
 
 ```
-conda install growbikenet -c conda-forge
+conda install growbikenet
 ```
 
 ### Advanced and development installations
