@@ -8,7 +8,7 @@ import geopandas as gpd
 import pandas as pd
 pd.set_option('display.max_columns', None) # for debugging
 import warnings
-from tqdm.auto import tqdm
+from tqdm import tqdm
 import time
 from growbikenet.functions import (
     add_path_to_df,

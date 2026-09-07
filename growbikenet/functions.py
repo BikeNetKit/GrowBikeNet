@@ -21,7 +21,7 @@ from shapely.geometry import Point, LineString, MultiLineString
 from shapely.affinity import rotate
 from shapely.strtree import STRtree
 from pyproj import Transformer
-from tqdm.auto import tqdm
+from tqdm import tqdm
 import datetime
 from growbikenet.visualization import generate_plots
 
