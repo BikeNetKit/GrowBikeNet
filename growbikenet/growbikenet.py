@@ -279,7 +279,7 @@ def growbikenet(
     export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary_exists, city_boundary_gdf, existing_network_spacing, edges_ordered, export_strings)
 
     ### Export plots
-    export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing)
+    export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing, point_data, edges)
 
     # Cleanup, finalize
     _reset_auto_settings(setting_was_auto)

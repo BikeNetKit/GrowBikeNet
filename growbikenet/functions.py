@@ -2076,7 +2076,7 @@ def export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary
             progress_bar.update(1)
         progress_bar.close()
 
-def export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing):
+def export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing, point_data, edges):
     """Export plots.
     """
     if export_plots:
@@ -2086,6 +2086,11 @@ def export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snap
         if settings.viz["crs"] == "auto": # Make it local azimuthal by default
             network_center = edges_ordered.to_crs(constants._CRS_CALCULATIONS).dissolve().centroid.to_crs('4326') # Calculate centroid in projected CRS, then go back to unprojected CRS for lat lon
             settings.viz["crs"] = f"+proj=aeqd +R=6371000 +units=m +lat_0={network_center.y[0]} +lon_0={network_center.x[0]}" # The first coordinate x is the latitude
+
+        from growbikenet.visualization import generate_plot_one_step
+        framenum = edges_ordered[edges_ordered.length_cumulative > 40000].index[0]
+        generate_plot_one_step(edges_ordered, seed_points_snapped_filtered, ordering, bool(existing_network_spacing), framenum, point_data, edges)
+        # sys.exit()
 
         generate_plots(
             edges_ordered,
