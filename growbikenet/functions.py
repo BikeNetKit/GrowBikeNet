@@ -2013,7 +2013,7 @@ def _prepare_export(export_data, export_plots, city_id, city_query, existing_net
             seed_point_string = slugify(settings.seed_point_type_name)
         else:
             seed_point_string = seed_point_type
-        export_data_filename = city_string + "-growbikenet-" + ordering + "-" + exnw_string + "-" + seed_point_string + "." + settings.export_file_format
+        export_data_filename = city_string + "-growbikenet-" + ordering + "-" + seed_point_string + "-" + exnw_string + "." + settings.export_file_format
         export_strings = {
             "export_data_filename": export_data_filename,
             "city_string": city_string,
