@@ -1,28 +1,30 @@
 """Utility functions for `growbikenet`."""
 
-from . import constants
-from . import settings
-from . import config
 import os
-from collections import defaultdict
 import re
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
+
+from . import config, constants, settings
+
 pd.set_option('display.max_columns', None) # for debugging
-import geopandas as gpd
+import datetime
 import warnings
+
+import geopandas as gpd
 import networkx as nx
 import osmnx as ox
-import scipy # scipy is needed by osmnx.distance.nearest_nodes()
-from scipy.spatial import Delaunay
 import shapely
-from shapely.prepared import prep
-from shapely.geometry import Point, LineString, MultiLineString
-from shapely.affinity import rotate
-from shapely.strtree import STRtree
 from pyproj import Transformer
+from scipy.spatial import Delaunay
+from shapely.affinity import rotate
+from shapely.geometry import MultiLineString, Point
+from shapely.prepared import prep
+from shapely.strtree import STRtree
 from tqdm import tqdm
-import datetime
+
 from growbikenet.visualization import generate_plots
 
 
@@ -539,8 +541,6 @@ def _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
     else:
         edges_reordered = edges_ordered.copy()
 
-        grown_bikenet_edges = gpd.GeoDataFrame()
-        grown_bikenet_edges_abstract_temp = pd.DataFrame().reindex(columns=grown_bikenet_edges_abstract.columns)
         for edge in tqdm(
             edges_ordered.itertuples(index=True),
                 desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Rerouting"),
@@ -550,12 +550,14 @@ def _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
                 bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
                 disable=settings.silent,
             ):
-            grown_bikenet_edges_abstract_onerow = grown_bikenet_edges_abstract.loc[edge.Index].to_frame().T.drop(columns=['path_nodes', 'path_edges'])
+            i = grown_bikenet_edges_abstract.index[(grown_bikenet_edges_abstract['source']==edge.source) & (grown_bikenet_edges_abstract['target']==edge.target)] # grown_bikenet_edges_abstract was never reordered like the edges. Need to match.
+            grown_bikenet_edges_abstract_onerow = grown_bikenet_edges_abstract.iloc[i].drop(columns=['path_nodes', 'path_edges'])
             g_undir = set_path_to_pbi(edge.source, edge.target, edges, g_undir)
             g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
             grown_bikenet_edges_abstract_onerow = add_path_to_df(grown_bikenet_edges_abstract_onerow, edges, g_undir)
-            grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
-            edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edges.loc[edge.Index, "geometry"]
+            grown_bikenet_edge = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
+            if not grown_bikenet_edge.empty: # To do: How can it be empty? See _get_weighted_distances()
+                edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edge['geometry'].iloc[0]
             
         return edges_reordered
 
@@ -667,12 +669,12 @@ def add_trip_data_to_net(trips, A, matching_distance=settings.import_trip_data_s
 
         # Add the number of trips to each edge of the shortest path
         for i, edge_id in enumerate(path_edges):
-            if edge_id in trip_dict.keys():
+            if edge_id in trip_dict:
                 trip_dict[edge_id] += num
 
             else:
                 edge_id = (path[i + 1], path[i])  # Inverse node order
-                if edge_id in trip_dict.keys():
+                if edge_id in trip_dict:
                     trip_dict[edge_id] += num
 
     nx.set_edge_attributes(graph_with_data, trip_dict, "num_trips")
@@ -1870,7 +1872,10 @@ def _get_weighted_distances(B, num_types):
     num_types_per_km_dict = {}
 
     for k,d in dist_dict.items():
-        num_types_per_km_dict[k] = 1000*num_types_dict[k]/d
+        if d != 0:
+            num_types_per_km_dict[k] = 1000*num_types_dict[k]/d
+        else: # To do: How can it be zero? Turin self-loop: (1668523317, 1668523317)
+            num_types_per_km_dict[k] = 0
     max_n = max(num_types_per_km_dict.values())+1e-10
 
     dist_weighted_by_types_dict = {}
@@ -1897,19 +1902,7 @@ def map_edges_to_bike_infrastructure(g):
 
     # add binary edge attribute "pbi" (protected bike infra: True/False)
     for edge in g.edges(keys=True):
-        if g.edges[edge].get("cycleway") in config.cycleway_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("cycleway:right") in config.cycleway_right_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("cycleway:left") in config.cycleway_left_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("cycleway:both") in config.cycleway_both_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("highway") in config.highway_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("cyclestreet"):
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("highway") in config.highway_bike_infra_extended and g.edges[edge].get("bicycle") in config.bicycle_bike_infra and g.edges[edge].get("access") != 'private':
+        if g.edges[edge].get("cycleway") in config.cycleway_bike_infra or g.edges[edge].get("cycleway:right") in config.cycleway_right_bike_infra or g.edges[edge].get("cycleway:left") in config.cycleway_left_bike_infra or g.edges[edge].get("cycleway:both") in config.cycleway_both_bike_infra or g.edges[edge].get("highway") in config.highway_bike_infra or g.edges[edge].get("cyclestreet") or g.edges[edge].get("highway") in config.highway_bike_infra_extended and g.edges[edge].get("bicycle") in config.bicycle_bike_infra and g.edges[edge].get("access") != 'private':
             g.edges[edge]["pbi"] = 1
         else:
             g.edges[edge]["pbi"] = 0

@@ -3,13 +3,16 @@
 import growbikenet as gbn
 
 gbn.settings.export_file_format = "geojson"
-edges_ordered = gbn.growbikenet("Frederiksberg municipality",
-                               export_data=True,
-                               existing_network_spacing='auto',
-                               # import_files={'growable_network':'podgorica_growable_network.gpkg',
-                               # 'bike_network':'podgorica_bike_network.gpkg'},
-                               export_plots=True,
-                               )
+gbn.settings.reroute = True
+edges_ordered = gbn.growbikenet(
+            "Turin", 
+            import_files={
+                'growable_network':"./tests/test_data/turin_growable_network.gpkg",
+                'point_data':"./tests/test_data/turin_crashes.gpkg",
+                'trip_data':"./tests/test_data/turin_trips.csv",
+            },
+            export_plots=True,
+        )
 
 
 # import osmnx as ox
