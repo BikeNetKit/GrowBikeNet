@@ -3,7 +3,7 @@
 import growbikenet as gbn
 
 gbn.settings.export_file_format = "geojson"
-gbn.settings.reroute = False
+gbn.settings.reroute = True
 edges_ordered = gbn.growbikenet("Podgorica",
                                export_data=True,
                                existing_network_spacing='auto',

@@ -541,8 +541,6 @@ def _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
     else:
         edges_reordered = edges_ordered.copy()
 
-        grown_bikenet_edges = gpd.GeoDataFrame()
-        grown_bikenet_edges_abstract_temp = pd.DataFrame().reindex(columns=grown_bikenet_edges_abstract.columns)
         for edge in tqdm(
             edges_ordered.itertuples(index=True),
                 desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Rerouting"),
@@ -552,12 +550,13 @@ def _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
                 bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
                 disable=settings.silent,
             ):
-            grown_bikenet_edges_abstract_onerow = grown_bikenet_edges_abstract.loc[edge.Index].to_frame().T.drop(columns=['path_nodes', 'path_edges'])
+            i = grown_bikenet_edges_abstract.index[(grown_bikenet_edges_abstract['source']==edge.source) & (grown_bikenet_edges_abstract['target']==edge.target)] # grown_bikenet_edges_abstract was never reordered like the edges. Need to match.
+            grown_bikenet_edges_abstract_onerow = grown_bikenet_edges_abstract.iloc[i].drop(columns=['path_nodes', 'path_edges'])
             g_undir = set_path_to_pbi(edge.source, edge.target, edges, g_undir)
             g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
             grown_bikenet_edges_abstract_onerow = add_path_to_df(grown_bikenet_edges_abstract_onerow, edges, g_undir)
-            grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
-            edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edges.loc[edge.Index, "geometry"]
+            grown_bikenet_edge = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
+            edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edge['geometry'].iloc[0]
             
         return edges_reordered
 
