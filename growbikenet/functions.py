@@ -556,7 +556,8 @@ def _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
             g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
             grown_bikenet_edges_abstract_onerow = add_path_to_df(grown_bikenet_edges_abstract_onerow, edges, g_undir)
             grown_bikenet_edge = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
-            edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edge['geometry'].iloc[0]
+            if not grown_bikenet_edge.empty: # To do: How can it be empty? See _get_weighted_distances()
+                edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edge['geometry'].iloc[0]
             
         return edges_reordered
 
@@ -1871,7 +1872,10 @@ def _get_weighted_distances(B, num_types):
     num_types_per_km_dict = {}
 
     for k,d in dist_dict.items():
-        num_types_per_km_dict[k] = 1000*num_types_dict[k]/d
+        if d != 0:
+            num_types_per_km_dict[k] = 1000*num_types_dict[k]/d
+        else: # To do: How can it be zero? Turin self-loop: (1668523317, 1668523317)
+            num_types_per_km_dict[k] = 0
     max_n = max(num_types_per_km_dict.values())+1e-10
 
     dist_weighted_by_types_dict = {}
