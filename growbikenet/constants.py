@@ -79,7 +79,8 @@ References
 PBI_CUSTOM_FILTER = [
     '["highway"~"cycleway|living_street"]',
     '["highway"~"path|pedestrian"]["bicycle"~"designated|yes|permissive"]["access"!~"private"]',
-    '["cyclestreet"]',
+    '["cyclestreet"~"yes"]',
+    '["bicycle_road"~"yes"]',
     '["cycleway"~"track"]',
     '["cycleway:right"~"track|opposite_track"]', # opposite_track is deprecated, but could still exist
     '["cycleway:left"~"track|opposite_track"]', # opposite_track is deprecated, but could still exist
@@ -104,7 +105,8 @@ GROWABLE_NETWORK_CUSTOM_FILTER = [ # adapted from https://github.com/gboeing/osm
     # Bike infra, copied from PBI_CUSTOM_FILTER
     '["highway"~"cycleway|living_street"]',
     '["highway"~"path|pedestrian"]["bicycle"~"designated|yes|permissive"]["access"!~"private"]',
-    '["cyclestreet"]',
+    '["cyclestreet"~"yes"]',
+    '["bicycle_road"~"yes"]',
     '["cycleway"~"track"]',
     '["cycleway:right"~"track|opposite_track"]', # opposite_track is deprecated, but could still exist
     '["cycleway:left"~"track|opposite_track"]', # opposite_track is deprecated, but could still exist
