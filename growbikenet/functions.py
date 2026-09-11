@@ -766,7 +766,7 @@ def add_point_data_to_net(points, edges, matching_distance=settings.import_point
     return edges_with_data
 
 
-def import_network(growable_network, import_path=settings.import_path):
+def import_network(growable_network):
     """Import and project a street network from gpkg file.
 
     Parameters
@@ -800,8 +800,8 @@ def import_network(growable_network, import_path=settings.import_path):
     key 0.
     """
 
-    nodes = gpd.read_file(import_path+growable_network, layer='nodes')
-    edges = gpd.read_file(import_path+growable_network, layer='edges')
+    nodes = gpd.read_file(settings.import_path+growable_network, layer='nodes')
+    edges = gpd.read_file(settings.import_path+growable_network, layer='edges')
 
     # Set indices as required by osmnx.convert.graph_from_gdfs
     # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
