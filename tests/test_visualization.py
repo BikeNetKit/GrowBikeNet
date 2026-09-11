@@ -1,13 +1,11 @@
-from growbikenet import constants
-from growbikenet import settings
-import geopandas as gpd
 import os
 import shutil
+
+import geopandas as gpd
 import pytest
-import matplotlib.pyplot as plt
-from growbikenet.visualization import (
-    generate_plots
-)
+
+from growbikenet import settings
+from growbikenet.visualization import generate_plots
 
 # Consistent settings
 settings.viz = {

@@ -87,6 +87,7 @@ PBI_CUSTOM_FILTER = [
 ]
 # Populate ox.settings.useful_tags_way to make application of custom filter possible
 import osmnx as ox
+
 for custom_tag in ["highway", "cycleway", "bicycle", "cycleway:right", "cycleway:left", "cycleway:both", "cyclestreet", "access", "area", "service", "motor_vehicle", "motorcar"]: # This list should contain all tags used in any custom filters
     if custom_tag not in ox.settings.useful_tags_way:
         ox.settings.useful_tags_way.extend(custom_tag)

@@ -1,26 +1,26 @@
-from growbikenet import constants
-from growbikenet import settings
-import pytest
-import osmnx as ox
-import networkx as nx
-import pandas as pd
-import geopandas as gpd
-from shapely.geometry import Point, LineString, MultiLineString
 import ast
-from pandas.testing import assert_frame_equal
-import shapely
 import pickle
+
+import geopandas as gpd
+import networkx as nx
+import osmnx as ox
+import pandas as pd
+import pytest
+from pandas.testing import assert_frame_equal
+from shapely.geometry import LineString, MultiLineString, Point
+
+from growbikenet import constants, settings
 from growbikenet.functions import (
-    get_principal_bearing,
     _get_grid_seed_points,
-    filter_points_distant_from_osm_nodes,
+    _get_weighted_distances,
     _order_df,
     # intersects_properly,
     _remove_edge_overlaps,
     add_point_data_to_net,
     add_trip_data_to_net,
     create_gdf_with_geoms,
-    _get_weighted_distances,
+    filter_points_distant_from_osm_nodes,
+    get_principal_bearing,
     slugify,
 )
 
@@ -490,13 +490,13 @@ def test_add_trip_data_to_net_case_success_simple(trips_data, triangulation_grap
 
 @pytest.fixture
 def turin_triangulation_graph_trips():
-    nodes = pd.read_csv(f"./tests/test_data/turin_triangulation_nodes_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
+    nodes = pd.read_csv("./tests/test_data/turin_triangulation_nodes_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
 
-    edges_gdf = gpd.read_file(f"./tests/test_data/turin_triangulation_edges_trips.gpkg")
+    edges_gdf = gpd.read_file("./tests/test_data/turin_triangulation_edges_trips.gpkg")
     edges_gdf.set_index(['u', 'v'], inplace=True)
     edges = edges_gdf.to_dict(orient='index')
 
-    graph_att = pd.read_csv(f"./tests/test_data/turin_triangulation_graph_trips.csv").loc[0,:].to_dict()
+    graph_att = pd.read_csv("./tests/test_data/turin_triangulation_graph_trips.csv").loc[0,:].to_dict()
 
     graph = nx.Graph()
     graph.add_nodes_from(nodes.keys())
@@ -515,13 +515,13 @@ def turin_trips_data():
 
 @pytest.fixture
 def turin_triangulation_graph_with_trips_data():
-    nodes = pd.read_csv(f"./tests/test_data/turin_triangulation_nodes_with_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
+    nodes = pd.read_csv("./tests/test_data/turin_triangulation_nodes_with_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
 
-    edges_gdf = gpd.read_file(f"./tests/test_data/turin_triangulation_edges_with_trips.gpkg")
+    edges_gdf = gpd.read_file("./tests/test_data/turin_triangulation_edges_with_trips.gpkg")
     edges_gdf.set_index(['u', 'v'], inplace=True)
     edges = edges_gdf.to_dict(orient='index')
 
-    graph_att = pd.read_csv(f"./tests/test_data/turin_triangulation_graph_with_trips.csv").loc[0,:].to_dict()
+    graph_att = pd.read_csv("./tests/test_data/turin_triangulation_graph_with_trips.csv").loc[0,:].to_dict()
 
     graph = nx.Graph()
     graph.add_nodes_from(nodes.keys())

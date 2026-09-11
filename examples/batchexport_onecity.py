@@ -37,10 +37,11 @@ export_orderings = ['betweenness', 'closeness'] # Full array: ['betweenness', 'c
 export_existing_network_spacings = [None, 'auto'] # Full array: [None, 'auto']
 
 # Main
-import growbikenet as gbn
 import sys
-from growbikenet.functions import slugify
+
+import growbikenet as gbn
 from growbikenet import settings
+from growbikenet.functions import slugify
 
 city_query = "Barcelona"
 city_id = "barcelona_es"
@@ -84,4 +85,5 @@ for seed_point_type in export_seed_point_types:
             )
 # Temporary hack to replace generated with real city boundary
 import shutil
+
 shutil.copyfile(city_boundary, "./results/"+city_id+"-city_boundary.geojson")

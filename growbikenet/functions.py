@@ -1,28 +1,30 @@
 """Utility functions for `growbikenet`."""
 
-from . import constants
-from . import settings
-from . import config
 import os
-from collections import defaultdict
 import re
+from collections import defaultdict
+
 import numpy as np
 import pandas as pd
+
+from . import config, constants, settings
+
 pd.set_option('display.max_columns', None) # for debugging
-import geopandas as gpd
+import datetime
 import warnings
+
+import geopandas as gpd
 import networkx as nx
 import osmnx as ox
-import scipy # scipy is needed by osmnx.distance.nearest_nodes()
-from scipy.spatial import Delaunay
 import shapely
-from shapely.prepared import prep
-from shapely.geometry import Point, LineString, MultiLineString
-from shapely.affinity import rotate
-from shapely.strtree import STRtree
 from pyproj import Transformer
+from scipy.spatial import Delaunay
+from shapely.affinity import rotate
+from shapely.geometry import MultiLineString, Point
+from shapely.prepared import prep
+from shapely.strtree import STRtree
 from tqdm import tqdm
-import datetime
+
 from growbikenet.visualization import generate_plots
 
 
@@ -667,12 +669,12 @@ def add_trip_data_to_net(trips, A, matching_distance=settings.import_trip_data_s
 
         # Add the number of trips to each edge of the shortest path
         for i, edge_id in enumerate(path_edges):
-            if edge_id in trip_dict.keys():
+            if edge_id in trip_dict:
                 trip_dict[edge_id] += num
 
             else:
                 edge_id = (path[i + 1], path[i])  # Inverse node order
-                if edge_id in trip_dict.keys():
+                if edge_id in trip_dict:
                     trip_dict[edge_id] += num
 
     nx.set_edge_attributes(graph_with_data, trip_dict, "num_trips")
@@ -1897,19 +1899,7 @@ def map_edges_to_bike_infrastructure(g):
 
     # add binary edge attribute "pbi" (protected bike infra: True/False)
     for edge in g.edges(keys=True):
-        if g.edges[edge].get("cycleway") in config.cycleway_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("cycleway:right") in config.cycleway_right_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("cycleway:left") in config.cycleway_left_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("cycleway:both") in config.cycleway_both_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("highway") in config.highway_bike_infra:
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("cyclestreet"):
-            g.edges[edge]["pbi"] = 1
-        elif g.edges[edge].get("highway") in config.highway_bike_infra_extended and g.edges[edge].get("bicycle") in config.bicycle_bike_infra and g.edges[edge].get("access") != 'private':
+        if g.edges[edge].get("cycleway") in config.cycleway_bike_infra or g.edges[edge].get("cycleway:right") in config.cycleway_right_bike_infra or g.edges[edge].get("cycleway:left") in config.cycleway_left_bike_infra or g.edges[edge].get("cycleway:both") in config.cycleway_both_bike_infra or g.edges[edge].get("highway") in config.highway_bike_infra or g.edges[edge].get("cyclestreet") or g.edges[edge].get("highway") in config.highway_bike_infra_extended and g.edges[edge].get("bicycle") in config.bicycle_bike_infra and g.edges[edge].get("access") != 'private':
             g.edges[edge]["pbi"] = 1
         else:
             g.edges[edge]["pbi"] = 0

@@ -1,14 +1,10 @@
 """Visualization functions for growbikenet."""
 
-from . import constants
-from . import settings
-import os
-import glob
-import re
-import pathlib
-import numpy as np
+
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+
+from . import constants, settings
 
 
 def generate_plots(edges_ordered, nodes, ordering, with_existing_bike_network):
@@ -74,7 +70,7 @@ def generate_plots(edges_ordered, nodes, ordering, with_existing_bike_network):
 
         ax.set_axis_off()
 
-        plot_id = "{:04d}".format(framenum)  # format plot ID with leading zeros
+        plot_id = f"{framenum:04d}"  # format plot ID with leading zeros
 
         fig.savefig(settings.export_path['plots']+f"ordering_{ordering}/{plot_id}.png", dpi=settings.viz['dpi'])
         figs[framenum] = fig

@@ -5,14 +5,15 @@ ordering = "betweenness"
 folder = "./results/plots/ordering_"+ordering+"/"
 fps = 30
 
-import cv2
-import os
 import glob
-import re
+import os
 import pathlib
+import re
+
+import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from tqdm import tqdm
+
 
 def generate_video(
     img_folder_name,  # folder where imgs are stored
@@ -70,6 +71,5 @@ def generate_video(
     # save
     video.release()
 
-    return None
 
 generate_video(img_folder_name=folder, fps=fps)
