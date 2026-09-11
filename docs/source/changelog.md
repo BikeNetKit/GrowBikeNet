@@ -1,5 +1,14 @@
 # Changelog
 
+## Version 0.14.2 (2026-09-11)
+
+- 🐛 Fixed reorder bug
+- 🐛 Fixed self-loop bug
+- 🐛 Fixed ruff-check in pre-commit hooks
+- 🐛 Extended custom filters with bicycle_road
+- 💄 Made tqdm bars consistent in notebooks
+- 💄 Polished exported filenames
+
 ## Version 0.14.1 (2026-09-03)
 
 - 🐛 Fixed botched bugfix with non-metric CRS
