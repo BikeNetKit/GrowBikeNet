@@ -1902,7 +1902,7 @@ def map_edges_to_bike_infrastructure(g):
 
     # add binary edge attribute "pbi" (protected bike infra: True/False)
     for edge in g.edges(keys=True):
-        if g.edges[edge].get("cycleway") in config.cycleway_bike_infra or g.edges[edge].get("cycleway:right") in config.cycleway_right_bike_infra or g.edges[edge].get("cycleway:left") in config.cycleway_left_bike_infra or g.edges[edge].get("cycleway:both") in config.cycleway_both_bike_infra or g.edges[edge].get("highway") in config.highway_bike_infra or g.edges[edge].get("cyclestreet") or g.edges[edge].get("highway") in config.highway_bike_infra_extended and g.edges[edge].get("bicycle") in config.bicycle_bike_infra and g.edges[edge].get("access") != 'private':
+        if g.edges[edge].get("cycleway") in config.cycleway_bike_infra or g.edges[edge].get("cycleway:right") in config.cycleway_right_bike_infra or g.edges[edge].get("cycleway:left") in config.cycleway_left_bike_infra or g.edges[edge].get("cycleway:both") in config.cycleway_both_bike_infra or g.edges[edge].get("highway") in config.highway_bike_infra or g.edges[edge].get("cyclestreet") or g.edges[edge].get("bicycle_road") or g.edges[edge].get("highway") in config.highway_bike_infra_extended and g.edges[edge].get("bicycle") in config.bicycle_bike_infra and g.edges[edge].get("access") != 'private':
             g.edges[edge]["pbi"] = 1
         else:
             g.edges[edge]["pbi"] = 0
