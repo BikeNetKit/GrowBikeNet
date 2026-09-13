@@ -1,8 +1,12 @@
 # Changelog
 
+## Version 0.14.4 (2026-09-13)
+
+- 🐛 Swapped variant layer in seed point export filename 
+
 ## Version 0.14.3 (2026-09-12)
 
-- 🐛 Add bicycle_road to pbi mapping
+- 🐛 Added bicycle_road to pbi mapping
 
 ## Version 0.14.2 (2026-09-11)
 
