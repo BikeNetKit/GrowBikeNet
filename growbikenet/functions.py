@@ -2035,7 +2035,7 @@ def export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary
                 else:
                     edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON", RFC7946="YES")
                     progress_bar.update(1)
-                seed_points_snapped_filtered.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-seed_points-"+export_strings['exnw_string']+"-"+export_strings['seed_point_string']+".geojson", driver="GeoJSON", RFC7946="YES")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-seed_points-"+export_strings['seed_point_string']+"-"+export_strings['exnw_string']+".geojson", driver="GeoJSON", RFC7946="YES")
                 progress_bar.update(1)
                 if city_boundary_exists: 
                     city_boundary_gdf.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-city_boundary.geojson", driver="GeoJSON", RFC7946="YES")
@@ -2049,7 +2049,7 @@ def export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary
                 else:
                     edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON")
                     progress_bar.update(1)
-                seed_points_snapped_filtered.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-seed_points-"+export_strings['exnw_string']+"-"+export_strings['seed_point_string']+".geojson", driver="GeoJSON")
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-seed_points-"+export_strings['seed_point_string']+"-"+export_strings['exnw_string']+".geojson", driver="GeoJSON")
                 progress_bar.update(1)
                 if city_boundary_exists: 
                     city_boundary_gdf.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-city_boundary.geojson", driver="GeoJSON")
