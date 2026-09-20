@@ -10,7 +10,7 @@
 The Python package `growbikenet` grows an urban bicycle network from scratch or from an existing bicycle network. You can download street and bike network data with a single line of code, simulate different bicycle network growth scenarios, and export and plot the resulting prioritized growth steps.
 
 > [!NOTE]  
-> GrowBikeNet is currently in Beta: It is stable enough to use, but likely to contain bugs. More features and breaking changes may be added anytime. Please [let us know](https://github.com/BikeNetKit/GrowBikeNet/issues) if you find issues or possible ways to improve.
+> GrowBikeNet is currently in Beta: It is core-feature complete, stable to use, but could still contain bugs. More features and breaking changes may be added anytime. Please [let us know](https://github.com/BikeNetKit/GrowBikeNet/issues) if you find issues or possible ways to improve.
 
 [![Example Paris](https://github.com/BikeNetKit/GrowBikeNet/raw/main/docs/source/_static/growbikenet-paris.gif)](https://bikenetkit.org/growbikenet)
 
