@@ -5,13 +5,12 @@ import growbikenet as gbn
 gbn.settings.export_file_format = "geojson"
 gbn.settings.import_path = "/Users/mszell/Tresorit/bikenetkitshare/"
 edges_ordered = gbn.growbikenet(
-            "Vienna",
+            "Turin",
             existing_network_spacing='auto',
             import_files={
-                'growable_network':"growable_networks/vienna_at.gpkg",
-                'bike_network':"bike_networks/vienna_at.gpkg",
+                'growable_network':"growable_networks/turin_it.gpkg",
+                'bike_network':"bike_networks/turin_it.gpkg",
             },
-            export_plots=True,
         )
 
 
