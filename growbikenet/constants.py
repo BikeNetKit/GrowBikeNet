@@ -78,7 +78,7 @@ References
 
 PBI_CUSTOM_FILTER = [
     '["highway"~"cycleway|living_street"]',
-    '["highway"~"path|pedestrian"]["bicycle"~"designated|yes|permissive"]["access"!~"private"]',
+    '["highway"~"path|pedestrian|footway"]["bicycle"~"designated|yes|permissive"]["access"!~"private"]',
     '["cyclestreet"~"yes"]',
     '["bicycle_road"~"yes"]',
     '["cycleway"~"track"]',
@@ -104,7 +104,7 @@ GROWABLE_NETWORK_CUSTOM_FILTER = [ # adapted from https://github.com/gboeing/osm
     '["highway"~"motorway|trunk|primary|secondary|tertiary|residential|motorway_link|trunk_link|primary_link|secondary_link|tertiary_link|service|unclassified"]["highway"!~"abandoned|construction|no|planned|platform|proposed|raceway|razed|rest_area|services"]["service"!~"emergency_access|parking|parking_aisle|private"]["area"!~"yes"]["access"!~"private"]["motor_vehicle"!~"no"]["motorcar"!~"no"]',
     # Bike infra, copied from PBI_CUSTOM_FILTER
     '["highway"~"cycleway|living_street"]',
-    '["highway"~"path|pedestrian"]["bicycle"~"designated|yes|permissive"]["access"!~"private"]',
+    '["highway"~"path|pedestrian|footway"]["bicycle"~"designated|yes|permissive"]["access"!~"private"]',
     '["cyclestreet"~"yes"]',
     '["bicycle_road"~"yes"]',
     '["cycleway"~"track"]',
