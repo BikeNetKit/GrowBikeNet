@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.14.5 (2026-09-24)
+
+- 🐛 Added footway to custom filters 
+
 ## Version 0.14.4 (2026-09-13)
 
 - 🐛 Swapped variant layer in seed point export filename 
