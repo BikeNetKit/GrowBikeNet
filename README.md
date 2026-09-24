@@ -70,4 +70,5 @@ Development of BikeNetKit/GrowBikeNet is supported by the [Innovation Fund Denma
 
 [![Innovation Fund Denmark](https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_innovationfund.png)](https://innovationsfonden.dk/en) &emsp;&emsp; [![European Union](https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_eu.png)](https://commission.europa.eu/index_en) &ensp; [![JUST STREETS](https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_juststreets.png)](https://www.just-streets.eu/) 
 
-
+Developed by  
+<a href="https://nerds.itu.dk"><img src="https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_nerds.png" alt="Networks, Data, and Society" width="280"></a>
