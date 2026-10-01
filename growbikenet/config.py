@@ -24,7 +24,8 @@ highway_bike_infra = [
 
 highway_bike_infra_extended = [
     'path', 
-    'pedestrian'
+    'pedestrian',
+    'footway'
 ]
 
 bicycle_bike_infra = [
