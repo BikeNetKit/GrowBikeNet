@@ -41,12 +41,18 @@ extensions = [
     "matplotlib.sphinxext.plot_directive",
     "IPython.sphinxext.ipython_console_highlighting",
     "sphinx_copybutton",
+    "sphinxext.opengraph",
 ]
 source_suffix = {
     '.rst': 'restructuredtext',
     '.ipynb': 'myst-nb',
     '.myst': 'myst-nb',
 }
+ogp_site_url = 'https://docs.bikenetkit.org/GrowBikeNet/'
+ogp_image = '_static/logo_growbikenet_og.jpg'
+ogp_custom_meta_tags = [
+    '<meta property="og:description" content="The Python package GrowBikeNet grows an urban bicycle network from scratch or from an existing bicycle network." />',
+]
 myst_enable_extensions = ["html_admonition"]
 nb_execution_mode = 'auto'
 nb_execution_allow_errors = False # Let's be strict so we don't publish completely broken docs
