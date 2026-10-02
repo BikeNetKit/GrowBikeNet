@@ -4,12 +4,16 @@ import growbikenet as gbn
 
 gbn.settings.export_file_format = "geojson"
 gbn.settings.import_path = "/Users/mszell/Tresorit/bikenetkitshare/"
+
+city_id = "soligorsk_by"
+
 edges_ordered = gbn.growbikenet(
-            "Turin",
+            "Soli",
             existing_network_spacing='auto',
             import_files={
-                'growable_network':"growable_networks/turin_it.gpkg",
-                'bike_network':"bike_networks/turin_it.gpkg",
+                'growable_network':"growable_networks/"+city_id+".gpkg",
+                'bike_network':"bike_networks/"+city_id+".gpkg",
+                'seed_points':"rail_stations/"+city_id+".gpkg"
             },
         )
 
