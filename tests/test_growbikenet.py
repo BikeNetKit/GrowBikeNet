@@ -4,16 +4,10 @@ import pandas as pd
 pd.set_option('display.max_columns', None) # for debugging
 from pandas.testing import assert_frame_equal
 import growbikenet as gbn
+
 import_path = './tests/test_data/'
-
 valcols = ['source', 'target', 'ordering', 'length', 'length_cumulative']
-
 gbn.settings.import_path = import_path
-gbn.settings.export_path = {
-    "results":"./results/",
-    "plots":"./results/plots/",
-}
-gbn.settings.crs_result = '4326' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
 
 
 @pytest.fixture
