@@ -8,7 +8,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-from . import config, constants, settings
+from . import constants, settings, osm
 
 pd.set_option('display.max_columns', None) # for debugging
 import datetime
@@ -435,7 +435,7 @@ def _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_fil
     progress_bar = initialize_progress_bar("Routing", 3)
 
     # Add pbi and weight before calculating shortest paths
-    g_undir = map_edges_to_bike_infrastructure(g_undir)
+    g_undir = assign_pbi_to_edges(g_undir)
     edges = bike_infra_mapping_gdf(g_undir, edges)
     g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
 
@@ -1070,7 +1070,7 @@ def update_with_existing_bike_network(city_query, g_undir, import_files, city_bo
     else:
         # Fetch protected bike network data from osmnx
         # Due to retain_all=True, this fetches all the connected components
-        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_query, custom_filter=constants.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_query, custom_filter=osm.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
 
     # Intermezzo: Get filtered existing network by component length
     nodes_exnw_filtered, _, g_undir_exnw_filtered = filter_network_by_component_length(g_undir_exnw)
@@ -1886,28 +1886,33 @@ def _get_weighted_distances(B, num_types):
     return dist_weighted_by_types_dict
 
 
-def map_edges_to_bike_infrastructure(g):
-    """
-    map if edges in graph have bike infrastructure as specified in config.py
+def assign_pbi_to_edges(g):
+    """Assign a boolean pbi attribute to all edges in a graph depending if they 
+    are considered protected bike infrastructure (pbi).
 
     Parameters
     ----------
-    g :networkx.MultiDiGraph
-        simplified graph representing the street network
+    g : networkx.MultiDiGraph
+        Simplified graph representing the street network.
 
     Returns
     -------
     g : networkx.MultiDiGraph
-        simplified graph representing the street network, with added binary edge attribute "pbi"
+        Simplified graph representing the street network, with added binary edge attribute "pbi".
     """
-
-    # add binary edge attribute "pbi" (protected bike infra: True/False)
     for edge in g.edges(keys=True):
-        if g.edges[edge].get("cycleway") in config.cycleway_bike_infra or g.edges[edge].get("cycleway:right") in config.cycleway_right_bike_infra or g.edges[edge].get("cycleway:left") in config.cycleway_left_bike_infra or g.edges[edge].get("cycleway:both") in config.cycleway_both_bike_infra or g.edges[edge].get("highway") in config.highway_bike_infra or g.edges[edge].get("cyclestreet") or g.edges[edge].get("bicycle_road") or g.edges[edge].get("highway") in config.highway_bike_infra_extended and g.edges[edge].get("bicycle") in config.bicycle_bike_infra and g.edges[edge].get("access") != 'private':
-            g.edges[edge]["pbi"] = 1
-        else:
-            g.edges[edge]["pbi"] = 0
+        assigned_pbi = 0
+        for tag in osm.PBI_DICT:
+            if g.edges[edge].get(tag) in osm.PBI_DICT[tag]:
+                assigned_pbi = 1
+        if not assigned_pbi: # Check if the edge fulfills a subcriterion
+            for tag in osm.PBI_DICT_SUB:
+                subtag = list(osm.PBI_DICT_SUB[tag][1].keys())[0]
+                if g.edges[edge].get(tag) in osm.PBI_DICT_SUB[tag][0] and g.edges[edge].get(subtag) in osm.PBI_DICT_SUB[tag][1][subtag] and g.edges[edge].get("access") != 'private':
+                    assigned_pbi = 1
+        g.edges[edge]["pbi"] = assigned_pbi
     return g
+
 
 def bike_infra_mapping_gdf(g, edges_gdf):
     """
