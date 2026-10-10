@@ -19,7 +19,7 @@ jobs:
   generate-deploy-docs:
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.11"]
         os: [ubuntu-latest]
     name: Generate documentation
     runs-on: ${{ matrix.os }}
@@ -54,12 +54,12 @@ jobs:
         run: sphinx-build -b dirhtml -a -E docs/source/ public 
 
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           # Upload generated html
           path: "public/"
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
