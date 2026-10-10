@@ -2,7 +2,7 @@ name: gbnenv
 channels:
   - conda-forge
 dependencies:
-  - python>=3.12
+  - python>=3.11
   - matplotlib
   - osmnx>=2
   - scipy
