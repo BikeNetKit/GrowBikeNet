@@ -13,7 +13,7 @@ gbn.settings.export_path = {
     "results":"./results/",
     "plots":"./results/plots/",
 }
-
+gbn.settings.crs_result = '4326' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
 
 
 @pytest.fixture
@@ -24,6 +24,7 @@ def test_growbikenet_betweenness_grid_fromscratch_success_offline(validation_gdf
     """Verify that the offline version of growbikenet works as intended.
     betweenness, grid, from scratch
     """
+    gbn.constants._CRS_CALCULATIONS = 'auto'
     edges_ordered = gbn.growbikenet(
         city_query="Badalona",
         ordering="betweenness",
@@ -46,6 +47,7 @@ def test_growbikenet_betweenness_grid_frombikenw_success_offline(validation_gdf_
     """Verify that the offline version of growbikenet works as intended.
     betweenness, grid, from bikenw
     """
+    gbn.constants._CRS_CALCULATIONS = 'auto'
     edges_ordered = gbn.growbikenet(
         city_query="Badalona",
         ordering="betweenness",
@@ -73,6 +75,7 @@ def test_growbikenet_betweenness_railstations_fromscratch_success_offline(valida
     """Verify that the offline version of growbikenet works as intended.
     betweenness, rail_stations, from scratch
     """
+    gbn.constants._CRS_CALCULATIONS = 'auto'
     edges_ordered = gbn.growbikenet(
         city_query="Badalona",
         ordering="betweenness",
@@ -96,6 +99,7 @@ def test_growbikenet_closeness_grid_fromscratch_success_offline(validation_gdf_c
     """Verify that the offline version of growbikenet works as intended.
     closeness, grid, from scratch
     """
+    gbn.constants._CRS_CALCULATIONS = 'auto'
     edges_ordered = gbn.growbikenet(
         city_query="Badalona",
         ordering="closeness",
