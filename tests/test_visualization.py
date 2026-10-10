@@ -29,7 +29,7 @@ settings.viz = {
     "dpi": 100,
     "crs": '3035',
 }
-
+settings.export_path["plots"] = "./tests/test_data/plots_temp/"
 
 @pytest.fixture
 def validation_gdf_athens_without_bikenw():
@@ -53,7 +53,6 @@ def test_generate_plots_case_success_without_bikenw(validation_gdf_athens_withou
     pytest tests/test_visualization.py --mpl
 
     """
-    settings.export_path["plots"] = "./tests/test_data/plots_temp/"
 
     ordering = "betweenness"
     with_existing_bike_network = 0
@@ -96,7 +95,6 @@ def test_generate_plots_case_success_with_bikenw(validation_gdf_athens_with_bike
     Test:
     pytest tests/test_visualization.py --mpl
     """
-    settings.export_path["plots"] = "./tests/test_data/plots_temp/"
 
     ordering = "betweenness"
     with_existing_bike_network = 1
