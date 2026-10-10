@@ -34,7 +34,7 @@ jobs:
     name: Cache for ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Get week number
         run: echo "WEEK=$(date +'%V')" >> $GITHUB_ENV

@@ -266,6 +266,7 @@ def routed_edges_with_crashes_data():
     return graph
 
 def test_add_point_data_to_net_case_success_simple(routed_edges_crashes, crashes_data, routed_edges_with_crashes_data):
+    constants._CRS_CALCULATIONS = '3857'
     assert_frame_equal(
         add_point_data_to_net(crashes_data, routed_edges_crashes),
         routed_edges_with_crashes_data,
@@ -289,6 +290,7 @@ def turin_routed_edges_with_crashes_data():
     return g
 
 def test_add_point_data_to_net_case_success_turin(turin_accidents_data, turin_routed_edges_crashes, turin_routed_edges_with_crashes_data):
+    constants._CRS_CALCULATIONS = '3857'
     result = add_point_data_to_net(turin_accidents_data, turin_routed_edges_crashes)
 
     diff_mask = result['num_points'] != turin_routed_edges_with_crashes_data['num_points']
@@ -462,6 +464,7 @@ def triangulation_graph_with_trips_data():
     return graph
 
 def test_add_trip_data_to_net_case_success_simple(trips_data, triangulation_graph_trips, triangulation_graph_with_trips_data):
+    constants._CRS_CALCULATIONS = '3857'
     result = add_trip_data_to_net(
                 trips_data, 
                 triangulation_graph_trips,
@@ -518,6 +521,7 @@ def turin_triangulation_graph_with_trips_data():
     return graph
 
 def test_add_trip_data_to_net_case_success_turin(turin_trips_data, turin_triangulation_graph_trips, turin_triangulation_graph_with_trips_data):
+    constants._CRS_CALCULATIONS = '3857'
     result = add_trip_data_to_net(
                 turin_trips_data, 
                 turin_triangulation_graph_trips,

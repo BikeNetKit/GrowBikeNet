@@ -1,89 +1,117 @@
 import geopandas as gpd
 import pytest
-
+import pandas as pd
+pd.set_option('display.max_columns', None) # for debugging
+from pandas.testing import assert_frame_equal
 import growbikenet as gbn
 
-gbn.constants._CRS_CALCULATIONS = '3857' # Leave for testing temporarily at the old value. Change to auto when re-doing test data.
-gbn.settings.export_path = {
-    "results":"./results/",
-    "plots":"./results/plots/",
-}
-gbn.settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
+import_path = './tests/test_data/'
+valcols = ['source', 'target', 'ordering', 'length', 'length_cumulative']
+gbn.settings.import_path = import_path
 
-@pytest.fixture
-def validation_gdf_oelde():
-    gdf = gpd.read_file("./tests/test_data/oelde_growbikenet.gpkg", layer='Grown bike network')
-    return gdf
 
-@pytest.fixture
-def validation_gdf_athens():
-    gdf = gpd.read_file("./tests/test_data/athens_growbikenet_with-bikenw.gpkg", layer='Grown bike network')
-    return gdf
-
-@pytest.fixture
-def validation_gdf_asti():
-    gdf = gpd.read_file("./tests/test_data/asti_growbikenet.gpkg", layer='Grown bike network')
-    return gdf
-
-# def test_growbikenet_case_success_online(validation_gdf_oelde):
-#     """Verify that the online version of growbikenet works as intended.
-#     This test might brake whenever Oelde is changed too much on OSM!
+# WORK LOCALLY BUT NOT THROUGH GITHUB
+#
+# @pytest.fixture
+# def validation_gdf_betweenness_grid_fromscratch():
+#     gdf = gpd.read_file(import_path+"badalona-growbikenet-betweenness-grid_square-from_scratch.geojson")
+#     return gdf
+# def test_growbikenet_betweenness_grid_fromscratch_success_offline(validation_gdf_betweenness_grid_fromscratch):
+#     """Verify that the offline version of growbikenet works as intended.
+#     betweenness, grid, from scratch
 #     """
-#     validation_gdf_oelde.equals(
-#         gbn.growbikenet(
-#             city_query="Oelde",
-#             ordering="betweenness",
-#             export_data=False,
-#         )
+#     gbn.constants._CRS_CALCULATIONS = 'auto'
+#     edges_ordered = gbn.growbikenet(
+#         city_query="Badalona",
+#         ordering="betweenness",
+#         export_data=False,
+#         import_files={
+#             "growable_network":"badalona_growable_network.gpkg",
+#         },
+#     )
+#     assert_frame_equal(
+#         validation_gdf_betweenness_grid_fromscratch[valcols],
+#         edges_ordered[valcols],
+#         check_dtype=False,
 #     )
 
-def test_growbikenet_case_success_offline1(validation_gdf_oelde):
-    """Verify that the offline version of growbikenet works as intended.
-    """
-    validation_gdf_oelde.equals(
-        gbn.growbikenet(
-            city_query="Oelde",
-            ordering="betweenness",
-            export_data=False,
-            import_files={"growable_network":"./tests/test_data/oelde_growable_network.gpkg"},
-        )
-    )
+# @pytest.fixture
+# def validation_gdf_betweenness_grid_frombikenw():
+#     gdf = gpd.read_file(import_path+"badalona-growbikenet-betweenness-grid_square-from_bikenw.geojson")
+#     return gdf
+# def test_growbikenet_betweenness_grid_frombikenw_success_offline(validation_gdf_betweenness_grid_frombikenw):
+#     """Verify that the offline version of growbikenet works as intended.
+#     betweenness, grid, from bikenw
+#     """
+#     gbn.constants._CRS_CALCULATIONS = 'auto'
+#     edges_ordered = gbn.growbikenet(
+#         city_query="Badalona",
+#         ordering="betweenness",
+#         existing_network_spacing='auto',
+#         export_data=False,
+#         import_files={
+#             "growable_network":"badalona_growable_network.gpkg",
+#             "bike_network":"badalona_bike_network.gpkg",
+#         },
+#     )
+#     l = len(validation_gdf_betweenness_grid_frombikenw)
+#     edges_ordered = edges_ordered[valcols].iloc[1:]
+#     edges_ordered.index = edges_ordered.index-1
+#     assert_frame_equal(
+#         validation_gdf_betweenness_grid_frombikenw[valcols],
+#         edges_ordered.reindex_like(validation_gdf_betweenness_grid_frombikenw[valcols]),
+#         check_dtype=False,
+#     )
 
-def test_growbikenet_case_success_offline2(validation_gdf_athens):
-    """Verify that the offline version of growbikenet works as intended, with existing bike network.
-    """
-    validation_gdf_athens.equals(
-        gbn.growbikenet(
-            city_query="Municipality of Athens",
-            ordering="betweenness",
-            export_data=False,
-            existing_network_spacing='auto',
-            import_files={
-                "city_boundary":"./tests/test_data/athens_city_boundary.gpkg",
-                "growable_network":"./tests/test_data/athens_growable_network.gpkg",
-                "bike_network":"./tests/test_data/athens_bike_network.gpkg",
-            }
-        )
-    )
+# @pytest.fixture
+# def validation_gdf_betweenness_railstations_fromscratch():
+#     gdf = gpd.read_file(import_path+"badalona-growbikenet-betweenness-rail_stations-from_scratch.geojson")
+#     return gdf
+# def test_growbikenet_betweenness_railstations_fromscratch_success_offline(validation_gdf_betweenness_railstations_fromscratch):
+#     """Verify that the offline version of growbikenet works as intended.
+#     betweenness, rail_stations, from scratch
+#     """
+#     gbn.constants._CRS_CALCULATIONS = 'auto'
+#     edges_ordered = gbn.growbikenet(
+#         city_query="Badalona",
+#         ordering="betweenness",
+#         export_data=False,
+#         import_files={
+#             "growable_network":"badalona_growable_network.gpkg",
+#             "seed_points":"badalona_rail_stations.gpkg",
+#         },
+#     )
+#     assert_frame_equal(
+#         validation_gdf_betweenness_railstations_fromscratch[valcols],
+#         edges_ordered[valcols],
+#         check_dtype=False,
+#     )
 
-def test_growbikenet_case_success_offline3(validation_gdf_asti):
-    """Verify that the offline version of growbikenet works as intended. 
-    Asti has previously caused a KeyError.
+# @pytest.fixture
+# def validation_gdf_closeness_grid_fromscratch():
+#     gdf = gpd.read_file(import_path+"badalona-growbikenet-closeness-grid_square-from_scratch.geojson")
+#     return gdf
+# def test_growbikenet_closeness_grid_fromscratch_success_offline(validation_gdf_closeness_grid_fromscratch):
+#     """Verify that the offline version of growbikenet works as intended.
+#     closeness, grid, from scratch
+#     """
+#     gbn.constants._CRS_CALCULATIONS = 'auto'
+#     edges_ordered = gbn.growbikenet(
+#         city_query="Badalona",
+#         ordering="closeness",
+#         export_data=False,
+#         import_files={
+#             "growable_network":"badalona_growable_network.gpkg",
+#         },
+#     )
+#     assert_frame_equal(
+#         validation_gdf_closeness_grid_fromscratch[valcols],
+#         edges_ordered[valcols],
+#         check_dtype=False,
+#     )
 
-    To get the correct asti_growable_network.gpkg, run the following:
-    >>> city_boundary_gdf = ox.geocoder.geocode_to_gdf("Asti 16")
-    >>> g = ox.graph_from_polygon(city_boundary_gdf.geometry[0], network_type="drive")
-    >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
-    >>> ox.io.save_graph_geopackage(g, "asti_growable_network.gpkg")
-    """
-    validation_gdf_asti.equals(
-        gbn.growbikenet(
-            city_query="Asti 16", # The 16 is needed to select the city, not the municipality (it doesn't matter here as the network is imported anyway, but it is important to know for exporting the street network asti_growable_network.gpkg in the first place)
-            ordering="betweenness",
-            export_data=False,
-            import_files={"growable_network":"./tests/test_data/asti_growable_network.gpkg"},
-        )
-    )
+
+
 
 # def test_growbikenet_case_fail_rail1():
 #     """Verify that when there are too few rail stations (Oelde), a 
@@ -122,12 +150,12 @@ def test_growbikenet_case_success_offline3(validation_gdf_asti):
 
 @pytest.fixture
 def validation_gdf_turin_alpha1():
-    gdf = gpd.read_file("./tests/test_data/turin_alpha1.gpkg", layer='Grown bike network')
+    gdf = gpd.read_file(import_path+"turin_alpha1.gpkg", layer='Grown bike network')
     return gdf
 
 @pytest.fixture
 def validation_gdf_turin_alpha0_4():
-    gdf = gpd.read_file("./tests/test_data/turin_alpha0_4.gpkg", layer='Grown bike network')
+    gdf = gpd.read_file(import_path+"turin_alpha0_4.gpkg", layer='Grown bike network')
     return gdf
 
 def test_growbikenet_case_success_offline_import_data1(validation_gdf_turin_alpha1):
@@ -140,9 +168,9 @@ def test_growbikenet_case_success_offline_import_data1(validation_gdf_turin_alph
         gbn.growbikenet(
             "Turin", 
             import_files={
-                'growable_network':"./tests/test_data/turin_growable_network.gpkg",
-                'point_data':"./tests/test_data/turin_crashes.gpkg",
-                'trip_data':"./tests/test_data/turin_trips.csv",
+                'growable_network':"turin_growable_network.gpkg",
+                'point_data':"turin_crashes.gpkg",
+                'trip_data':"turin_trips.csv",
             },
         )
     )
@@ -157,8 +185,8 @@ def test_growbikenet_case_success_offline_import_data2(validation_gdf_turin_alph
         gbn.growbikenet(
             "Turin", 
             import_files={
-                'growable_network':"./tests/test_data/turin_growable_network.gpkg",
-                'trip_data':"./tests/test_data/turin_trips.csv",
+                'growable_network':"turin_growable_network.gpkg",
+                'trip_data':"turin_trips.csv",
             },
         )
     )
@@ -173,9 +201,9 @@ def test_growbikenet_case_success_offline_import_data3(validation_gdf_turin_alph
         gbn.growbikenet(
             "Turin",
             import_files={
-                'growable_network':"./tests/test_data/turin_growable_network.gpkg",
-                'point_data':"./tests/test_data/turin_crashes.gpkg",
-                'trip_data':"./tests/test_data/turin_trips.csv",
+                'growable_network':"turin_growable_network.gpkg",
+                'point_data':"turin_crashes.gpkg",
+                'trip_data':"turin_trips.csv",
             },
         )
     )

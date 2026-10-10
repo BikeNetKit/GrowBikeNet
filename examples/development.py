@@ -3,19 +3,22 @@
 import growbikenet as gbn
 
 gbn.settings.export_file_format = "gpkg"
-gbn.settings.import_path = "/Users/mszell/Tresorit/bikenetkitshare/"
+# gbn.settings.import_path = "/Users/mszell/Tresorit/bikenetkitshare/"
+gbn.settings.import_path = "./tests/test_data/"
 
-city_id = "paris_fr"
+city_id = "badalona_es"
 
-edges_ordered = gbn.growbikenet(
-            "Paris",
-            existing_network_spacing='auto',
-            import_files={
-                'growable_network':"growable_networks/"+city_id+".gpkg",
-                'bike_network':"bike_networks/"+city_id+".gpkg",
-            },
-        )
+gbn.settings.import_data_impact = 9
+gbn.settings.import_data_trip_point_balance = 0.4 # alpha
 
+gbn.growbikenet(
+    "Turin", 
+    import_files={
+        'growable_network':"turin_growable_network.gpkg",
+        'point_data':"turin_crashes.gpkg",
+        'trip_data':"turin_trips.csv",
+    },
+)
 
 # import osmnx as ox
 # import networkx as nx
