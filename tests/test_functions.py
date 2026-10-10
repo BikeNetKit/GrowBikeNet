@@ -14,7 +14,6 @@ from growbikenet.functions import (
     _get_grid_seed_points,
     _get_weighted_distances,
     _order_df,
-    # intersects_properly,
     _remove_edge_overlaps,
     add_point_data_to_net,
     add_trip_data_to_net,
@@ -30,21 +29,6 @@ settings.export_path = {
 }
 settings.crs_result = '3857' # Leave for testing temporarily at the old value. Change to 4326 when re-doing test data.
 constants._CRS_CALCULATIONS = '3857' # Leave for testing temporarily at the old value. Change to auto when re-doing test data.
-
-# @pytest.fixture
-# def geom_1():
-#     linestring = LineString([(0, 0), (1, 1), (2, 2)])
-#     return linestring
-
-
-# @pytest.fixture
-# def geom_2():
-#     linestring = LineString([(3, 3), (4, 4), (5, 5)])
-#     return linestring
-
-
-# def test_intersects_properly(geom_1, geom_2):
-#     assert intersects_properly(geom_1, geom_2) is False
 
 
 @pytest.fixture
