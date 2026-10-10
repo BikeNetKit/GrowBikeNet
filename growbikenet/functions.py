@@ -440,7 +440,7 @@ def _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_fil
     g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
 
     # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
-    grown_bikenet_edges_abstract = add_path_to_df(grown_bikenet_edges_abstract, edges, g_undir)
+    grown_bikenet_edges_abstract = route_nodepairs(grown_bikenet_edges_abstract, edges, g_undir)
     progress_bar.update(1)
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
@@ -555,7 +555,7 @@ def _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
             grown_bikenet_edges_abstract_onerow = grown_bikenet_edges_abstract.iloc[i].drop(columns=['path_nodes', 'path_edges'])
             g_undir = set_path_to_pbi(edge.source, edge.target, edges, g_undir)
             g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
-            grown_bikenet_edges_abstract_onerow = add_path_to_df(grown_bikenet_edges_abstract_onerow, edges, g_undir)
+            grown_bikenet_edges_abstract_onerow = route_nodepairs(grown_bikenet_edges_abstract_onerow, edges, g_undir)
             grown_bikenet_edge = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
             if not grown_bikenet_edge.empty: # To do: How can it be empty? See _get_weighted_distances()
                 edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edge['geometry'].iloc[0]
@@ -952,14 +952,16 @@ def nx_to_nodes_edges(G):
     return nodes, edges
     
 
-def _get_correct_edgetuples(edge_gdf, nodelist):
-    """Map a node list (from ``nx.shortest_paths()``) to the correct set of 
-    edge tuples that can be used for indexing the edge geodataframe.
+def nodelist_to_edgetuples(edge_gdf, nodelist):
+    """Map a list of nodes (from `nx.shortest_paths()`) to a list of edge 
+    tuples that can be used for indexing an edge geodataframe.
+
+    Useful to apply as a lambda function to turn path nodes into path edges.
 
     Parameters
     ----------
     edge_gdf : geopandas.geodataframe.GeoDataFrame
-        The street network, in a projected CRS.
+        The edges of a spatial network, in a projected CRS.
     nodelist : list
         A list of nodes that make up source and targets of edges.
 
@@ -971,8 +973,9 @@ def _get_correct_edgetuples(edge_gdf, nodelist):
     """
     edgelist_prelim = zip(nodelist, nodelist[1:])
     edgelist_final = []
+    temp_gdf = edge_gdf.sort_index() # To circumvent PerformanceWarning, see https://stackoverflow.com/questions/54307300/what-causes-indexing-past-lexsort-depth-warning-in-pandas
     for edge_prelim in edgelist_prelim:
-        if edge_prelim in edge_gdf.index:
+        if edge_prelim in temp_gdf.index:
             edgelist_final.append(edge_prelim)
         else:
             edgelist_final.append(tuple([edge_prelim[1], edge_prelim[0]]))
@@ -1714,26 +1717,25 @@ def node_to_edge_attributes(values_nodes, edges):
     return values_edges
 
 
-def add_path_to_df(df, edges, g_undir):
-    """Map each unrouted edge to a merged geometry of corresponding OSMnx 
-    edges (routed on `g_undir`).
+def route_nodepairs(nodepairs, edges, g_undir):
+    """Route pairs of nodes on the graph `g_undir` to a merged geometry of corresponding OSM nodes and edges.
 
     Parameters
     ----------
-    df : pandas.DataFrame
-        Dataframe with information about edges.
+    nodepairs : pandas.DataFrame
+        Dataframe with node pair integer IDs, columns `source` and `target`.
     edges : geopandas.geodataframe.GeoDataFrame
         The street network, in a projected CRS.
     g_undir : networkx.graph undirected
-        Graph to use for routing.
+        Graph to use for routing. The weight variable is "weight".
 
     Returns
     -------
-    df : pandas.DataFrame
-        Dataframe with added path nodes and path edges.
+    nodepairs : pandas.DataFrame
+        Dataframe of node pairs with added path nodes and path edges.
     """
     paths = []
-    for _, row in df.iterrows():
+    for _, row in nodepairs.iterrows():
         paths.append(
             nx.shortest_path(
                 G=g_undir,
@@ -1742,9 +1744,10 @@ def add_path_to_df(df, edges, g_undir):
                 weight="weight",
             )
         )
-    df["path_nodes"] = paths
-    df["path_edges"] = df.path_nodes.apply(lambda x: _get_correct_edgetuples(edges, x))
-    return df
+    nodepairs["path_nodes"] = paths
+    nodepairs["path_edges"] = nodepairs.path_nodes.apply(lambda x: nodelist_to_edgetuples(edges, x))
+    return nodepairs
+
 
 def set_path_to_pbi(source, target, edges, g):
     """Map an unrouted edge to a merged geometry of corresponding OSMnx 
