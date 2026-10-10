@@ -1,9 +1,12 @@
 import geopandas as gpd
 import pytest
+import pandas as pd
+pd.set_option('display.max_columns', None) # for debugging
 from pandas.testing import assert_frame_equal
 import growbikenet as gbn
 import_path = './tests/test_data/'
 
+valcols = ['source', 'target', 'ordering', 'length', 'length_cumulative']
 
 gbn.settings.import_path = import_path
 gbn.settings.export_path = {
@@ -12,80 +15,101 @@ gbn.settings.export_path = {
 }
 
 
-@pytest.fixture
-def validation_gdf_oelde():
-    gdf = gpd.read_file(import_path+"oelde_growbikenet.gpkg", layer='Grown bike network')
-    return gdf
 
 @pytest.fixture
-def validation_gdf_athens():
-    gdf = gpd.read_file(import_path+"athens_growbikenet_with-bikenw.gpkg", layer='Grown bike network')
+def validation_gdf_betweenness_grid_fromscratch():
+    gdf = gpd.read_file(import_path+"badalona-growbikenet-betweenness-grid_square-from_scratch.geojson")
     return gdf
-
-@pytest.fixture
-def validation_gdf_asti():
-    gdf = gpd.read_file(import_path+"asti_growbikenet.gpkg", layer='Grown bike network')
-    return gdf
-
-# def test_growbikenet_case_success_online(validation_gdf_oelde):
-#     """Verify that the online version of growbikenet works as intended.
-#     This test might brake whenever Oelde is changed too much on OSM!
-#     """
-#     validation_gdf_oelde.equals(
-#         gbn.growbikenet(
-#             city_query="Oelde",
-#             ordering="betweenness",
-#             export_data=False,
-#         )
-#     )
-
-def test_growbikenet_case_success_offline1(validation_gdf_oelde):
+def test_growbikenet_betweenness_grid_fromscratch_success_offline(validation_gdf_betweenness_grid_fromscratch):
     """Verify that the offline version of growbikenet works as intended.
+    betweenness, grid, from scratch
     """
-    validation_gdf_oelde.equals(
-        gbn.growbikenet(
-            city_query="Oelde",
-            ordering="betweenness",
-            export_data=False,
-            import_files={"growable_network":"oelde_growable_network.gpkg"},
-        )
+    edges_ordered = gbn.growbikenet(
+        city_query="Badalona",
+        ordering="betweenness",
+        export_data=False,
+        import_files={
+            "growable_network":"badalona_growable_network.gpkg",
+        },
+    )
+    assert_frame_equal(
+        validation_gdf_betweenness_grid_fromscratch[valcols],
+        edges_ordered[valcols],
+        check_dtype=False,
     )
 
-def test_growbikenet_case_success_offline2(validation_gdf_athens):
-    """Verify that the offline version of growbikenet works as intended, with existing bike network.
+@pytest.fixture
+def validation_gdf_betweenness_grid_frombikenw():
+    gdf = gpd.read_file(import_path+"badalona-growbikenet-betweenness-grid_square-from_bikenw.geojson")
+    return gdf
+def test_growbikenet_betweenness_grid_frombikenw_success_offline(validation_gdf_betweenness_grid_frombikenw):
+    """Verify that the offline version of growbikenet works as intended.
+    betweenness, grid, from bikenw
     """
-    validation_gdf_athens.equals(
-        gbn.growbikenet(
-            city_query="Municipality of Athens",
-            ordering="betweenness",
-            export_data=False,
-            existing_network_spacing='auto',
-            import_files={
-                "city_boundary":"athens_city_boundary.gpkg",
-                "growable_network":"athens_growable_network.gpkg",
-                "bike_network":"athens_bike_network.gpkg",
-            }
-        )
+    edges_ordered = gbn.growbikenet(
+        city_query="Badalona",
+        ordering="betweenness",
+        existing_network_spacing='auto',
+        export_data=False,
+        import_files={
+            "growable_network":"badalona_growable_network.gpkg",
+            "bike_network":"badalona_bike_network.gpkg",
+        },
+    )
+    l = len(validation_gdf_betweenness_grid_frombikenw)
+    edges_ordered = edges_ordered[valcols].iloc[1:]
+    edges_ordered.index = edges_ordered.index-1
+    assert_frame_equal(
+        validation_gdf_betweenness_grid_frombikenw[valcols],
+        edges_ordered.reindex_like(validation_gdf_betweenness_grid_frombikenw[valcols]),
+        check_dtype=False,
     )
 
-def test_growbikenet_case_success_offline3(validation_gdf_asti):
-    """Verify that the offline version of growbikenet works as intended. 
-    Asti has previously caused a KeyError.
-
-    To get the correct asti_growable_network.gpkg, run the following:
-    >>> city_boundary_gdf = ox.geocoder.geocode_to_gdf("Asti 16")
-    >>> g = ox.graph_from_polygon(city_boundary_gdf.geometry[0], network_type="drive")
-    >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
-    >>> ox.io.save_graph_geopackage(g, "asti_growable_network.gpkg")
+@pytest.fixture
+def validation_gdf_betweenness_railstations_fromscratch():
+    gdf = gpd.read_file(import_path+"badalona-growbikenet-betweenness-rail_stations-from_scratch.geojson")
+    return gdf
+def test_growbikenet_betweenness_railstations_fromscratch_success_offline(validation_gdf_betweenness_railstations_fromscratch):
+    """Verify that the offline version of growbikenet works as intended.
+    betweenness, rail_stations, from scratch
     """
-    validation_gdf_asti.equals(
-        gbn.growbikenet(
-            city_query="Asti 16", # The 16 is needed to select the city, not the municipality (it doesn't matter here as the network is imported anyway, but it is important to know for exporting the street network asti_growable_network.gpkg in the first place)
-            ordering="betweenness",
-            export_data=False,
-            import_files={"growable_network":"asti_growable_network.gpkg"},
-        )
+    edges_ordered = gbn.growbikenet(
+        city_query="Badalona",
+        ordering="betweenness",
+        export_data=False,
+        import_files={
+            "growable_network":"badalona_growable_network.gpkg",
+            "seed_points":"badalona_rail_stations.gpkg",
+        },
     )
+    assert_frame_equal(
+        validation_gdf_betweenness_railstations_fromscratch[valcols],
+        edges_ordered[valcols],
+        check_dtype=False,
+    )
+
+@pytest.fixture
+def validation_gdf_closeness_grid_fromscratch():
+    gdf = gpd.read_file(import_path+"badalona-growbikenet-closeness-grid_square-from_scratch.geojson")
+    return gdf
+def test_growbikenet_closeness_grid_fromscratch_success_offline(validation_gdf_closeness_grid_fromscratch):
+    """Verify that the offline version of growbikenet works as intended.
+    closeness, grid, from scratch
+    """
+    edges_ordered = gbn.growbikenet(
+        city_query="Badalona",
+        ordering="closeness",
+        export_data=False,
+        import_files={
+            "growable_network":"badalona_growable_network.gpkg",
+        },
+    )
+    assert_frame_equal(
+        validation_gdf_closeness_grid_fromscratch[valcols],
+        edges_ordered[valcols],
+        check_dtype=False,
+    )
+
 
 # def test_growbikenet_case_fail_rail1():
 #     """Verify that when there are too few rail stations (Oelde), a 

@@ -2040,9 +2040,11 @@ def export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary
                 progress_bar = initialize_progress_bar("Exporting data", 2+int(bool(existing_network_spacing))+int(city_boundary_exists), "file")
                 if settings.crs_result == '4326': # Export with RFC7946="YES"
                     if existing_network_spacing:
-                        edges_ordered.iloc[[0]].to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-existing_bike_network.geojson", driver="GeoJSON", RFC7946="YES")
+                        existing_network = edges_ordered.iloc[[0]]
+                        edges_ordered = edges_ordered.iloc[1:].astype({'source': int, 'target': int})
+                        existing_network.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-existing_bike_network.geojson", driver="GeoJSON", RFC7946="YES")
                         progress_bar.update(1)
-                        edges_ordered.iloc[1:].to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON", RFC7946="YES")
+                        edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON", RFC7946="YES")
                         progress_bar.update(1)
                     else:
                         edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON", RFC7946="YES")
@@ -2054,9 +2056,11 @@ def export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary
                         progress_bar.update(1)
                 else:
                     if existing_network_spacing:
-                        edges_ordered.iloc[[0]].to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-existing_bike_network.geojson", driver="GeoJSON")
+                        existing_network = edges_ordered.iloc[[0]]
+                        edges_ordered = edges_ordered.iloc[1:].astype({'source': int, 'target': int})
+                        existing_network.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-existing_bike_network.geojson", driver="GeoJSON")
                         progress_bar.update(1)
-                        edges_ordered.iloc[1:].to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON")
+                        edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON")
                         progress_bar.update(1)
                     else:
                         edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'], driver="GeoJSON")
