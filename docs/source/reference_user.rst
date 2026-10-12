@@ -5,6 +5,7 @@ This is the user reference for the GrowBikeNet package. If you are looking for a
 
 The standard way to import the GrowBikeNet package is via ``import growbikenet as gbn``. The main ``growbikenet()`` function below is then called via ``gbn.growbikenet()``, see the :doc:`mwe`.
 
+
 growbikenet.growbikenet
 -----------------------
 
@@ -12,16 +13,18 @@ growbikenet.growbikenet
    :members:
    :no-index:
 
-growbikenet.osm
----------------
-
-.. automodule:: growbikenet.osm
-   :members:
-   :no-index:
 
 growbikenet.settings
 --------------------
 
 .. automodule:: growbikenet.settings
+   :members:
+   :no-index:
+
+
+growbikenet.osm
+---------------
+
+.. automodule:: growbikenet.osm
    :members:
    :no-index:

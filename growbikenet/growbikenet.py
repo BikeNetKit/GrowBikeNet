@@ -102,13 +102,15 @@ def growbikenet(
     export_plots : bool, default False
         If set to True, plots are saved to files, overwriting existing ones.
     import_files: dict, default {}
-        The following key:value entries can be set:
+        All imported files can be given as geojson, gpkg, or shp, unless noted 
+        otherwise. The following key:value entries can be set:
 
         - 'city_boundary' : None or str, default None
             If not set to None, the study area is selected from the 
-            (Multi)Polygon provided in the city_boundary shape or gpkg file, 
-            ideally in unprojected latitude-longitude degrees (EPSG:4326), but 
-            EPSG:3857 also works. For example, './tests/test_data/copenhagen_city_boundary.shp'.
+            (Multi)Polygon provided in the city_boundary file, ideally in
+            unprojected latitude-longitude degrees (EPSG:4326), but 
+            EPSG:3857 also works. For example, 
+            './tests/test_data/copenhagen_city_boundary.shp'.
         - 'growable_network' : None or str, default None
             If not set to None, the growable street network is loaded from this 
             file. Must be a gpkg file in unprojected CRS EPSG:4326 with layers 
@@ -131,18 +133,20 @@ def growbikenet(
             network has after saved via ``ox.io.save_graph_geopackage()``.
         - 'seed_points' : None or str, default None
             If not set to None, the seed points is loaded from this file. Must 
-            be a gpkg file in unprojected CRS EPSG:4326 containing only point 
-            objects. For example, './tests/test_data/oelde_seed_points.shp'. `seed_point_type` must be set to 'file'. The name of the seed 
-            points in the exported file name is controlled via `settings.seed_point_type_name`.
+            be in unprojected CRS EPSG:4326 containing only point objects. For 
+            example, './tests/test_data/oelde_seed_points.shp'. 
+            `seed_point_type` must be set to 'file'. The name of the seed 
+            points in the exported file name is controlled via 
+            `settings.seed_point_type_name`.
         - 'point_data' : None or str, default None
             If not set to None, an additional data set of points will be loaded 
             from this file, representing point events like traffic crashes or 
-            citizen feedback to improve bike infrastructure. Must be a gpkg 
-            file in unprojected CRS EPSG:4326 containing only point objects, 
-            optionally with an int ``num`` column that encodes the number of 
-            point events. The data set is used to re-prioritize the ordering of 
-            the network links, controlled with `settings.import_data_impact` 
-            and `settings.import_data_trip_point_balance`, following [2]_.
+            citizen feedback to improve bike infrastructure. Must be in 
+            unprojected CRS EPSG:4326 containing only point objects, optionally 
+            with an int ``num`` column that encodes the number of point events. 
+            The data set is used to re-prioritize the ordering of the network 
+            links, controlled with `settings.import_data_impact` and 
+            `settings.import_data_trip_point_balance`, following [2]_.
         - 'trip_data' : None or str, default None
             If not set to None, an additional data set of trips will be loaded 
             from this file, representing trip events for prioritizing bike 

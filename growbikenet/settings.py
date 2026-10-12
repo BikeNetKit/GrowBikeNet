@@ -9,10 +9,11 @@ crs_result : str, default '4326'
     'geojson', data is exported via the RFC7946 standard.
 export_path : dict(str)
     Paths to results and plots folders to save data and plots.
-export_file_format : {'gpkg', 'geojson'}, default 'gpkg'
+export_file_format : {'gpkg', 'geojson', 'shp'}, default 'gpkg'
     File format for the data export, relevant if `export_data` is set to True. 
-    If exporting as geojson, generates extra files for seed points, city 
-    boundary, and existing bicycle network (if relevant). If exporting as gkpg, these are added all in one file as extra layers.
+    If exporting as geojson or shp, generates extra files for seed points, city 
+    boundary, and existing bicycle network (if relevant). If exporting as gkpg, 
+    these are added all in one file as extra layers.
 import_data_impact : float, default 9
     Impact of imported trip or point data on results. Must be non-negative.
 import_data_trip_point_balance : float, default 0.5
@@ -23,7 +24,8 @@ import_data_trip_point_balance : float, default 0.5
     point data is imported, this variable is treated as 0 - meaning in such a 
     case the data impact is controlled only by `settings.import_data_impact`.
 import_path : str
-    Path to import files (as defined in `growbikenet`'s import_files parameter).
+    Path to import files (as defined in `growbikenet`'s import_files 
+    parameter).
 import_point_data_snap_distance : int, default 500
     Maximum distance between point data and network links for snapping, in 
     meters.
@@ -33,14 +35,14 @@ import_trip_data_snap_distance : int, default 500
 random_seed : int, default 43
     Random number generator seed for reproducibility
 reroute : bool, default True
-    Decide whether to add a rerouting step, which takes extra computations but removes unrealistic artefacts.
+    Decide whether to add a rerouting step, which takes extra computations but 
+    removes unrealistic artefacts.
 seed_point_snap_distance : 'auto' or int, default 'auto'
     Maximum distance between raw seed points and osm nodes for snapping, 
-    in meters.
-    Auto-value is ceil(`seed_point_grid_spacing`*
-    `constants._SEED_POINT_SNAP_DISTANCE_FACTOR`). If integer, must be positive. 
-    The default values for seed_point_grid_spacing of 1000/1154/1707 are: 
-    250/289/427
+    in meters. Auto-value is 
+    ceil(`seed_point_grid_spacing`*`constants._SEED_POINT_SNAP_DISTANCE_FACTOR`). 
+    If integer, must be positive. The default values for 
+    seed_point_grid_spacing of 1000/1154/1707 are: 250/289/427
 seed_point_type_name : str, default 'file'
     The name of the seed points in the exported file name, when 
     `seed_point_type` is set to 'file'.

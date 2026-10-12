@@ -1,4 +1,5 @@
-"""Global constants for `growbikenet` related to OpenStreetMap (OSM).
+"""Global constants for `growbikenet` related to OpenStreetMap (OSM). These are 
+meant for advanced users only who have a good understanding of OSM tags.
 
 GROWABLE_NETWORK_CUSTOM_FILTER : list[str] or None
     Custom filter for all infrastructure elements that are considered as 
@@ -18,10 +19,6 @@ PBI_DICT_SUB : dict
     Dictionary for protected bicycle infrastructure (pbi), with one 
     sub-criterion. For example, highway~path AND bicycle~designated. Always 
     adds a second criterion access!~private.
-ROUTING_PENALTY : dict, default {0: 1.5, 1: 1}
-    Factor to multiply length of non-pbi/pbi for routing, to avoid routing
-    through parallel streets when slightly longer pbi is available. By 
-    default, non-pbi counts as 50% longer than pbi.
 """
 
 # Populate ox.settings.useful_tags_way to make application of custom filter possible
@@ -67,12 +64,10 @@ PBI_DICT = {
     'cycleway:left': ['track','opposite_track'],
     'cycleway:both': ['track','opposite_track'],
 }
+
 PBI_DICT_SUB = {
     'highway': [
         ['path','pedestrian','footway'],
         {'bicycle': ['designated','yes','permissive']},
     ]
 }
-
-ROUTING_PENALTY = {0: 1.5, 1: 1}
-

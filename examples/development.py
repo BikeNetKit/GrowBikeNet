@@ -8,17 +8,19 @@ gbn.settings.import_path = "./tests/test_data/"
 
 city_id = "badalona_es"
 
-gbn.settings.import_data_impact = 9
-gbn.settings.import_data_trip_point_balance = 0.4 # alpha
-
 gbn.growbikenet(
-    "Turin", 
-    import_files={
-        'growable_network':"turin_growable_network.gpkg",
-        'point_data':"turin_crashes.gpkg",
-        'trip_data':"turin_trips.csv",
-    },
-)
+            "Oelde",
+            # existing_network_spacing='auto',
+            import_files={
+                'growable_network':"oelde_growable_network.gpkg",
+                # 'bike_network':"bike_networks/"+city_id+".gpkg",
+                'seed_points':"oelde_seed_points.geojson"
+            },
+        )
+
+# 'growable_network':"growable_networks/"+city_id+".gpkg",
+# 'bike_network':"bike_networks/"+city_id+".gpkg",
+# 'seed_points':"rail_stations/"+city_id+".gpkg"
 
 # import osmnx as ox
 # import networkx as nx

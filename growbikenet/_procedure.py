@@ -71,8 +71,8 @@ def _gbn_validate_settings():
 
     if type(constants._CRS_CALCULATIONS) is not str:
         raise TypeError("constants._CRS_CALCULATIONS must be a string")
-    if settings.export_file_format != "geojson" and settings.export_file_format != "gpkg":
-        raise ValueError("settings.export_file_format must be 'geojson' or 'gpkg'")
+    if settings.export_file_format not in ["geojson", "gpkg", "shp"]:
+        raise ValueError("settings.export_file_format must be 'geojson' or 'gpkg' or 'shp'")
     # To do: check export_path
     if type(settings.seed_point_snap_distance) is not int and settings.seed_point_snap_distance != 'auto':
         raise TypeError("settings.seed_point_snap_distance must be 'auto' or an integer")
@@ -586,59 +586,6 @@ def _gbn_compute_edge_metrics(ordering, B, metric_weight):
     return edges_ordered
 
 
-def import_network(growable_network):
-    """Import and project a street network from gpkg file.
-
-    Parameters
-    ----------
-    growable_network : str
-        The street network is loaded from this file. Must be a gpkg file 
-        in unprojected CRS EPSG:4326 with layers nodes and edges, with the 
-        structure that a OSMnx street network ``g`` has after saving its 
-        undirected version via ``ox.io.save_graph_geopackage()``. For example:
-
-        >>> g = ox.graph_from_place("Barcelona", network_type='drive')
-        >>> g = nx.MultiGraph(ox.convert.to_digraph(g))
-        >>> ox.io.save_graph_geopackage(g, "Barcelona_streets.gpkg")
-    import_path : str, default `settings.import_path`
-        Path to import files.
-
-    Returns
-    -------
-    nodes : geopandas.geodataframe.GeoDataFrame
-        Extracted OSM nodes, projected.
-    edges : geopandas.geodataframe.GeoDataFrame
-        Extracted OSM edges, projected.
-    g_undir : networkx.classes.multigraph.MultiGraph
-        Extracted networkX graph, undirected.
-    city_boundary_gdf : geopandas.geodataframe.GeoDataFrame
-        Convex hull of the street network.
-
-    Notes
-    -----
-    For all edges between a pair of nodes u and v there must be one edge with 
-    key 0.
-    """
-
-    nodes = gpd.read_file(settings.import_path+growable_network, layer='nodes')
-    edges = gpd.read_file(settings.import_path+growable_network, layer='edges')
-
-    # Set indices as required by osmnx.convert.graph_from_gdfs
-    # See: https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.utils_graph.graph_from_gdfs
-    nodes = nodes.set_index(['osmid'])
-    edges = edges.set_index(['u', 'v', 'key'])
-
-    g = ox.convert.graph_from_gdfs(nodes, edges)
-    g_undir = g.to_undirected().copy() # convert to undirected (dropping OSMnx keys!)
-
-    city_boundary_gdf = gpd.GeoDataFrame(gpd.GeoSeries(nodes.union_all().convex_hull), geometry=0, crs=nodes.crs) # We do this before the projection of nodes below
-    # To do: To be super-correct, the hull should be buffered by settings.seed_point_snap_distance (in degrees due to being unprojected)
-
-    nodes, edges = prepare_nodes_edges(nodes, edges)
-
-    return nodes, edges, g_undir, city_boundary_gdf
-
-
 def _gbn_postprocess_edges(existing_network_spacing, edges_exnw, edges_ordered):
     """Postprocess edges: Add bike net on top, remove overlaps, add length 
     metrics, reorder, reproject.
@@ -756,6 +703,28 @@ def _gbn_export_data_to_file(export_data, seed_points_snapped_filtered, city_bou
                 seed_points_snapped_filtered.to_file(f, driver="GPKG", layer="Seed points")
                 if city_boundary_exists: city_boundary_gdf.to_file(f, driver="GPKG", layer="City boundary")
                 progress_bar.update(1)
+            elif settings.export_file_format == "shp":
+                progress_bar = initialize_progress_bar("Exporting data", 2+int(bool(existing_network_spacing))+int(city_boundary_exists), "file")
+                if existing_network_spacing:
+                    existing_network = edges_ordered.iloc[[0]]
+                    edges_ordered = edges_ordered.iloc[1:].astype({'source': int, 'target': int})
+                    existing_network.columns = [str(col)[:10] for col in existing_network.columns]
+                    existing_network.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-existing_bike_network.shp")
+                    progress_bar.update(1)
+                    edges_ordered.columns = [str(col)[:10] for col in edges_ordered.columns]
+                    edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'])
+                    progress_bar.update(1)
+                else:
+                    edges_ordered.columns = [str(col)[:10] for col in edges_ordered.columns]
+                    edges_ordered.to_file(settings.export_path['results']+export_strings['export_data_filename'])
+                    progress_bar.update(1)
+                seed_points_snapped_filtered.columns = [str(col)[:10] for col in seed_points_snapped_filtered.columns]
+                seed_points_snapped_filtered.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-seed_points-"+export_strings['seed_point_string']+"-"+export_strings['exnw_string']+".shp")
+                progress_bar.update(1)
+                if city_boundary_exists: 
+                    city_boundary_gdf.columns = [str(col)[:10] for col in city_boundary_gdf.columns]
+                    city_boundary_gdf.to_file(settings.export_path['results']+export_strings['city_string']+"-growbikenet-city_boundary.shp")
+                    progress_bar.update(1)
             progress_bar.close()
 
 
