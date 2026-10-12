@@ -16,10 +16,17 @@ growbikenet.constants
    :members:
    :private-members:
 
-growbikenet.functions
----------------------
+growbikenet.osm
+---------------
 
-.. automodule:: growbikenet.functions
+.. automodule:: growbikenet.osm
+   :members:
+   :private-members:
+
+growbikenet.utils
+-----------------
+
+.. automodule:: growbikenet.utils
    :members:
    :private-members:
 
@@ -34,5 +41,12 @@ growbikenet.visualization
 -------------------------
 
 .. automodule:: growbikenet.visualization
+   :members:
+   :private-members:
+
+growbikenet._procedure
+----------------------
+
+.. automodule:: growbikenet._procedure
    :members:
    :private-members:

@@ -55,7 +55,7 @@ jobs:
         os: [ubuntu-latest]
         submodule:
           - { name: "growbikenet", pytest_args: "tests/test_growbikenet.py" }
-          - { name: "functions", pytest_args: "tests/test_functions.py" }
+          - { name: "utils", pytest_args: "tests/test_utils.py" }
           - { name: "visualization", pytest_args: "tests/test_visualization.py --mpl" }
       fail-fast: false
 

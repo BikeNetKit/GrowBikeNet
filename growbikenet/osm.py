@@ -1,4 +1,4 @@
-"""Global constants related to OpenStreetMap(OSM).
+"""Global constants for `growbikenet` related to OpenStreetMap (OSM).
 
 GROWABLE_NETWORK_CUSTOM_FILTER : list[str] or None
     Custom filter for all infrastructure elements that are considered as 
