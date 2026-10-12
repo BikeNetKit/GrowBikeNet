@@ -20,7 +20,6 @@ GRID_SPACING_TRIANGLE : int, default 1154
 REORDER : bool, default True
     Decision whether ordering should be reordered after edge removal, as edge 
     removal can leave gaps.
-
 _CRS_CALCULATIONS : str, default 'auto'
     EPSG code of the coordinate reference system that is used to project OSM 
     data for calculations. This has to be a distance-preserving projected CRS, 
@@ -57,19 +56,12 @@ _PROGRESS_BAR_DESC_LENGTH : int, default 23
 _ROUTING_PENALTY : dict, default {0: 1.5, 1: 1}
     Factor to multiply length of non-pbi/pbi for routing, to avoid routing
     through parallel streets when slightly longer pbi is available. By 
-    default, non-pbi counts as 50% longer than pbi.
+    default, non-pbi counts as 50% longer than pbi, reflected in the value 1.5.
 
 References
 ----------
 .. [1] G. Boeing, `Urban spatial order: Street network orientation, configuration, and entropy`, Applied Network Science 4, 67 (2019)
 """
-
-# Populate ox.settings.useful_tags_way to make application of custom filter possible
-import osmnx as ox
-
-for custom_tag in ["highway", "cycleway", "bicycle", "cycleway:right", "cycleway:left", "cycleway:both", "cyclestreet", "access", "area", "service", "motor_vehicle", "motorcar"]: # This list should contain all tags used in any custom filters
-    if custom_tag not in ox.settings.useful_tags_way:
-        ox.settings.useful_tags_way.extend(custom_tag)
 
 EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH = 100 
 

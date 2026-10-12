@@ -12,6 +12,8 @@ gbn.settings.import_path = import_path
 
 # WORK LOCALLY BUT NOT THROUGH GITHUB
 #
+# Test successes
+#
 # @pytest.fixture
 # def validation_gdf_betweenness_grid_fromscratch():
 #     gdf = gpd.read_file(import_path+"badalona-growbikenet-betweenness-grid_square-from_scratch.geojson")
@@ -112,6 +114,8 @@ gbn.settings.import_path = import_path
 
 
 
+# Test fails
+
 
 # def test_growbikenet_case_fail_rail1():
 #     """Verify that when there are too few rail stations (Oelde), a 
@@ -142,6 +146,54 @@ gbn.settings.import_path = import_path
 #             "Hallettsville",
 #             existing_network_spacing=500,
 #         )
+
+
+# Test import file formats geojson and shp (gpkg already tested above)
+
+@pytest.fixture
+def validation_gdf_betweenness_file_fromscratch():
+    gdf = gpd.read_file(import_path+"oelde-growbikenet-betweenness-file-from_scratch.geojson")
+    return gdf
+def test_growbikenet_betweenness_file_geojson_fromscratch_success_offline(validation_gdf_betweenness_file_fromscratch):
+    """Verify that the offline version of growbikenet works as intended, with
+    geojson seed_points import.
+    betweenness, file, from scratch
+    """
+    gbn.constants._CRS_CALCULATIONS = 'auto'
+    edges_ordered = gbn.growbikenet(
+        city_query="Oelde",
+        ordering="betweenness",
+        export_data=False,
+        import_files={
+            'growable_network': "oelde_growable_network.gpkg",
+            'seed_points': "oelde_seed_points.geojson",
+        },
+    )
+    assert_frame_equal(
+        validation_gdf_betweenness_file_fromscratch[valcols],
+        edges_ordered[valcols],
+        check_dtype=False,
+    )
+def test_growbikenet_betweenness_file_shp_fromscratch_success_offline(validation_gdf_betweenness_file_fromscratch):
+    """Verify that the offline version of growbikenet works as intended, with
+    geojson seed_points import.
+    betweenness, file, from scratch
+    """
+    gbn.constants._CRS_CALCULATIONS = 'auto'
+    edges_ordered = gbn.growbikenet(
+        city_query="Oelde",
+        ordering="betweenness",
+        export_data=False,
+        import_files={
+            'growable_network': "oelde_growable_network.gpkg",
+            'seed_points': "oelde_seed_points.shp",
+        },
+    )
+    assert_frame_equal(
+        validation_gdf_betweenness_file_fromscratch[valcols],
+        edges_ordered[valcols],
+        check_dtype=False,
+    )
 
 
 

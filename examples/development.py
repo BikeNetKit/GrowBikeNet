@@ -2,21 +2,25 @@
 
 import growbikenet as gbn
 
-gbn.settings.export_file_format = "shp"
-gbn.settings.import_path = "/Users/mszell/Tresorit/bikenetkitshare/"
-# gbn.settings.import_path = "./tests/test_data/"
+gbn.settings.export_file_format = "gpkg"
+# gbn.settings.import_path = "/Users/mszell/Tresorit/bikenetkitshare/"
+gbn.settings.import_path = "./tests/test_data/"
 
 city_id = "badalona_es"
 
 gbn.growbikenet(
-            "Badalona",
+            "Oelde",
             # existing_network_spacing='auto',
             import_files={
-                'growable_network':"growable_networks/"+city_id+".gpkg",
+                'growable_network':"oelde_growable_network.gpkg",
                 # 'bike_network':"bike_networks/"+city_id+".gpkg",
-                # 'seed_points':"rail_stations/"+city_id+".gpkg"
+                'seed_points':"oelde_seed_points.geojson"
             },
         )
+
+# 'growable_network':"growable_networks/"+city_id+".gpkg",
+# 'bike_network':"bike_networks/"+city_id+".gpkg",
+# 'seed_points':"rail_stations/"+city_id+".gpkg"
 
 # import osmnx as ox
 # import networkx as nx
