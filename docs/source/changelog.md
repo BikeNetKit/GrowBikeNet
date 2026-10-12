@@ -1,5 +1,20 @@
 # Changelog
 
+## Version 0.15.0 (2026-10-12)
+
+- ✨ Added support for shp and geojson imports and exports, where possible
+- 🐛 Fixed bug with non-metric CRS, now estimating UTM
+- 🐛 Fixed init not exposing all modules
+- 🐛 Added footway to pbi config
+- ♻️ Refactored pbi assignment, getting rid of config
+- ♻️ Refactored functions into new utils and procedure modules
+- ♻️ Refactored osm constants into new osm module, preparing for BikeNetLib
+- ⬆️ Added Python 3.15 support
+- ⬆️ Updated actions versions
+- 📝 Simplified usage docs 7
+- 📝 Added OG to docs
+- 💄 Added whitelisted Stadia maps to docs, replacing broken CartoDB maps
+
 ## Version 0.14.5 (2026-09-24)
 
 - 🐛 Added footway to custom filters 
