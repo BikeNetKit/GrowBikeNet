@@ -11,6 +11,7 @@
 - ♻️ Refactored osm constants into new osm module, preparing for BikeNetLib
 - ⬆️ Added Python 3.15 support
 - ⬆️ Updated actions versions
+- ✅ Implemented assert_frame_equal in tests; works locally, not yet all online
 - 📝 Simplified usage docs 7
 - 📝 Added OG to docs
 - 💄 Added whitelisted Stadia maps to docs, replacing broken CartoDB maps
