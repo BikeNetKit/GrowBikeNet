@@ -41,7 +41,7 @@ import sys
 
 import growbikenet as gbn
 from growbikenet import settings
-from growbikenet.functions import slugify
+from growbikenet.utils import slugify
 
 city_query = "Barcelona"
 city_id = "barcelona_es"

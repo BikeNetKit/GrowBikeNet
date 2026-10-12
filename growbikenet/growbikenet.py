@@ -1,31 +1,27 @@
+"""Main procedure for running `growbikenet`."""
+
 import numpy as np
-import pandas as pd
-
-from . import settings
-
-pd.set_option('display.max_columns', None) # for debugging
 import time
-
-from growbikenet.functions import (
-    _acquire_network,
-    _angulate_seed_points,
-    _compute_edge_metrics,
-    _create_seed_points,
-    _import_data_files,
-    _postprocess_edges,
-    _prepare_export,
-    _print_footer,
-    _print_header,
-    _reroute,
-    _reset_auto_settings,
-    _resolve_auto_parameters,
-    _route,
-    _snap_filter_seed_points,
-    _validate_parameters,
-    _validate_settings,
-    export_data_to_file,
-    export_plots_to_file,
-    orientation_order,
+from . import settings
+from growbikenet._procedure import (
+    _gbn_acquire_network,
+    _gbn_angulate_seed_points,
+    _gbn_compute_edge_metrics,
+    _gbn_create_seed_points,
+    _gbn_export_data_to_file,
+    _gbn_export_plots_to_file,
+    _gbn_import_data_files,
+    _gbn_postprocess_edges,
+    _gbn_prepare_export,
+    _gbn_print_footer,
+    _gbn_print_header,
+    _gbn_reroute,
+    _gbn_reset_auto_settings,
+    _gbn_resolve_auto_parameters,
+    _gbn_route,
+    _gbn_snap_filter_seed_points,
+    _gbn_validate_parameters,
+    _gbn_validate_settings,
 )
 
 
@@ -209,55 +205,55 @@ def growbikenet(
     # Setup
     starttime = time.time()
     np.random.seed(settings.random_seed)  # Set random number generator seed for reproducibility
-    setting_was_auto = _validate_settings()
-    import_files = _validate_parameters(city_query, ordering, seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing, export_data, city_id, export_plots, import_files, seed_point_tags)
-    _print_header(city_query, ordering, seed_point_type, existing_network_spacing)
+    setting_was_auto = _gbn_validate_settings()
+    import_files = _gbn_validate_parameters(city_query, ordering, seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing, export_data, city_id, export_plots, import_files, seed_point_tags)
+    _gbn_print_header(city_query, ordering, seed_point_type, existing_network_spacing)
 
     ### Import data files
-    num_data_files, point_data, trip_data = _import_data_files(import_files)
+    num_data_files, point_data, trip_data = _gbn_import_data_files(import_files)
 
     ### Download/Import network
-    city_boundary_exists, nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered, city_boundary_geometry, city_boundary_gdf = _acquire_network(import_files, existing_network_spacing, city_query)
+    city_boundary_exists, nodes, edges, g_undir, nodes_exnw, edges_exnw, g_undir_exnw, nodes_exnw_filtered, city_boundary_geometry, city_boundary_gdf = _gbn_acquire_network(import_files, existing_network_spacing, city_query)
 
     # Now that the graph is ready, resolve auto parameters
-    seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = _resolve_auto_parameters(seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing, orientation_order(g_undir), import_files)
+    seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing = _gbn_resolve_auto_parameters(seed_point_type, seed_point_grid_spacing, seed_point_linking, existing_network_spacing, g_undir, import_files)
 
     # At this point no parameter should be on 'auto' any longer and 
     # inconsistencies should be resolved.
 
     ### Create seed points
-    seed_points, seed_network, progress_bar = _create_seed_points(existing_network_spacing, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry)
+    seed_points, seed_network, progress_bar = _gbn_create_seed_points(existing_network_spacing, seed_point_type, g_undir, edges, nodes, seed_point_grid_spacing, import_files, city_query, seed_point_tags, city_boundary_geometry)
     
     # Snap and filter seed points to OSM nodes
-    seed_points_snapped_filtered = _snap_filter_seed_points(progress_bar, seed_points, seed_network, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered)
+    seed_points_snapped_filtered = _gbn_snap_filter_seed_points(progress_bar, seed_points, seed_network, nodes, seed_point_linking, existing_network_spacing, nodes_exnw_filtered)
 
     ### *angulate
-    grown_bikenet_edges_abstract = _angulate_seed_points(seed_point_linking, seed_points_snapped_filtered, seed_network)
+    grown_bikenet_edges_abstract = _gbn_angulate_seed_points(seed_point_linking, seed_points_snapped_filtered, seed_network)
 
     ### Routing: Get routed geometry (LineString) for each abstract edge (row)
-    B, metric_weight = _route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data)
+    B, metric_weight = _gbn_route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data)
 
     ### Compute edge metrics
-    edges_ordered = _compute_edge_metrics(ordering, B, metric_weight)
+    edges_ordered = _gbn_compute_edge_metrics(ordering, B, metric_weight)
 
     ### Reroute
-    edges_ordered = _reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract)
+    edges_ordered = _gbn_reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract)
 
     # Postprocess edges, like removing overlaps
-    edges_ordered = _postprocess_edges(existing_network_spacing, edges_exnw, edges_ordered)
+    edges_ordered = _gbn_postprocess_edges(existing_network_spacing, edges_exnw, edges_ordered)
 
     # Generate export data filenames
-    export_strings = _prepare_export(export_data, export_plots, city_id, city_query, existing_network_spacing, seed_point_type, ordering)
+    export_strings = _gbn_prepare_export(export_data, export_plots, city_id, city_query, existing_network_spacing, seed_point_type, ordering)
 
     ### Export data
-    export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary_exists, city_boundary_gdf, existing_network_spacing, edges_ordered, export_strings)
+    _gbn_export_data_to_file(export_data, seed_points_snapped_filtered, city_boundary_exists, city_boundary_gdf, existing_network_spacing, edges_ordered, export_strings)
 
     ### Export plots
-    export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing)
+    _gbn_export_plots_to_file(export_plots, ordering, edges_ordered, seed_points_snapped_filtered, existing_network_spacing)
 
     # Cleanup, finalize
-    _reset_auto_settings(setting_was_auto)
+    _gbn_reset_auto_settings(setting_was_auto)
     endtime = time.time()
-    _print_footer(export_data, export_plots, endtime, starttime)
+    _gbn_print_footer(export_data, export_plots, endtime, starttime)
 
     return edges_ordered

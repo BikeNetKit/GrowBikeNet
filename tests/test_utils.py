@@ -10,7 +10,7 @@ from pandas.testing import assert_frame_equal
 from shapely.geometry import LineString, MultiLineString, Point
 
 from growbikenet import constants, settings
-from growbikenet.functions import (
+from growbikenet.utils import (
     _get_grid_seed_points,
     _get_weighted_distances,
     _order_df,
