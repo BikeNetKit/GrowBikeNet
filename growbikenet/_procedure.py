@@ -27,7 +27,7 @@ from growbikenet.utils import (
     assign_pbi_to_edges,
     bike_infra_mapping_gdf,
     create_gdf_with_geoms,
-    df_from_graph
+    df_from_graph,
     download_network,
     filter_network_by_component_length,
     filter_points_distant_from_osm_nodes,
@@ -440,8 +440,6 @@ def _gbn_route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped
     node_lon = seed_points_snapped_filtered.geometry.x # Needed for add_trip_data_to_net()
     node_lat = seed_points_snapped_filtered.geometry.y # Needed for add_trip_data_to_net()
     edge_list = grown_bikenet_edges["pair"]
-    print(edge_list)
-    sys.exit()
     dist_list = grown_bikenet_edges["dist"]
     dist_dict = dict(zip(edge_list, dist_list))
     geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
