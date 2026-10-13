@@ -91,7 +91,8 @@ def growbikenet(
     export_data : bool, default True
         If set to True, data is saved to a file. The filename is ``[slug]-growbikenet-[ordering]-from_scratch|from_bikenw-[seed_point_type].[settings.export_file_format]``, 
         depending on the respective parameters, and where ``[slug]`` is a 
-        string id made out of `city_query` (or `city_id` if set).
+        string id made out of `city_query` (or `city_id` if set). Existing 
+        files are overwritten.
     city_id : None or str, default None
         If set, the slugified `city_id` is used in the filename of the data 
         export. For example, a `city_id` "Athens" will slugify into "athens" in 

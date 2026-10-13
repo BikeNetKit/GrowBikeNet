@@ -3,7 +3,6 @@
 ## Version 0.15.0 (2026-10-12)
 
 - ✨ Added support for shp and geojson imports and exports, where possible
-- 🐛 Fixed bug with non-metric CRS, now estimating UTM
 - 🐛 Fixed init not exposing all modules
 - 🐛 Added footway to pbi config
 - ♻️ Refactored pbi assignment, getting rid of config
