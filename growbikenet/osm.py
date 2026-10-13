@@ -9,16 +9,23 @@ GROWABLE_NETWORK_CUSTOM_FILTER : list[str] or None
     `GROWABLE_NETWORK_CUSTOM_FILTER` to None and `GROWABLE_NETWORK_TYPE` to 
     'drive'. However, doing so can lead to issues: 
     https://github.com/BikeNetKit/GrowBikeNet/issues/255. 
+    By default, `GROWABLE_NETWORK_CUSTOM_FILTER` is a superset of 
+    `PBI_CUSTOM_FILTER`, so it is best to keep them in sync.
 GROWABLE_NETWORK_TYPE : {'drive', 'all', 'all_public', 'bike', 'drive_service', 'walk'}, default 'drive' 
-        What type of street network to retrieve for the growable network if `GROWABLE_NETWORK_CUSTOM_FILTER` is None.
+    What type of street network to retrieve for the growable network if `GROWABLE_NETWORK_CUSTOM_FILTER` is None.
 PBI_CUSTOM_FILTER : list[str]
-    Custom filter for protected bicycle infrastructure (pbi).
+    Custom filter for protected bicycle infrastructure (pbi). Always keep in 
+    sync with `PBI_DICT` and `PBI_DICT_SUB`. By default, `PBI_CUSTOM_FILTER` is 
+    a subset of `GROWABLE_NETWORK_CUSTOM_FILTER`, so it is best to keep them in
+    sync.
 PBI_DICT : dict
-    Dictionary for protected bicycle infrastructure (pbi), for single criteria.
+    Dictionary for protected bicycle infrastructure (pbi), for single criteria. 
+    Always keep in sync with `PBI_CUSTOM_FILTER`.
 PBI_DICT_SUB : dict
     Dictionary for protected bicycle infrastructure (pbi), with one 
     sub-criterion. For example, highway~path AND bicycle~designated. Always 
-    adds a second criterion access!~private.
+    adds a second criterion access!~private. Always keep in sync with 
+    `PBI_CUSTOM_FILTER`.
 """
 
 # Populate ox.settings.useful_tags_way to make application of custom filter possible
