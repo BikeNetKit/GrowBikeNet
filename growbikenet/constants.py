@@ -40,11 +40,15 @@ _SEED_POINT_SNAP_DISTANCE_FACTOR : float, default 0.25
     of `seed_point_snap_distance`.
 _EXISTING_NETWORK_SPACING_FACTOR : float, default 0.5
     Factor to multiply `seed_point_grid_spacing` with, to determine auto value 
-    of `existing_network_spacing`.
+    of `existing_network_spacing`. A value of 0.5 means that the seed points
+    for the existing bicycle network will be twice as dense as the regular seed
+    points.
 _BUFFER_SEED_POINTS_EXNW_FACTOR : float, default 0.5
     Factor to multiply `existing_network_spacing` with, to determine which 
     previously determined seed points (grid or rail) to drop that are too close 
-    to the extra existing network points.
+    to the extra existing network points. A value of 0.5 means that, if the 
+    existing bicycle network is dense, almost all grid or rail seed points will
+    be dropped.
 _BEARING_BINS : int, default 72
     Number of bins to determine bearing. e.g. 72 will create 5 degrees bins.
 _PROGRESS_BAR_LENGTH : int, default 23
