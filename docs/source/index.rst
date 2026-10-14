@@ -37,7 +37,7 @@ is a good place to start. Various usage examples are walked through on the :doc:
 
 .. TBA
 
-Source
+Origin
 ------
 
 The source code builds on `the code from the
@@ -67,14 +67,16 @@ Development of BikeNetKit/GrowBikeNet is supported by the Innovation Fund Denmar
 
 |Innovation Fund Denmark|    |European Union|   |JUST STREETS|
 
-.. |Example Paris| image:: _static/growbikenet-paris.gif
-   :target: https://bikenetkit.org/growbikenet
-.. |Innovation Fund Denmark| image:: _static/logo_innovationfund.png
+Developed by |NERDS|
+
+.. |Innovation Fund Denmark| image:: https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_innovationfund.png
    :target: https://innovationsfonden.dk/en
-.. |European Union| image:: _static/logo_eu.png
+.. |European Union| image:: https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_eu.png
    :target: https://commission.europa.eu/index_en
-.. |JUST STREETS| image:: _static/logo_juststreets.png
+.. |JUST STREETS| image:: https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_juststreets.png
    :target: https://www.just-streets.eu/
+.. |NERDS| image:: https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_nerds.png
+   :target: https://www.nerds.itu.dk
 
 
 Documentation contents
