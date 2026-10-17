@@ -25,6 +25,8 @@ from growbikenet.visualization import generate_plots
 from bikenetlib.utils import(
     assign_pbi_to_edges,
     get_principal_bearing,
+    nodelist_to_edgetuples,
+    route_nodepairs,
     _count_and_merge,
     _reverse_bearing,
 )
@@ -42,12 +44,10 @@ from growbikenet.utils import (
     filter_network_by_component_length,
     filter_points_distant_from_osm_nodes,
     import_network,
-    nodelist_to_edgetuples,
     node_to_edge_attributes,
     nx_to_nodes_edges,
     orientation_order,
     prepare_nodes_edges,
-    route_nodepairs,
     set_path_to_pbi,
     snap_points_to_osm_nodes,
     update_with_existing_bike_network,
@@ -436,7 +436,7 @@ def _gbn_route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped
     g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
 
     # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
-    grown_bikenet_edges_abstract = route_nodepairs(grown_bikenet_edges_abstract, edges, g_undir)
+    grown_bikenet_edges_abstract = route_nodepairs(grown_bikenet_edges_abstract, edges, g_undir, 'weight')
     progress_bar.update(1)
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
@@ -551,7 +551,7 @@ def _gbn_reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
             grown_bikenet_edges_abstract_onerow = grown_bikenet_edges_abstract.iloc[i].drop(columns=['path_nodes', 'path_edges'])
             g_undir = set_path_to_pbi(edge.source, edge.target, edges, g_undir)
             g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
-            grown_bikenet_edges_abstract_onerow = route_nodepairs(grown_bikenet_edges_abstract_onerow, edges, g_undir)
+            grown_bikenet_edges_abstract_onerow = route_nodepairs(grown_bikenet_edges_abstract_onerow, edges, g_undir, 'weight')
             grown_bikenet_edge = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
             if not grown_bikenet_edge.empty: # To do: How can it be empty? See _get_weighted_distances()
                 edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edge['geometry'].iloc[0]

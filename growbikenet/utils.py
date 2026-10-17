@@ -367,36 +367,6 @@ def nx_to_nodes_edges(G):
     )
     nodes, edges = prepare_nodes_edges(nodes, edges)
     return nodes, edges
-    
-
-def nodelist_to_edgetuples(edge_gdf, nodelist):
-    """Map a list of nodes (from `nx.shortest_paths()`) to a list of edge 
-    tuples that can be used for indexing an edge geodataframe.
-
-    Useful to apply as a lambda function to turn path nodes into path edges.
-
-    Parameters
-    ----------
-    edge_gdf : geopandas.geodataframe.GeoDataFrame
-        The edges of a spatial network, in a projected CRS.
-    nodelist : list
-        A list of nodes that make up source and targets of edges.
-
-    Returns
-    -------
-    edgelist_final : list
-        List of edge tuples that can be used for indexing the edge 
-        geodataframe.
-    """
-    edgelist_prelim = zip(nodelist, nodelist[1:])
-    edgelist_final = []
-    temp_gdf = edge_gdf.sort_index() # To circumvent PerformanceWarning, see https://stackoverflow.com/questions/54307300/what-causes-indexing-past-lexsort-depth-warning-in-pandas
-    for edge_prelim in edgelist_prelim:
-        if edge_prelim in temp_gdf.index:
-            edgelist_final.append(edge_prelim)
-        else:
-            edgelist_final.append(tuple([edge_prelim[1], edge_prelim[0]]))
-    return edgelist_final
 
 
 def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
@@ -1035,38 +1005,6 @@ def node_to_edge_attributes(values_nodes, edges):
     for u, v in edges:
         values_edges[(u, v)] = 0.5 * (values_nodes[u] + values_nodes[v])
     return values_edges
-
-
-def route_nodepairs(nodepairs, edges, g_undir):
-    """Route pairs of nodes on the graph `g_undir` to a merged geometry of corresponding OSM nodes and edges.
-
-    Parameters
-    ----------
-    nodepairs : pandas.DataFrame
-        Dataframe with node pair integer IDs, columns `source` and `target`.
-    edges : geopandas.geodataframe.GeoDataFrame
-        The street network, in a projected CRS.
-    g_undir : networkx.graph undirected
-        Graph to use for routing. The weight variable is "weight".
-
-    Returns
-    -------
-    nodepairs : pandas.DataFrame
-        Dataframe of node pairs with added path nodes and path edges.
-    """
-    paths = []
-    for _, row in nodepairs.iterrows():
-        paths.append(
-            nx.shortest_path(
-                G=g_undir,
-                source=int(row.source),
-                target=int(row.target),
-                weight="weight",
-            )
-        )
-    nodepairs["path_nodes"] = paths
-    nodepairs["path_edges"] = nodepairs.path_nodes.apply(lambda x: nodelist_to_edgetuples(edges, x))
-    return nodepairs
 
 
 def set_path_to_pbi(source, target, edges, g):
