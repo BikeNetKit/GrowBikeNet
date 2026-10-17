@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 
 from . import constants, settings, osm
+import bikenetlib as bnl
 
 pd.set_option('display.max_columns', None) # for debugging
 import datetime
@@ -26,6 +27,10 @@ from bikenetlib.utils import(
     _count_and_merge,
     _reverse_bearing,
 )
+from bikenetlib.io import(
+    initialize_progress_bar,
+    slugify,
+)
 from growbikenet.utils import (
     add_point_data_to_net,
     add_trip_data_to_net,
@@ -37,7 +42,6 @@ from growbikenet.utils import (
     filter_network_by_component_length,
     filter_points_distant_from_osm_nodes,
     import_network,
-    initialize_progress_bar,
     nodelist_to_edgetuples,
     node_to_edge_attributes,
     nx_to_nodes_edges,
@@ -45,7 +49,6 @@ from growbikenet.utils import (
     prepare_nodes_edges,
     route_nodepairs,
     set_path_to_pbi,
-    slugify,
     snap_points_to_osm_nodes,
     update_with_existing_bike_network,
     weigh_edges,
@@ -261,26 +264,26 @@ def _gbn_resolve_auto_parameters(
 def _gbn_print_header(city_query, ordering, seed_point_type, existing_network_spacing):
     """Print header.
     """
-    if not settings.silent:
-        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"=")
+    if not bnl.io.silent:
+        print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"=")
         print("RUNNING GROWBIKENET FOR CITY: " + city_query)
         print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
-        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"-"+"╮")
+        print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"-"+"╮")
 
 
 def _gbn_print_footer(export_data, export_plots, endtime, starttime):
     """Print footer.
     """
-    if not settings.silent:
-        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"-"+"╯")
+    if not bnl.io.silent:
+        print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"-"+"╯")
         if export_data:
             print("Data exported to "+settings.export_path['results'])
         if export_plots:
             print("Plots exported to "+settings.export_path['plots'])
         if export_data or export_plots:
-            print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"-")
+            print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"-")
         print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
-        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"=")
+        print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"=")
 
 
 def _gbn_import_data_files(import_files):
@@ -537,12 +540,12 @@ def _gbn_reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
 
         for edge in tqdm(
             edges_ordered.itertuples(index=True),
-                desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Rerouting"),
+                desc=("{:<"+str(bnl.constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Rerouting"),
                 leave=True,
                 unit="edge",
                 total=len(list(edges_ordered.itertuples())),
-                bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
-                disable=settings.silent,
+                bar_format='{l_bar}{bar:'+str(bnl.constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
+                disable=bnl.io.silent,
             ):
             i = grown_bikenet_edges_abstract.index[(grown_bikenet_edges_abstract['source']==edge.source) & (grown_bikenet_edges_abstract['target']==edge.target)] # grown_bikenet_edges_abstract was never reordered like the edges. Need to match.
             grown_bikenet_edges_abstract_onerow = grown_bikenet_edges_abstract.iloc[i].drop(columns=['path_nodes', 'path_edges'])

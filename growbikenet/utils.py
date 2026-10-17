@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from . import constants, settings, osm
+import bikenetlib as bnl
 
 pd.set_option('display.max_columns', None) # for debugging
 import datetime
@@ -23,51 +24,6 @@ from shapely.geometry import MultiLineString, Point
 from shapely.prepared import prep
 from shapely.strtree import STRtree
 from tqdm import tqdm
-
-
-def slugify(s): 
-    """Slugify a string.
-    
-    Adapted from: https://github.com/Chalarangelo/30-seconds-of-code/blob/master/content/snippets/python/s/slugify.md
-
-    Parameters
-    ----------
-    s : str
-        String to slufigy.
-
-    Returns
-    -------
-    s : str
-        Slugified string.
-
-    Notes
-    -----
-    A clean global solution would be using unidecode, but we do not want
-    extra dependencies for this. We assume European city names in latin
-    alphabet, some special letters like Hungarian ő already mapped.
-    """
-    s = s.lower().strip()
-    s = re.sub(r'[\s-]+', '', s) # Remove white spaces, -
-    s = re.sub(r'[^\w\s-]', '', s)
-    s = re.sub(r'^-+|-+$', '', s)
-    tab = str.maketrans(
-        "áéíóúàèìùòâêîôûäëïöüǎěǐǒǔãẽĩõũăåæçčıłñňøœřßșşšůŷÿźž",
-        "aeiouaeiouaeiouaeiouaeiouaeiouaaaccilnnoorssssuyyzz"
-    )
-    s = s.translate(tab)
-    return s
-
-
-def initialize_progress_bar(desc_string, total=1, unit="step"):
-    """Initialize tqdm progress bar.
-    """
-    return tqdm(
-        desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format(desc_string),
-        total=total,
-        unit=unit,
-        bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
-        disable=settings.silent,
-    )
 
 
 def add_trip_data_to_net(trips, A, matching_distance=settings.import_trip_data_snap_distance):
@@ -964,12 +920,12 @@ def _remove_edge_overlaps(edges_in):
     grown_net = MultiLineString()
     for row in tqdm(
         edges_in.itertuples(),
-            desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Removing edge overlaps"),
+            desc=("{:<"+str(bnl.constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Removing edge overlaps"),
             leave=True,
             unit="edge",
             total=len(list(edges_in.itertuples())),
-            bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
-            disable=settings.silent,
+            bar_format='{l_bar}{bar:'+str(bnl.constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
+            disable=bnl.io.silent,
         ):
         grown_net_new = grown_net | row.geometry # Calculate union
         grown_net_diff = row.geometry - grown_net
