@@ -10,7 +10,7 @@ The Python package ``growbikenet`` grows an urban bicycle network from scratch o
 
 |Example Paris|
 
-GrowBikeNet is a decision support tool for urban planners based on the Dutch CROW Design manual for bicycle traffic. It is also useful for proactive citizens to create a compelling vision for urban cycling in their city, and it aims to foster research on bicycle networks. 
+GrowBikeNet is a decision support tool for urban planners inspired by the Dutch CROW Design manual for bicycle traffic. It is also useful for proactive citizens to create a compelling vision for urban cycling in their city, and it aims to foster research on bicycle networks. 
 
 GrowBikeNet is fully customizable and data-driven allowing to explore different scenarios - for example, you can import and make use of your own custom data sets like points of interest or traffic flows, or limit network development to specific streets to adapt the software to your local needs.
 
@@ -69,6 +69,8 @@ Development of BikeNetKit/GrowBikeNet is supported by the Innovation Fund Denmar
 
 Developed by |NERDS|
 
+.. |Example Paris| image:: _static/growbikenet-paris.gif
+   :target: https://bikenetkit.org/growbikenet
 .. |Innovation Fund Denmark| image:: https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_innovationfund.png
    :target: https://innovationsfonden.dk/en
 .. |European Union| image:: https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_eu.png
@@ -76,6 +78,7 @@ Developed by |NERDS|
 .. |JUST STREETS| image:: https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_juststreets.png
    :target: https://www.just-streets.eu/
 .. |NERDS| image:: https://raw.githubusercontent.com/BikeNetKit/.github/refs/heads/main/profile/_static/logo_nerds.png
+   :width: 280px
    :target: https://www.nerds.itu.dk
 
 
