@@ -19,7 +19,6 @@ from growbikenet.utils import (
     add_trip_data_to_net,
     create_gdf_with_geoms,
     filter_points_distant_from_osm_nodes,
-    get_principal_bearing,
     slugify,
 )
 
@@ -103,11 +102,6 @@ def validation_streets():
     ).set_index(["u", "v", "key"])
     streets = ox.convert.graph_from_gdfs(streets_nodes, streets_edges)
     return streets
-
-
-def test_get_principal_bearing(validation_streets):
-    assert get_principal_bearing(validation_streets) == 65.0
-
 
 @pytest.fixture
 def validation_grid():

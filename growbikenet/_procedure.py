@@ -21,6 +21,11 @@ import osmnx as ox
 from tqdm import tqdm
 
 from growbikenet.visualization import generate_plots
+from bikenetlib.utils import(
+    get_principal_bearing,
+    _count_and_merge,
+    _reverse_bearing,
+)
 from growbikenet.utils import (
     add_point_data_to_net,
     add_trip_data_to_net,
@@ -31,7 +36,6 @@ from growbikenet.utils import (
     download_network,
     filter_network_by_component_length,
     filter_points_distant_from_osm_nodes,
-    get_principal_bearing,
     import_network,
     initialize_progress_bar,
     nodelist_to_edgetuples,

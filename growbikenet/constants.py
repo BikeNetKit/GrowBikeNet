@@ -49,8 +49,6 @@ _BUFFER_SEED_POINTS_EXNW_FACTOR : float, default 0.5
     to the extra existing network points. A value of 0.5 means that, if the 
     existing bicycle network is dense, almost all grid or rail seed points will
     be dropped.
-_BEARING_BINS : int, default 72
-    Number of bins to determine bearing. e.g. 72 will create 5 degrees bins.
 _PROGRESS_BAR_LENGTH : int, default 23
     Character length of tqdm progress bars.
 _PROGRESS_BAR_DESC_LENGTH : int, default 23
