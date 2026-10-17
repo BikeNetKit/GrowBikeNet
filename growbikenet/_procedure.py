@@ -10,7 +10,7 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-from . import constants, settings, osm
+from . import constants, settings
 import bikenetlib as bnl
 
 pd.set_option('display.max_columns', None) # for debugging
@@ -23,6 +23,7 @@ from tqdm import tqdm
 
 from growbikenet.visualization import generate_plots
 from bikenetlib.utils import(
+    assign_pbi_to_edges,
     get_principal_bearing,
     _count_and_merge,
     _reverse_bearing,
@@ -34,7 +35,6 @@ from bikenetlib.io import(
 from growbikenet.utils import (
     add_point_data_to_net,
     add_trip_data_to_net,
-    assign_pbi_to_edges,
     bike_infra_mapping_gdf,
     create_gdf_with_geoms,
     df_from_graph,
@@ -327,7 +327,7 @@ def _gbn_acquire_network(import_files, existing_network_spacing, city_query):
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         # Fetch growable network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = download_network(city_query, network_type=constants.GROWABLE_NETWORK_TYPE, custom_filter=constants.GROWABLE_NETWORK_CUSTOM_FILTER, retain_all=False, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir = download_network(city_query, network_type=bnl.osm.CARPBI_NETWORK_TYPE, custom_filter=bnl.osm.CARPBI_NETWORK_CUSTOM_FILTER, retain_all=False, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
 
     # Update g_undir: Add the existing bike network

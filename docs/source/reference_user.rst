@@ -20,11 +20,3 @@ growbikenet.settings
 .. automodule:: growbikenet.settings
    :members:
    :no-index:
-
-
-growbikenet.osm
----------------
-
-.. automodule:: growbikenet.osm
-   :members:
-   :no-index:

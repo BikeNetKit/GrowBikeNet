@@ -124,9 +124,10 @@ def growbikenet(
             >>> ox.io.save_graph_geopackage(g, 'Barcelona_streets.gpkg')
 
             To download a growable network that also includes existing bicycle infrastructure, as growbikenet does by default, replace the first 
-            line in the above example by this line:
-
-            >>> g = ox.graph_from_place("Barcelona", custom_filter=gbn.constants.GROWABLE_NETWORK_CUSTOM_FILTER)
+            line in the above example by these lines:
+            
+            >>> import bikenetlib as bnl
+            >>> g = ox.graph_from_place("Barcelona", custom_filter=bnl.osm.CARPBI_NETWORK_CUSTOM_FILTER)
         - 'bike_network' : None or str, default None
             If not set to None, the existing bike network is loaded from this 
             file. Must be a gpkg file in unprojected CRS EPSG:4326 with layers 

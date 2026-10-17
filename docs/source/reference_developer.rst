@@ -19,14 +19,6 @@ growbikenet.constants
    :private-members:
 
 
-growbikenet.osm
----------------
-
-.. automodule:: growbikenet.osm
-   :members:
-   :private-members:
-
-
 growbikenet.utils
 -----------------
 

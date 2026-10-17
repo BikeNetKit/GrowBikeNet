@@ -24,15 +24,16 @@ gbn.growbikenet(
 
 # import osmnx as ox
 # import networkx as nx
+# import bikenetlib as bnl
 
 # g = ox.graph_from_place("Podgorica", 
-#     custom_filter=gbn.constants.GROWABLE_NETWORK_CUSTOM_FILTER)
+#     custom_filter=bnl.osm.CARPBI_NETWORK_CUSTOM_FILTER)
 # g = nx.MultiGraph(ox.convert.to_digraph(g))
 # ox.io.save_graph_geopackage(g, "podgorica_growable_network.gpkg")
 
 # g = ox.graph_from_place(
 #     "Podgorica",
-#     custom_filter=gbn.constants.PBI_CUSTOM_FILTER,
+#     custom_filter=bnl.osm.PBI_CUSTOM_FILTER,
 #     retain_all=True, # fetch all connected components
 # )
 # g = nx.MultiGraph(ox.convert.to_digraph(g))
