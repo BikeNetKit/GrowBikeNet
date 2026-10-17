@@ -982,31 +982,6 @@ def _order_df(df, method):
     return df
 
 
-def node_to_edge_attributes(values_nodes, edges):
-    """Map node to edge attributes.
-
-    Creates edge attributes by taking the average values of adjacent node 
-    attributes.
-
-    Parameters
-    ----------
-    values_nodes : dict
-        Keys: node ids, Values: Node attributes (for example a scalar).
-    edges : networkx.classes.reportviews.EdgeView
-        A view of edge attributes of a networkx graph. Could also be a list of 
-        tuples of node ids.
-
-    Returns
-    -------
-    values_edges: dict
-        Keys: tuples of node ids, Values: Edge attributes
-    """
-    values_edges = {}
-    for u, v in edges:
-        values_edges[(u, v)] = 0.5 * (values_nodes[u] + values_nodes[v])
-    return values_edges
-
-
 def set_path_to_pbi(source, target, edges, g):
     """Map an unrouted edge to a merged geometry of corresponding OSMnx 
     edges (routed on `g`), and set g's edges pbi to 1.

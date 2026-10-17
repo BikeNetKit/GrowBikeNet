@@ -10,9 +10,6 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-from . import constants, settings
-import bikenetlib as bnl
-
 pd.set_option('display.max_columns', None) # for debugging
 import datetime
 
@@ -21,11 +18,14 @@ import networkx as nx
 import osmnx as ox
 from tqdm import tqdm
 
-from growbikenet.visualization import generate_plots
+from . import constants, settings
+import bikenetlib as bnl
+
 from bikenetlib.utils import(
     assign_pbi_to_edges,
     get_principal_bearing,
     nodelist_to_edgetuples,
+    node_to_edge_attributes,
     route_nodepairs,
     _count_and_merge,
     _reverse_bearing,
@@ -44,7 +44,6 @@ from growbikenet.utils import (
     filter_network_by_component_length,
     filter_points_distant_from_osm_nodes,
     import_network,
-    node_to_edge_attributes,
     nx_to_nodes_edges,
     orientation_order,
     prepare_nodes_edges,
@@ -63,6 +62,7 @@ from growbikenet.utils import (
     _resolve_crs_calculations,
     _update_seed_points_with_existing_bike_network,
 )
+from growbikenet.visualization import generate_plots
 
 
 def _gbn_validate_settings():
