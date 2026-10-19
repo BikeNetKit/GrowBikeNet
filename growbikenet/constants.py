@@ -49,11 +49,9 @@ _BUFFER_SEED_POINTS_EXNW_FACTOR : float, default 0.5
     to the extra existing network points. A value of 0.5 means that, if the 
     existing bicycle network is dense, almost all grid or rail seed points will
     be dropped.
-_BEARING_BINS : int, default 72
-    Number of bins to determine bearing. e.g. 72 will create 5 degrees bins.
-_PROGRESS_BAR_LENGTH : int, default 23
+bnl.constants._PROGRESS_BAR_LENGTH : int, default 23
     Character length of tqdm progress bars.
-_PROGRESS_BAR_DESC_LENGTH : int, default 23
+bnl.constants._PROGRESS_BAR_DESC_LENGTH : int, default 23
     Character length of tqdm progress bar descriptions. This is the space given 
     to text like "Importing network data ", which is at the maximum of 23 
     characters.
@@ -66,6 +64,8 @@ References
 ----------
 .. [1] G. Boeing, `Urban spatial order: Street network orientation, configuration, and entropy`, Applied Network Science 4, 67 (2019)
 """
+
+import bikenetlib as bnl
 
 EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH = 100 
 
@@ -90,9 +90,7 @@ _EXISTING_NETWORK_SPACING_FACTOR = 0.5
 
 _BUFFER_SEED_POINTS_EXNW_FACTOR = 0.5
 
-_BEARING_BINS = 72
-
-_PROGRESS_BAR_LENGTH = 23
-_PROGRESS_BAR_DESC_LENGTH = 23
+bnl.constants._PROGRESS_BAR_LENGTH = 23
+bnl.constants._PROGRESS_BAR_DESC_LENGTH = 23
 
 _ROUTING_PENALTY = {0: 1.5, 1: 1}

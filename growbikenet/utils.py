@@ -7,7 +7,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from . import constants, settings, osm
+from . import constants, settings
+import bikenetlib as bnl
 
 pd.set_option('display.max_columns', None) # for debugging
 import datetime
@@ -23,51 +24,6 @@ from shapely.geometry import MultiLineString, Point
 from shapely.prepared import prep
 from shapely.strtree import STRtree
 from tqdm import tqdm
-
-
-def slugify(s): 
-    """Slugify a string.
-    
-    Adapted from: https://github.com/Chalarangelo/30-seconds-of-code/blob/master/content/snippets/python/s/slugify.md
-
-    Parameters
-    ----------
-    s : str
-        String to slufigy.
-
-    Returns
-    -------
-    s : str
-        Slugified string.
-
-    Notes
-    -----
-    A clean global solution would be using unidecode, but we do not want
-    extra dependencies for this. We assume European city names in latin
-    alphabet, some special letters like Hungarian ő already mapped.
-    """
-    s = s.lower().strip()
-    s = re.sub(r'[\s-]+', '', s) # Remove white spaces, -
-    s = re.sub(r'[^\w\s-]', '', s)
-    s = re.sub(r'^-+|-+$', '', s)
-    tab = str.maketrans(
-        "áéíóúàèìùòâêîôûäëïöüǎěǐǒǔãẽĩõũăåæçčıłñňøœřßșşšůŷÿźž",
-        "aeiouaeiouaeiouaeiouaeiouaeiouaaaccilnnoorssssuyyzz"
-    )
-    s = s.translate(tab)
-    return s
-
-
-def initialize_progress_bar(desc_string, total=1, unit="step"):
-    """Initialize tqdm progress bar.
-    """
-    return tqdm(
-        desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format(desc_string),
-        total=total,
-        unit=unit,
-        bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
-        disable=settings.silent,
-    )
 
 
 def add_trip_data_to_net(trips, A, matching_distance=settings.import_trip_data_snap_distance):
@@ -411,36 +367,6 @@ def nx_to_nodes_edges(G):
     )
     nodes, edges = prepare_nodes_edges(nodes, edges)
     return nodes, edges
-    
-
-def nodelist_to_edgetuples(edge_gdf, nodelist):
-    """Map a list of nodes (from `nx.shortest_paths()`) to a list of edge 
-    tuples that can be used for indexing an edge geodataframe.
-
-    Useful to apply as a lambda function to turn path nodes into path edges.
-
-    Parameters
-    ----------
-    edge_gdf : geopandas.geodataframe.GeoDataFrame
-        The edges of a spatial network, in a projected CRS.
-    nodelist : list
-        A list of nodes that make up source and targets of edges.
-
-    Returns
-    -------
-    edgelist_final : list
-        List of edge tuples that can be used for indexing the edge 
-        geodataframe.
-    """
-    edgelist_prelim = zip(nodelist, nodelist[1:])
-    edgelist_final = []
-    temp_gdf = edge_gdf.sort_index() # To circumvent PerformanceWarning, see https://stackoverflow.com/questions/54307300/what-causes-indexing-past-lexsort-depth-warning-in-pandas
-    for edge_prelim in edgelist_prelim:
-        if edge_prelim in temp_gdf.index:
-            edgelist_final.append(edge_prelim)
-        else:
-            edgelist_final.append(tuple([edge_prelim[1], edge_prelim[0]]))
-    return edgelist_final
 
 
 def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
@@ -533,7 +459,7 @@ def update_with_existing_bike_network(city_query, g_undir, import_files, city_bo
     else:
         # Fetch protected bike network data from osmnx
         # Due to retain_all=True, this fetches all the connected components
-        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_query, custom_filter=osm.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
+        nodes_exnw, edges_exnw, g_undir_exnw = download_network(city_query, custom_filter=bnl.osm.PBI_CUSTOM_FILTER, retain_all=True, city_boundary_geometry=city_boundary_geometry)
 
     # Intermezzo: Get filtered existing network by component length
     nodes_exnw_filtered, _, g_undir_exnw_filtered = filter_network_by_component_length(g_undir_exnw)
@@ -800,89 +726,6 @@ def _get_tags_seed_points(city_query, tags, city_boundary_geometry=None):
     return seed_points
 
 
-def get_principal_bearing(G):
-    """Determine the most common (principal) bearing, for the best grid 
-    orientation.
-
-    Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
-    The bearing is determined from edges weighted by length.
-
-    Parameters
-    ----------
-    G : networkx MultiGraph (undirected)
-        The graph from which to determine the principal bearing. Its CRS must 
-        be geographical, not projected.
-
-    Returns
-    -------
-    principal_bearing : float
-        The principal bearing, precise to 5 degrees.
-    """
-    bearings = {}
-    # weight bearings by length (meters)
-    city_bearings = []
-    for u, v, k, d in G.edges(keys=True, data=True):
-        try:
-            city_bearings.extend([d["bearing"]] * int(d["length"]))
-        except:  # noqa (To do: make specific and remove noqa)
-            pass  # Bearings cannot be calculated in rare edge cases.
-    b = pd.Series(city_bearings)
-    bearings = pd.concat([b, b.map(_reverse_bearing)]).reset_index(drop="True")
-    bins = np.arange(constants._BEARING_BINS + 1) * 360 / constants._BEARING_BINS
-    count = _count_and_merge(constants._BEARING_BINS, bearings)
-    principal_bearing = bins[np.where(count == max(count))][0]
-    return principal_bearing
-
-
-def _reverse_bearing(x):
-    """Reverse bearing.
-
-    Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
-
-    Parameters
-    ----------
-    x : float
-        The bearing to reverse.
-
-    Returns
-    -------
-    x_rev : float
-        The reversed bearing.
-    """
-    x_rev = x + 180 if x < 180 else x - 180
-    return x_rev
-
-
-def _count_and_merge(n, bearings):
-    """Double, then merge bins to avoid edge effects.
-
-    Make twice as many bins as desired, then merge them in pairs.
-    Prevents bin-edge effects around common values like 0° and 90°.
-    Adapted from: https://github.com/gboeing/osmnx-examples/blob/v0.11/notebooks/17-street-network-orientations.ipynb
-
-    Parameters
-    ----------
-    n : int
-        Number of bins.
-    bearings : pandas.Series
-        Series of bearings.
-
-    Returns
-    -------
-    bearings_merged : numpy.ndarray, dtype=int
-        The frequencies of the new merged bearings.
-    """
-    n *= 2
-    bins = np.arange(n + 1) * 360 / n
-    count, _ = np.histogram(bearings, bins=bins)
-
-    # Move the last bin to the front, so eg 0.01° and 359.99° will be binned 
-    # together
-    count = np.roll(count, 1)
-    bearings_merged = count[::2] + count[1::2]
-    return bearings_merged
-
-
 def snap_points_to_osm_nodes(points, nodes):
     """Snap points to OSM nodes.
 
@@ -1047,12 +890,12 @@ def _remove_edge_overlaps(edges_in):
     grown_net = MultiLineString()
     for row in tqdm(
         edges_in.itertuples(),
-            desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Removing edge overlaps"),
+            desc=("{:<"+str(bnl.constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Removing edge overlaps"),
             leave=True,
             unit="edge",
             total=len(list(edges_in.itertuples())),
-            bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
-            disable=settings.silent,
+            bar_format='{l_bar}{bar:'+str(bnl.constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
+            disable=bnl.io.silent,
         ):
         grown_net_new = grown_net | row.geometry # Calculate union
         grown_net_diff = row.geometry - grown_net
@@ -1137,63 +980,6 @@ def _order_df(df, method):
             df.index
         )  
     return df
-
-
-def node_to_edge_attributes(values_nodes, edges):
-    """Map node to edge attributes.
-
-    Creates edge attributes by taking the average values of adjacent node 
-    attributes.
-
-    Parameters
-    ----------
-    values_nodes : dict
-        Keys: node ids, Values: Node attributes (for example a scalar).
-    edges : networkx.classes.reportviews.EdgeView
-        A view of edge attributes of a networkx graph. Could also be a list of 
-        tuples of node ids.
-
-    Returns
-    -------
-    values_edges: dict
-        Keys: tuples of node ids, Values: Edge attributes
-    """
-    values_edges = {}
-    for u, v in edges:
-        values_edges[(u, v)] = 0.5 * (values_nodes[u] + values_nodes[v])
-    return values_edges
-
-
-def route_nodepairs(nodepairs, edges, g_undir):
-    """Route pairs of nodes on the graph `g_undir` to a merged geometry of corresponding OSM nodes and edges.
-
-    Parameters
-    ----------
-    nodepairs : pandas.DataFrame
-        Dataframe with node pair integer IDs, columns `source` and `target`.
-    edges : geopandas.geodataframe.GeoDataFrame
-        The street network, in a projected CRS.
-    g_undir : networkx.graph undirected
-        Graph to use for routing. The weight variable is "weight".
-
-    Returns
-    -------
-    nodepairs : pandas.DataFrame
-        Dataframe of node pairs with added path nodes and path edges.
-    """
-    paths = []
-    for _, row in nodepairs.iterrows():
-        paths.append(
-            nx.shortest_path(
-                G=g_undir,
-                source=int(row.source),
-                target=int(row.target),
-                weight="weight",
-            )
-        )
-    nodepairs["path_nodes"] = paths
-    nodepairs["path_edges"] = nodepairs.path_nodes.apply(lambda x: nodelist_to_edgetuples(edges, x))
-    return nodepairs
 
 
 def set_path_to_pbi(source, target, edges, g):
@@ -1334,35 +1120,6 @@ def _get_weighted_distances(B, num_types):
         dist_weighted_by_types_dict[k] = d/(1+settings.import_data_impact*(num_types_per_km_dict[k]/max_n))
 
     return dist_weighted_by_types_dict
-
-
-def assign_pbi_to_edges(g):
-    """Assign a boolean pbi attribute to all edges in a graph depending if they 
-    are considered protected bike infrastructure (pbi).
-
-    Parameters
-    ----------
-    g : networkx.MultiDiGraph
-        Simplified graph representing the street network.
-
-    Returns
-    -------
-    g : networkx.MultiDiGraph
-        Simplified graph representing the street network, with added binary edge attribute "pbi".
-    """
-    for edge in g.edges(keys=True):
-        assigned_pbi = 0
-        for tag in osm.PBI_DICT:
-            if g.edges[edge].get(tag) in osm.PBI_DICT[tag]:
-                assigned_pbi = 1
-        if not assigned_pbi: # Check if the edge fulfills a subcriterion
-            for tag in osm.PBI_DICT_SUB:
-                subtag = list(osm.PBI_DICT_SUB[tag][1].keys())[0]
-                if g.edges[edge].get(tag) in osm.PBI_DICT_SUB[tag][0] and g.edges[edge].get(subtag) in osm.PBI_DICT_SUB[tag][1][subtag] and g.edges[edge].get("access") != 'private':
-                    assigned_pbi = 1
-        g.edges[edge]["pbi"] = assigned_pbi
-
-    return g
 
 
 def bike_infra_mapping_gdf(g, edges_gdf):

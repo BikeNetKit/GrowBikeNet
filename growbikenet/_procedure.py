@@ -10,8 +10,6 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 
-from . import constants, settings, osm
-
 pd.set_option('display.max_columns', None) # for debugging
 import datetime
 
@@ -20,28 +18,36 @@ import networkx as nx
 import osmnx as ox
 from tqdm import tqdm
 
-from growbikenet.visualization import generate_plots
+from . import constants, settings
+import bikenetlib as bnl
+
+from bikenetlib.utils import(
+    assign_pbi_to_edges,
+    get_principal_bearing,
+    nodelist_to_edgetuples,
+    node_to_edge_attributes,
+    route_nodepairs,
+    _count_and_merge,
+    _reverse_bearing,
+)
+from bikenetlib.io import(
+    initialize_progress_bar,
+    slugify,
+)
 from growbikenet.utils import (
     add_point_data_to_net,
     add_trip_data_to_net,
-    assign_pbi_to_edges,
     bike_infra_mapping_gdf,
     create_gdf_with_geoms,
     df_from_graph,
     download_network,
     filter_network_by_component_length,
     filter_points_distant_from_osm_nodes,
-    get_principal_bearing,
     import_network,
-    initialize_progress_bar,
-    nodelist_to_edgetuples,
-    node_to_edge_attributes,
     nx_to_nodes_edges,
     orientation_order,
     prepare_nodes_edges,
-    route_nodepairs,
     set_path_to_pbi,
-    slugify,
     snap_points_to_osm_nodes,
     update_with_existing_bike_network,
     weigh_edges,
@@ -56,6 +62,7 @@ from growbikenet.utils import (
     _resolve_crs_calculations,
     _update_seed_points_with_existing_bike_network,
 )
+from growbikenet.visualization import generate_plots
 
 
 def _gbn_validate_settings():
@@ -257,26 +264,26 @@ def _gbn_resolve_auto_parameters(
 def _gbn_print_header(city_query, ordering, seed_point_type, existing_network_spacing):
     """Print header.
     """
-    if not settings.silent:
-        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"=")
+    if not bnl.io.silent:
+        print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"=")
         print("RUNNING GROWBIKENET FOR CITY: " + city_query)
         print(ordering + " | " + seed_point_type + " | " + ("from existing bike network " if existing_network_spacing else "from scratch"))
-        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"-"+"╮")
+        print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"-"+"╮")
 
 
 def _gbn_print_footer(export_data, export_plots, endtime, starttime):
     """Print footer.
     """
-    if not settings.silent:
-        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"-"+"╯")
+    if not bnl.io.silent:
+        print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"-"+"╯")
         if export_data:
             print("Data exported to "+settings.export_path['results'])
         if export_plots:
             print("Plots exported to "+settings.export_path['plots'])
         if export_data or export_plots:
-            print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"-")
+            print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"-")
         print("FINISHED IN " + str(datetime.timedelta(seconds = round(endtime - starttime))))
-        print((constants._PROGRESS_BAR_DESC_LENGTH+constants._PROGRESS_BAR_LENGTH)*"=")
+        print((bnl.constants._PROGRESS_BAR_DESC_LENGTH+bnl.constants._PROGRESS_BAR_LENGTH)*"=")
 
 
 def _gbn_import_data_files(import_files):
@@ -320,7 +327,7 @@ def _gbn_acquire_network(import_files, existing_network_spacing, city_query):
         city_boundary_geometry = city_boundary_gdf.geometry[0]
         # Fetch growable network data from osmnx
         # Due to retain_all=False, this fetches the largest connected component
-        nodes, edges, g_undir = download_network(city_query, network_type=constants.GROWABLE_NETWORK_TYPE, custom_filter=constants.GROWABLE_NETWORK_CUSTOM_FILTER, retain_all=False, city_boundary_geometry=city_boundary_geometry)
+        nodes, edges, g_undir = download_network(city_query, network_type=bnl.osm.CARPBI_NETWORK_TYPE, custom_filter=bnl.osm.CARPBI_NETWORK_CUSTOM_FILTER, retain_all=False, city_boundary_geometry=city_boundary_geometry)
         progress_bar.update(1)
 
     # Update g_undir: Add the existing bike network
@@ -429,7 +436,7 @@ def _gbn_route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped
     g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
 
     # Map each unrouted edge to a merged geometry of corresponding OSMnx edges (routed on g_undir)
-    grown_bikenet_edges_abstract = route_nodepairs(grown_bikenet_edges_abstract, edges, g_undir)
+    grown_bikenet_edges_abstract = route_nodepairs(grown_bikenet_edges_abstract, edges, g_undir, 'weight')
     progress_bar.update(1)
     grown_bikenet_edges = create_gdf_with_geoms(grown_bikenet_edges_abstract, edges)
     progress_bar.update(1)
@@ -533,18 +540,18 @@ def _gbn_reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
 
         for edge in tqdm(
             edges_ordered.itertuples(index=True),
-                desc=("{:<"+str(constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Rerouting"),
+                desc=("{:<"+str(bnl.constants._PROGRESS_BAR_DESC_LENGTH)+"}").format("Rerouting"),
                 leave=True,
                 unit="edge",
                 total=len(list(edges_ordered.itertuples())),
-                bar_format='{l_bar}{bar:'+str(constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
-                disable=settings.silent,
+                bar_format='{l_bar}{bar:'+str(bnl.constants._PROGRESS_BAR_LENGTH-7)+'}{r_bar}',
+                disable=bnl.io.silent,
             ):
             i = grown_bikenet_edges_abstract.index[(grown_bikenet_edges_abstract['source']==edge.source) & (grown_bikenet_edges_abstract['target']==edge.target)] # grown_bikenet_edges_abstract was never reordered like the edges. Need to match.
             grown_bikenet_edges_abstract_onerow = grown_bikenet_edges_abstract.iloc[i].drop(columns=['path_nodes', 'path_edges'])
             g_undir = set_path_to_pbi(edge.source, edge.target, edges, g_undir)
             g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
-            grown_bikenet_edges_abstract_onerow = route_nodepairs(grown_bikenet_edges_abstract_onerow, edges, g_undir)
+            grown_bikenet_edges_abstract_onerow = route_nodepairs(grown_bikenet_edges_abstract_onerow, edges, g_undir, 'weight')
             grown_bikenet_edge = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
             if not grown_bikenet_edge.empty: # To do: How can it be empty? See _get_weighted_distances()
                 edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edge['geometry'].iloc[0]

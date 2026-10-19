@@ -13,7 +13,6 @@ from importlib.metadata import PackageNotFoundError, version
 from growbikenet.growbikenet import growbikenet
 from . import constants
 from . import growbikenet
-from . import osm
 from . import settings
 from . import utils
 from . import visualization

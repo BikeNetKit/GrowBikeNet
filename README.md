@@ -14,7 +14,7 @@ The Python package `growbikenet` grows an urban bicycle network from scratch or 
 
 [![Example Paris](https://github.com/BikeNetKit/GrowBikeNet/raw/main/docs/source/_static/growbikenet-paris.gif)](https://bikenetkit.org/growbikenet)
 
-GrowBikeNet is a decision support tool for urban planners based on the Dutch CROW Design manual for bicycle traffic. It is also useful for proactive citizens to create a compelling vision for urban cycling in their city, and it aims to foster research on bicycle networks. 
+GrowBikeNet is a decision support tool for urban planners inspired by the Dutch CROW Design manual for bicycle traffic. It is also useful for proactive citizens to create a compelling vision for urban cycling in their city, and it aims to foster research on bicycle networks. 
 
 GrowBikeNet is fully customizable and data-driven allowing to explore different scenarios - for example, you can import and make use of your own custom data sets like points of interest or traffic flows, or limit network development to specific streets to adapt the software to your local needs.
 
