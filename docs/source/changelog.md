@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 0.16.0 (2026-10-19)
+
+- ✨ Integrated first functions from BikeNetLib: osm, io, utils
+
 ## Version 0.15.0 (2026-10-12)
 
 - ✨ Added support for shp and geojson imports and exports, where possible
