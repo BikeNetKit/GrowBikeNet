@@ -1,8 +1,11 @@
 # Changelog
 
+
 ## Version 0.16.0 (2026-10-19)
 
 - ✨ Integrated first functions from BikeNetLib: osm, io, utils
+- ➕ Added bikenetlib dependency
+
 
 ## Version 0.15.0 (2026-10-12)
 
@@ -19,17 +22,21 @@
 - 📝 Added OG to docs
 - 💄 Added whitelisted Stadia maps to docs, replacing broken CartoDB maps
 
+
 ## Version 0.14.5 (2026-09-24)
 
 - 🐛 Added footway to custom filters 
+
 
 ## Version 0.14.4 (2026-09-13)
 
 - 🐛 Swapped variant layer in seed point export filename 
 
+
 ## Version 0.14.3 (2026-09-12)
 
 - 🐛 Added bicycle_road to pbi mapping
+
 
 ## Version 0.14.2 (2026-09-11)
 
@@ -40,10 +47,12 @@
 - 💄 Made tqdm bars consistent in notebooks
 - 💄 Polished exported filenames
 
+
 ## Version 0.14.1 (2026-09-03)
 
 - 🐛 Fixed botched bugfix with non-metric CRS
 - 🐛 Extended PBI config to match custom filters
+
 
 ## Version 0.14.0 (2026-09-01)
 
@@ -54,6 +63,7 @@
 - ♻️ Refactored main growbikenet flow into functions
 - 💄 Made tqdm progress bars configurable via constants
 
+
 ## Version 0.13.1 (2026-08-26)
 
 - 🐛 Deleted zero length geometries
@@ -63,6 +73,7 @@
 - ♻️ Moved `allow_edge_overlaps` to settings
 - 📝 Added css for docs dataframes and polished docs
 - 📝 Added usage docs 6 and 7, completing docs
+
 
 ## Version 0.13.0 (2026-08-14)
 
@@ -78,6 +89,7 @@
 - ➕ Added scipy dependency
 - 📝 Added and polished usage docs
 
+
 ## Version 0.12.0 (2026-08-05)
 
 - ✨ Implemented point and trip data import with weighted growth
@@ -91,11 +103,13 @@
 - ✅ Removed online tests temporarily
 - 📝 Fixed docs source variable, added edit button and key navigation
 
+
 ## Version 0.11.1 (2026-07-17)
 
 - 🐛 Fixed validate seed point bug
 - 🐛 Fixed loading of docs modules
 - ♻️ Refactored import_files via defaultdict
+
 
 ## Version 0.11.0 (2026-06-29)
 
@@ -107,11 +121,13 @@
 - 📝 Added changelog to docs
 - 📝 Deployed docs on new custom URL
 
+
 ## Version 0.10.3 (2026-06-17)
 
 - ➖ Removed unneeded dependencies
 - 📌 Pinned dependencies consistently
 - 🔥 Removed video code, temporarily
+
 
 ## Version 0.10.2 (2026-06-17)
 
@@ -119,11 +135,13 @@
 - 🐛 Fixed existing bike net not being usable with street net file
 - 📝 Added more usage docs
 
+
 ## Version 0.10.1 (2026-06-15)
 
 - 🐛 Added missing checks for seed_point_tags
 - 📝 Added first usage docs
 - ♻️ Renamed seed_points_file parameter for consistency
+
 
 ## Version 0.10.0 (2026-06-11)
 
@@ -132,6 +150,7 @@
 - ✨ Added triangular grid
 - ✨ Added quadrangulation
 - 🎨 Renamed variables for better readability
+
 
 ## Version 0.9.0 (2026-06-09)
 

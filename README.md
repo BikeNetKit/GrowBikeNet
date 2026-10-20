@@ -46,9 +46,9 @@ We provide a minimum working example in two formats:
 - Python script ([examples/mwe.py](examples/mwe.py))
 - Jupyter notebook ([examples/mwe.ipynb](examples/mwe.ipynb))
 
-For a walkthrough with illustrative examples, see our [Usage docs](https://docs.bikenetkit.org/GrowBikeNet/usage/).
+For a walkthrough with illustrative examples, see our [Usage docs](https://docs.bikenetkit.org/GrowBikeNet/usage/). For a hands-on tutorial, see our [Python tutorials](https://github.com/BikeNetKit/tutorials#python-tutorials).
 
-## Docs
+## Documentation
 Find more information in our docs: [https://docs.bikenetkit.org/GrowBikeNet/](https://docs.bikenetkit.org/GrowBikeNet/)
 
 ## Origin

@@ -33,7 +33,7 @@ jobs:
         shell: bash -el {0}
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Get week number
         run: echo "WEEK=$(date +'%V')" >> $GITHUB_ENV

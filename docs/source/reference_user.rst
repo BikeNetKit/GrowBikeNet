@@ -11,7 +11,6 @@ growbikenet.growbikenet
 
 .. automodule:: growbikenet.growbikenet
    :members:
-   :no-index:
 
 
 growbikenet.settings
@@ -19,4 +18,3 @@ growbikenet.settings
 
 .. automodule:: growbikenet.settings
    :members:
-   :no-index:
