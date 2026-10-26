@@ -31,6 +31,7 @@ from bikenetlib.utils import(
     _reverse_bearing,
 )
 from bikenetlib.io import(
+    export_gdfs,
     initialize_progress_bar,
     slugify,
 )
@@ -41,7 +42,6 @@ from growbikenet.utils import (
     create_gdf_with_geoms,
     df_from_graph,
     download_network,
-    export_gdfs,
     filter_network_by_component_length,
     filter_points_distant_from_osm_nodes,
     import_network,
