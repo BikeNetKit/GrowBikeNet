@@ -2,7 +2,7 @@
 
 import growbikenet as gbn
 
-gbn.settings.export_file_format = "gpkg"
+gbn.settings.export_file_format = "geojson"
 # gbn.settings.import_path = "/Users/mszell/Tresorit/bikenetkitshare/"
 gbn.settings.import_path = "./tests/test_data/"
 
