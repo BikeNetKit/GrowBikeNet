@@ -2,7 +2,7 @@
 
 import numpy as np
 import time
-from . import settings
+from . import settings, _overpass
 from growbikenet._procedure import (
     _gbn_acquire_network,
     _gbn_angulate_seed_points,

@@ -1,11 +1,10 @@
-"""Visualization functions for growbikenet."""
-
+"""Visualization functions for `growbikenet`."""
 
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from . import constants, settings
 import bikenetlib as bnl
+from . import constants, settings, _overpass
 
 
 def generate_plots(edges_ordered, nodes, ordering, with_existing_bike_network):

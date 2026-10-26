@@ -18,8 +18,8 @@ import networkx as nx
 import osmnx as ox
 from tqdm import tqdm
 
-from . import constants, settings
 import bikenetlib as bnl
+from . import constants, settings, _overpass
 
 from bikenetlib.utils import(
     assign_pbi_to_edges,
