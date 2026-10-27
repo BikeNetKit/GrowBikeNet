@@ -1,6 +1,13 @@
 # Changelog
 
 
+## Version 0.17.0 (2026-10-27)
+
+- ✨ Added `_overpass` module, now using BikeNetKit's overpass server
+- ♻️ Refactored data export with BikeNetLib's `export_gdfs()`
+- 📝 Polished docs
+
+
 ## Version 0.16.0 (2026-10-19)
 
 - ✨ Integrated first functions from BikeNetLib: osm, io, utils
