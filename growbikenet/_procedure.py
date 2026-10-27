@@ -45,7 +45,6 @@ from growbikenet.utils import (
     filter_network_by_component_length,
     filter_points_distant_from_osm_nodes,
     import_network,
-    nx_to_nodes_edges,
     orientation_order,
     prepare_nodes_edges,
     set_path_to_pbi,
