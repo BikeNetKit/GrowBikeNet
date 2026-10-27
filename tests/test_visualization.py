@@ -102,8 +102,8 @@ def test_generate_plots_case_success_with_bikenw(validation_gdf_athens_with_bike
     # Add existing bike network on top
     validation_gdf_athens_with_bikenw.loc[-1] = validation_existing_gdf_athens_with_bikenw.iloc[0]
     validation_gdf_athens_with_bikenw.index = validation_gdf_athens_with_bikenw.index+1
-    validation_gdf_athens_with_bikenw.sort_index(inplace=True)
-    validation_gdf_athens_with_bikenw.crs = '3857'
+    validation_gdf_athens_with_bikenw = validation_gdf_athens_with_bikenw.sort_index()
+    validation_gdf_athens_with_bikenw = validation_gdf_athens_with_bikenw.set_crs('3857')
     
     # Create directory
     os.makedirs(settings.export_path['plots']+"ordering_"+ordering+"/", exist_ok=True)

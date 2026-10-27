@@ -417,7 +417,7 @@ def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
         if len(node_current)>0: # Current nodes could already be depleted here. Then loop will stop.
             node_current = nodes_exnw[nodes_exnw.osmid == node_current["osmid_right"].values[0]]
 
-    seed_points_exnw.set_index("osmid", drop=False, inplace=True)
+    seed_points_exnw = seed_points_exnw.set_index("osmid", drop=False)
     return seed_points_exnw
 
 
@@ -579,7 +579,7 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
         # Bring back to original form (geometry and osmid columns, osmid index)
         seed_points_snapped['osmid'] = seed_points_snapped.apply(lambda row: row['osmid_2'] if pd.isnull(row['osmid_1']) else row['osmid_1'], axis=1) # _1 comes from one side, _2 from the other. When one is Nan, the other is a number.
         seed_points_snapped = seed_points_snapped[['osmid','geometry']]
-        seed_points_snapped.set_index("osmid", drop=False, inplace=True)
+        seed_points_snapped = seed_points_snapped.set_index("osmid", drop=False)
     else:
         seed_points_snapped = seed_points_exnw
 
@@ -908,9 +908,9 @@ def _remove_edge_overlaps(edges_in):
             edges_out.loc[row.Index, ['geometry']] = grown_net_diff # Add difference
             grown_net = grown_net_new # Only update if something was added
         else: # There was nothing added, so we delete the row
-            edges_out.drop(index=row.Index, inplace=True)
-    edges_out.drop_duplicates(inplace=True) # How can duplicates happen??
-    edges_out.reset_index(drop=True, inplace=True)
+            edges_out = edges_out.drop(index=row.Index)
+    edges_out = edges_out.drop_duplicates() # How can duplicates happen??
+    edges_out = edges_out.reset_index(drop=True)
     return edges_out
 
 
@@ -950,7 +950,7 @@ def df_from_graph(A, method):
     df["node_tuple"] = df.index
     df["source"] = [t[0] for t in df.node_tuple]
     df["target"] = [t[1] for t in df.node_tuple]
-    df.drop(columns=["node_tuple"], inplace=True)
+    df = df.drop(columns=["node_tuple"])
     return df
 
 
@@ -973,13 +973,13 @@ def _order_df(df, method):
     if method == "random": # ordering is random
         df['ordering'] = np.random.permutation(np.arange(df.shape[0]))
         df = df.sort_values(by="ordering", ascending=False)
-        df.reset_index(drop=True, inplace=True)
+        df = df.reset_index(drop=True)
         df['ordering'] = (
             df.index
         )  
     else: # ordering is the order of appearance in the method's ordering
         df = df.sort_values(by=method, ascending=False)
-        df.reset_index(drop=True, inplace=True)
+        df = df.reset_index(drop=True)
         df['ordering'] = (
             df.index
         )  

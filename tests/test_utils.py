@@ -473,7 +473,7 @@ def turin_triangulation_graph_trips():
     nodes = pd.read_csv("./tests/test_data/turin_triangulation_nodes_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
 
     edges_gdf = gpd.read_file("./tests/test_data/turin_triangulation_edges_trips.gpkg")
-    edges_gdf.set_index(['u', 'v'], inplace=True)
+    edges_gdf = edges_gdf.set_index(['u', 'v'])
     edges = edges_gdf.to_dict(orient='index')
 
     graph_att = pd.read_csv("./tests/test_data/turin_triangulation_graph_trips.csv").loc[0,:].to_dict()
@@ -498,7 +498,7 @@ def turin_triangulation_graph_with_trips_data():
     nodes = pd.read_csv("./tests/test_data/turin_triangulation_nodes_with_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
 
     edges_gdf = gpd.read_file("./tests/test_data/turin_triangulation_edges_with_trips.gpkg")
-    edges_gdf.set_index(['u', 'v'], inplace=True)
+    edges_gdf = edges_gdf.set_index(['u', 'v'])
     edges = edges_gdf.to_dict(orient='index')
 
     graph_att = pd.read_csv("./tests/test_data/turin_triangulation_graph_with_trips.csv").loc[0,:].to_dict()
@@ -576,7 +576,7 @@ def network_edges():
         crs = '3857',
         geometry = [AB, BC, CD, DE, EF, FG, BH, HF, FI, IJ, GJ]
     )
-    gdf.set_index(['u','v'], inplace = True)
+    gdf = gdf.set_index(['u','v'])
     return gdf
 
 @pytest.fixture
@@ -641,7 +641,7 @@ def turin_network_edges():
     gdf = gpd.read_file(
         "./tests/test_data/turin_edges.gpkg"
     )
-    gdf.set_index(['u','v'], inplace=True)
+    gdf = gdf.set_index(['u','v'])
     return gdf
 
 @pytest.fixture
