@@ -8,7 +8,7 @@ dependencies:
   - scipy
   - tqdm
   - geojson
-  - bikenetlib>=0.7.2
+  - bikenetlib>=0.8.1
 
   # additional to the non-dev env
   - ipykernel

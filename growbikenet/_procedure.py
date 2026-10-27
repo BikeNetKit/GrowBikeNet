@@ -18,8 +18,8 @@ import networkx as nx
 import osmnx as ox
 from tqdm import tqdm
 
-from . import constants, settings
 import bikenetlib as bnl
+from . import constants, settings, _overpass
 
 from bikenetlib.utils import(
     assign_pbi_to_edges,
@@ -31,6 +31,7 @@ from bikenetlib.utils import(
     _reverse_bearing,
 )
 from bikenetlib.io import(
+    export_gdfs,
     initialize_progress_bar,
     slugify,
 )
@@ -41,11 +42,9 @@ from growbikenet.utils import (
     create_gdf_with_geoms,
     df_from_graph,
     download_network,
-    export_gdfs,
     filter_network_by_component_length,
     filter_points_distant_from_osm_nodes,
     import_network,
-    nx_to_nodes_edges,
     orientation_order,
     prepare_nodes_edges,
     set_path_to_pbi,
@@ -605,7 +604,7 @@ def _gbn_postprocess_edges(existing_network_spacing, edges_exnw, edges_ordered):
         existing_bikenet.loc[-1, 'geometry'] = gpd.GeoSeries(edges_exnw.geometry).union_all()
         edges_ordered.loc[-1] = existing_bikenet.loc[-1]
         edges_ordered.index = edges_ordered.index+1
-        edges_ordered.sort_index(inplace=True)
+        edges_ordered = edges_ordered.sort_index()
         edges_ordered.crs = constants._CRS_CALCULATIONS
 
     # Remove edge overlaps
@@ -663,7 +662,7 @@ def _gbn_export_data_to_file(export_data, seed_points_snapped_filtered, city_bou
         if len(edges_ordered)<1+bool(existing_network_spacing is not None):
             warnings.warn("Not enough space to grow links. No data was exported.")
         else:
-            seed_points_snapped_filtered.drop(["osmid"], axis=1, inplace=True)
+            seed_points_snapped_filtered = seed_points_snapped_filtered.drop(["osmid"], axis=1)
             seed_points_snapped_filtered.to_crs(epsg=settings.crs_result, inplace=True)
             if city_boundary_exists:
                 city_boundary_gdf.to_crs(epsg=settings.crs_result, inplace=True)

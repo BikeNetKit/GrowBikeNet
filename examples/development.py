@@ -12,9 +12,9 @@ gbn.growbikenet(
             "Oelde",
             # existing_network_spacing='auto',
             import_files={
-                'growable_network':"oelde_growable_network.gpkg",
-                # 'bike_network':"bike_networks/"+city_id+".gpkg",
-                'seed_points':"oelde_seed_points.geojson"
+                # 'growable_network':"oelde_growable_network.gpkg",
+                # # 'bike_network':"bike_networks/"+city_id+".gpkg",
+                # 'seed_points':"oelde_seed_points.geojson"
             },
         )
 

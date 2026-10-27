@@ -7,8 +7,8 @@ import warnings
 import numpy as np
 import pandas as pd
 
-from . import constants, settings
 import bikenetlib as bnl
+from . import constants, settings, _overpass
 
 pd.set_option('display.max_columns', None) # for debugging
 import datetime
@@ -28,85 +28,6 @@ from tqdm import tqdm
 from bikenetlib.io import(
     initialize_progress_bar,
 )
-
-
-def export_gdfs(gdfs, filename='exported_data', path="./", format='gpkg', overwrite=True, crs='4326', bar=False):
-    """Export GeoDataFrames as geojson, gpkg, or shp file(s).
-
-    If crs=='4326' and format=='geojson', export with RFC7946.
-
-    Parameters
-    ----------
-    gdfs : dict
-        Dictionary with the gdfs as keys with dicts as values. Structure:
-        {
-            'layername1': {'gdf': gdf1, 'filename_single':str},
-            'layername2': {'gdf': gdf2, 'filename_single':str},
-            ...
-        }
-        `filename_single` is relevant for geojson and shp files which ignore
-        `filename` and export each gdf as individual files. `layername` is 
-        relevant for gpkg which exports all gdfs merged into one file 
-        `filename` as their own layers.
-    filename : str, default 'exported_data'
-        Name of exported file, if exported as gpkg.
-    path : str, default './'
-        Export path.
-    format : {'gpkg', 'geojson', 'shp'}, default 'gpkg'
-        Export file format.
-    overwrite : bool, default True
-        Decision whether to overwrite existing files.
-    crs : str, default '4326'
-        Coordinate Reference System of exported data.
-    bar : bool, default False
-        Decision whether to show a progress bar.
-
-    Returns
-    -------
-    bool
-        Returns True if all files have been written. If overwrite is set to 
-        False and at least one file already existed, returns False. 
-    """
-    os.makedirs(path, exist_ok=True)
-
-    format_driver = {'gpkg': "GPKG", 'geojson': "GeoJSON", 'shp': "ESRI Shapefile"}
-    d = format_driver[format]
-    
-    if bar: progress_bar = initialize_progress_bar("Exporting data", len(gdfs), "file")
-
-    if format == 'gpkg': # Export as one file with layers
-        f = path+filename+'.'+format
-        # Check if file exists, and remove if overwrite
-        if os.path.exists(f):
-            if not overwrite:
-                return False
-            else:
-                os.remove(f)
-        # Export one gpkg with layers
-        for layername, gdfinfo in gdfs.items():
-            gdfinfo['gdf'].to_file(f, driver=d, layer=layername)
-            if bar: progress_bar.update(1)
-
-    elif format == 'geojson' or format == 'shp': # Export as individual files
-        # Check if files exists, and remove if overwrite
-        for gdfinfo in gdfs.values():
-            f = path+gdfinfo['filename_single']+'.'+format
-            if os.path.exists(f):
-                if not overwrite:
-                    return False
-                else:
-                    os.remove(f)
-        # Export individual files
-        for layername, gdfinfo in gdfs.items():
-            f = path+gdfinfo['filename_single']+'.'+format
-            if format == 'geojson' and crs == '4326':
-                gdfinfo['gdf'].to_file(f, driver=d, RFC7946="YES")
-            else:
-                gdfinfo['gdf'].to_file(f, driver=d)
-            if bar: progress_bar.update(1)
-
-    if bar: progress_bar.close()
-    return True
 
 
 def add_trip_data_to_net(trips, A, matching_distance=settings.import_trip_data_snap_distance):
@@ -496,7 +417,7 @@ def _get_existing_network_seed_points(nodes_exnw, existing_network_spacing):
         if len(node_current)>0: # Current nodes could already be depleted here. Then loop will stop.
             node_current = nodes_exnw[nodes_exnw.osmid == node_current["osmid_right"].values[0]]
 
-    seed_points_exnw.set_index("osmid", drop=False, inplace=True)
+    seed_points_exnw = seed_points_exnw.set_index("osmid", drop=False)
     return seed_points_exnw
 
 
@@ -658,7 +579,7 @@ def _update_seed_points_with_existing_bike_network(seed_points_snapped, nodes_ex
         # Bring back to original form (geometry and osmid columns, osmid index)
         seed_points_snapped['osmid'] = seed_points_snapped.apply(lambda row: row['osmid_2'] if pd.isnull(row['osmid_1']) else row['osmid_1'], axis=1) # _1 comes from one side, _2 from the other. When one is Nan, the other is a number.
         seed_points_snapped = seed_points_snapped[['osmid','geometry']]
-        seed_points_snapped.set_index("osmid", drop=False, inplace=True)
+        seed_points_snapped = seed_points_snapped.set_index("osmid", drop=False)
     else:
         seed_points_snapped = seed_points_exnw
 
@@ -987,9 +908,9 @@ def _remove_edge_overlaps(edges_in):
             edges_out.loc[row.Index, ['geometry']] = grown_net_diff # Add difference
             grown_net = grown_net_new # Only update if something was added
         else: # There was nothing added, so we delete the row
-            edges_out.drop(index=row.Index, inplace=True)
-    edges_out.drop_duplicates(inplace=True) # How can duplicates happen??
-    edges_out.reset_index(drop=True, inplace=True)
+            edges_out = edges_out.drop(index=row.Index)
+    edges_out = edges_out.drop_duplicates() # How can duplicates happen??
+    edges_out = edges_out.reset_index(drop=True)
     return edges_out
 
 
@@ -1029,7 +950,7 @@ def df_from_graph(A, method):
     df["node_tuple"] = df.index
     df["source"] = [t[0] for t in df.node_tuple]
     df["target"] = [t[1] for t in df.node_tuple]
-    df.drop(columns=["node_tuple"], inplace=True)
+    df = df.drop(columns=["node_tuple"])
     return df
 
 
@@ -1052,13 +973,13 @@ def _order_df(df, method):
     if method == "random": # ordering is random
         df['ordering'] = np.random.permutation(np.arange(df.shape[0]))
         df = df.sort_values(by="ordering", ascending=False)
-        df.reset_index(drop=True, inplace=True)
+        df = df.reset_index(drop=True)
         df['ordering'] = (
             df.index
         )  
     else: # ordering is the order of appearance in the method's ordering
         df = df.sort_values(by=method, ascending=False)
-        df.reset_index(drop=True, inplace=True)
+        df = df.reset_index(drop=True)
         df['ordering'] = (
             df.index
         )  

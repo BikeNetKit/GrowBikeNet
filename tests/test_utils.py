@@ -1,7 +1,5 @@
 import ast
 import pickle
-import os
-import shutil
 
 import geopandas as gpd
 import networkx as nx
@@ -20,7 +18,6 @@ from growbikenet.utils import (
     add_point_data_to_net,
     add_trip_data_to_net,
     create_gdf_with_geoms,
-    export_gdfs,
     filter_points_distant_from_osm_nodes,
 )
 
@@ -476,7 +473,7 @@ def turin_triangulation_graph_trips():
     nodes = pd.read_csv("./tests/test_data/turin_triangulation_nodes_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
 
     edges_gdf = gpd.read_file("./tests/test_data/turin_triangulation_edges_trips.gpkg")
-    edges_gdf.set_index(['u', 'v'], inplace=True)
+    edges_gdf = edges_gdf.set_index(['u', 'v'])
     edges = edges_gdf.to_dict(orient='index')
 
     graph_att = pd.read_csv("./tests/test_data/turin_triangulation_graph_trips.csv").loc[0,:].to_dict()
@@ -501,7 +498,7 @@ def turin_triangulation_graph_with_trips_data():
     nodes = pd.read_csv("./tests/test_data/turin_triangulation_nodes_with_trips.csv", sep = ";", index_col='osmid').to_dict(orient='index')
 
     edges_gdf = gpd.read_file("./tests/test_data/turin_triangulation_edges_with_trips.gpkg")
-    edges_gdf.set_index(['u', 'v'], inplace=True)
+    edges_gdf = edges_gdf.set_index(['u', 'v'])
     edges = edges_gdf.to_dict(orient='index')
 
     graph_att = pd.read_csv("./tests/test_data/turin_triangulation_graph_with_trips.csv").loc[0,:].to_dict()
@@ -579,7 +576,7 @@ def network_edges():
         crs = '3857',
         geometry = [AB, BC, CD, DE, EF, FG, BH, HF, FI, IJ, GJ]
     )
-    gdf.set_index(['u','v'], inplace = True)
+    gdf = gdf.set_index(['u','v'])
     return gdf
 
 @pytest.fixture
@@ -644,7 +641,7 @@ def turin_network_edges():
     gdf = gpd.read_file(
         "./tests/test_data/turin_edges.gpkg"
     )
-    gdf.set_index(['u','v'], inplace=True)
+    gdf = gdf.set_index(['u','v'])
     return gdf
 
 @pytest.fixture
@@ -684,91 +681,3 @@ def turin_d_trips():
 def test__get_weighted_distances(turin_B, turin_d_points, turin_d_trips):
     assert turin_d_points == _get_weighted_distances(turin_B, "num_points")
     assert turin_d_trips == _get_weighted_distances(turin_B, "num_trips")
-
-
-@pytest.fixture
-def oelde_gdfs():
-    gdfs = {}
-    gdfs["Seed points"] = {
-        'gdf': gpd.read_file("./tests/test_data/oelde_seed_points.geojson"),
-        'filename_single': 'oelde_seed_points',
-    }
-    gdfs["City boundary"] = {
-        'gdf': gpd.read_file("./tests/test_data/oelde_boundary.geojson"),
-        'filename_single': 'oelde_boundary',
-    }
-    return gdfs
-
-@pytest.fixture
-def validation_oelde_gpkg_layer():
-    gdf = gpd.read_file("./tests/test_data/oelde_export.gpkg", layer="Seed points")
-    return gdf
-
-def test_export_gdfs(oelde_gdfs, validation_oelde_gpkg_layer):
-    path_test_outputs = './tests/test_outputs/'
-    filename = 'oelde_export'
-
-    format = 'gpkg'
-    if os.path.exists(path_test_outputs) and os.path.isdir(path_test_outputs):
-        shutil.rmtree(path_test_outputs)
-    export_gdfs(
-        oelde_gdfs, 
-        filename=filename, 
-        path=path_test_outputs, 
-        format=format,
-        bar=False,
-    )
-    assert_frame_equal(
-        validation_oelde_gpkg_layer,
-        gpd.read_file(path_test_outputs+"oelde_export.gpkg", layer="Seed points"),
-        check_dtype=False,
-    )
-
-    format = 'geojson'
-    if os.path.exists(path_test_outputs) and os.path.isdir(path_test_outputs):
-        shutil.rmtree(path_test_outputs)
-    export_gdfs(
-        oelde_gdfs, 
-        filename=filename, 
-        path=path_test_outputs, 
-        format=format,
-        bar=False,
-    )
-    assert_frame_equal(
-        gpd.read_file('./tests/test_data/'+"oelde_seed_points.geojson"),
-        gpd.read_file(path_test_outputs+"oelde_seed_points.geojson"),
-        check_dtype=False,
-    )
-    assert_frame_equal(
-        gpd.read_file('./tests/test_data/'+"oelde_boundary.geojson"),
-        gpd.read_file(path_test_outputs+"oelde_boundary.geojson"),
-        check_dtype=False,
-    )
-
-    format = 'shp'
-    if os.path.exists(path_test_outputs) and os.path.isdir(path_test_outputs):
-        shutil.rmtree(path_test_outputs)
-    export_gdfs(
-        oelde_gdfs, 
-        filename=filename, 
-        path=path_test_outputs, 
-        format=format,
-        bar=False,
-    )
-    assert_frame_equal(
-        gpd.read_file('./tests/test_data/'+"oelde_seed_points.geojson"),
-        gpd.read_file(path_test_outputs+"oelde_seed_points.shp"),
-        check_dtype=False,
-    )
-    # To do: Some weird FID issue when loading a single-row shape file.
-    # shp = gpd.read_file(path_test_outputs+"oelde_boundary.shp")
-    # del shp['FID']
-    # assert_frame_equal(
-    #     gpd.read_file('./tests/test_data/'+"oelde_boundary.geojson"),
-    #     shp,
-    #     check_dtype=False,
-    # )
-
-    # Clean up
-    if os.path.exists(path_test_outputs) and os.path.isdir(path_test_outputs):
-        shutil.rmtree(path_test_outputs)
