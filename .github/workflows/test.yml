@@ -57,6 +57,7 @@ jobs:
           - { name: "growbikenet", pytest_args: "tests/test_growbikenet.py" }
           - { name: "utils", pytest_args: "tests/test_utils.py" }
           - { name: "visualization", pytest_args: "tests/test_visualization.py --mpl" }
+          - { name: "_overpass", pytest_args: "tests/test__overpass.py" }
       fail-fast: false
 
     name: ${{ matrix.submodule.name }} (${{ matrix.python-version }} on ${{ matrix.os }})
