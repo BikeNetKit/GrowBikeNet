@@ -6,6 +6,7 @@
 - ✨ Added `_overpass` module, now using BikeNetKit's overpass server
 - ♻️ Refactored data export with BikeNetLib's `export_gdfs()`
 - 📝 Polished docs
+- 🔥 Removed all pandas-deprecated `inplace=True`
 
 
 ## Version 0.16.0 (2026-10-19)
