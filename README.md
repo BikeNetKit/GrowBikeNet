@@ -46,7 +46,8 @@ We provide a minimum working example in two formats:
 For a walkthrough with illustrative examples, see our [Usage docs](https://docs.bikenetkit.org/GrowBikeNet/usage/). For a hands-on tutorial, see our [Python tutorials](https://github.com/BikeNetKit/tutorials#python-tutorials).
 
 ## Documentation
-Find more information in our docs: [https://docs.bikenetkit.org/GrowBikeNet/](https://docs.bikenetkit.org/GrowBikeNet/)
+Find more information in our docs: [https://docs.bikenetkit.org/GrowBikeNet/](https://docs.bikenetkit.org/GrowBikeNet/)  
+See also our [Frequently Asked Questions](https://faq.bikenetkit.org).
 
 ## Origin
 The source code builds on [the code from the research paper](https://github.com/mszell/bikenwgrowth) _Growing Urban Bicycle Networks_ and on [the code from the research paper](https://github.com/pietrofolco/Data-driven_bicycle_network_planning_for_demand_and_safety) _Data-driven micromobility network planning for demand and safety_.

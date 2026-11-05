@@ -30,12 +30,7 @@ Setup and use
 
 To set up GrowBikeNet, see the :doc:`installation` page.
 To use GrowBikeNet, the :doc:`getting_started` page
-is a good place to start. Various usage examples are walked through on the :doc:`usage` page. For technical documentation, consult the :doc:`reference_user`.
-
-.. Statement of need
-.. =================
-
-.. TBA
+is a good place to start. Various usage examples are walked through on the :doc:`usage` page. For technical documentation, consult the :doc:`reference_user`. See also our `Frequently Asked Questions <https://faq.bikenetkit.org>`__.
 
 Origin
 ------
