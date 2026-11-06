@@ -52,9 +52,6 @@ See also our [Frequently Asked Questions](https://faq.bikenetkit.org).
 ## Origin
 The source code builds on [the code from the research paper](https://github.com/mszell/bikenwgrowth) _Growing Urban Bicycle Networks_ and on [the code from the research paper](https://github.com/pietrofolco/Data-driven_bicycle_network_planning_for_demand_and_safety) _Data-driven micromobility network planning for demand and safety_.
 
-**Publication** (primary): [https://doi.org/10.1038/s41598-022-10783-y](https://doi.org/10.1038/s41598-022-10783-y)  
-**Publication** (secondary): [https://doi.org/10.1177/23998083221135611](https://doi.org/10.1177/23998083221135611)
-
 ## How to cite
 If you use GrowBikeNet in your research, please cite the primary paper:
 
