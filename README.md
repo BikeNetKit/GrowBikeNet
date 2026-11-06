@@ -61,6 +61,21 @@ If you use GrowBikeNet in your research, please cite the primary paper:
 > M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra. Growing urban bicycle networks. Scientific Reports 12, 6765 (2022).  
 > DOI: [10.1038/s41598-022-10783-y](https://doi.org/10.1038/s41598-022-10783-y)
 
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
+@article{szell2022gub,
+  title = {Growing urban bicycle networks},
+  author = {Szell, Michael and Mimar, Sayat and Perlman, Tyler and Ghoshal, Gourab and Sinatra, Roberta},
+  journal = {Scientific Reports},
+  year = {2022},
+  volume = {12},
+  number = {6765},
+  doi = {10.1038/s41598-022-10783-y}
+}
+```
+</details>
 
 ## Supported by
 Development of BikeNetKit/GrowBikeNet is supported by the [Innovation Fund Denmark](https://innovationsfonden.dk/en), the EU HORIZON project [JUST STREETS](https://www.just-streets.eu), and the [Data Science Section](https://en.itu.dk/Research/Sections-and-research-groups/Data-Science) of IT University of Copenhagen.
