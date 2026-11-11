@@ -160,6 +160,7 @@ def test_growbikenet_betweenness_file_geojson_fromscratch_success_offline(valida
     betweenness, file, from scratch
     """
     gbn.constants._CRS_CALCULATIONS = 'auto'
+    gbn.settings.seed_point_snap_distance = 'auto'
     edges_ordered = gbn.growbikenet(
         city_query="Oelde",
         ordering="betweenness",
@@ -180,6 +181,7 @@ def test_growbikenet_betweenness_file_shp_fromscratch_success_offline(validation
     betweenness, file, from scratch
     """
     gbn.constants._CRS_CALCULATIONS = 'auto'
+    gbn.settings.seed_point_snap_distance = 'auto'
     edges_ordered = gbn.growbikenet(
         city_query="Oelde",
         ordering="betweenness",
