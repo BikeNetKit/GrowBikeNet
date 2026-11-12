@@ -148,6 +148,33 @@ gbn.settings.import_path = import_path
 #         )
 
 
+# Online tests
+
+def test_growbikenet_success_online_mwe():
+    """Verify that the online version of growbikenet does not throw an error, 
+    minimal working example.
+    """
+    gbn.constants._CRS_CALCULATIONS = 'auto'
+    gbn.settings.seed_point_snap_distance = 'auto'
+    edges_ordered = gbn.growbikenet(
+        city_query="Oelde",
+    )
+
+def test_growbikenet_success_online_mwe_city_boundary():
+    """Verify that the online version of growbikenet does not throw an error, 
+    minimal working example with imported city boundary.
+    """
+    gbn.constants._CRS_CALCULATIONS = 'auto'
+    gbn.settings.seed_point_snap_distance = 'auto'
+    edges_ordered = gbn.growbikenet(
+        city_query="Oelde",
+        import_files={
+            'city_boundary': "oelde_boundary.geojson",
+        },
+
+    )
+
+
 # Test import file formats geojson and shp (gpkg already tested above)
 
 @pytest.fixture
