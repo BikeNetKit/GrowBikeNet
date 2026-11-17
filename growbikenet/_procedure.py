@@ -22,6 +22,8 @@ import bikenetlib as bnl
 from . import constants, settings, _overpass
 
 from bikenetlib.utils import(
+    add_point_data_to_net,
+    add_trip_data_to_net,
     assign_pbi_to_edges,
     get_principal_bearing,
     nodelist_to_edgetuples,
@@ -36,8 +38,6 @@ from bikenetlib.io import(
     slugify,
 )
 from growbikenet.utils import (
-    add_point_data_to_net,
-    add_trip_data_to_net,
     bike_infra_mapping_gdf,
     create_gdf_with_geoms,
     df_from_graph,
@@ -453,7 +453,7 @@ def _gbn_route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped
     geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
     # Add point data to edges
     if point_data is not None:
-        grown_bikenet_edges = add_point_data_to_net(point_data, grown_bikenet_edges)
+        grown_bikenet_edges = add_point_data_to_net(point_data, grown_bikenet_edges, matching_distance=settings.import_trip_data_snap_distance)
         num_points_list = grown_bikenet_edges["num_points"]
         num_points_dict = dict(zip(edge_list, num_points_list))
 
@@ -474,7 +474,7 @@ def _gbn_route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped
     if num_data_files:
         # Add trip data to edges
         if trip_data is not None:
-            B = add_trip_data_to_net(trip_data, B)
+            B = add_trip_data_to_net(trip_data, B, matching_distance=settings.import_trip_data_snap_distance)
 
         # Compute weighted distances
         if trip_data is not None:
