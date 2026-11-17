@@ -12,7 +12,6 @@ from shapely.geometry import LineString, MultiLineString, Point
 from growbikenet import constants, settings
 from growbikenet.utils import (
     _get_grid_seed_points,
-    _get_weighted_distances,
     _order_df,
     _remove_edge_overlaps,
     create_gdf_with_geoms,
@@ -288,22 +287,3 @@ def test_create_gdf_with_geoms_case_success_turin(turin_routed_triangulation, tu
         ),
         turin_routed_triangulation_with_geoms
     )
-
-@pytest.fixture
-def turin_B():
-    B = pickle.load(open('./tests/test_data/turin_B.pickle', 'rb'))
-    return B
-
-@pytest.fixture
-def turin_d_points():
-    d = pickle.load(open('./tests/test_data/turin_d_points.pickle', 'rb'))
-    return d
-
-@pytest.fixture
-def turin_d_trips():
-    d = pickle.load(open('./tests/test_data/turin_d_trips.pickle', 'rb'))
-    return d
-
-def test__get_weighted_distances(turin_B, turin_d_points, turin_d_trips):
-    assert turin_d_points == _get_weighted_distances(turin_B, "num_points")
-    assert turin_d_trips == _get_weighted_distances(turin_B, "num_trips")

@@ -29,6 +29,7 @@ from bikenetlib.utils import(
     nodelist_to_edgetuples,
     node_to_edge_attributes,
     route_nodepairs,
+    weight_distances,
     _count_and_merge,
     _reverse_bearing,
 )
@@ -55,7 +56,6 @@ from growbikenet.utils import (
     _get_existing_network_seed_points,
     _get_grid_seed_points,
     _get_tags_seed_points,
-    _get_weighted_distances,
     _order_df,
     _prepare_seed_points,
     _remove_edge_overlaps,
@@ -478,9 +478,9 @@ def _gbn_route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped
 
         # Compute weighted distances
         if trip_data is not None:
-            dist_weighted_by_trips_dict = _get_weighted_distances(B, "num_trips") # d_trip in [2]_
+            dist_weighted_by_trips_dict = weight_distances(B, "num_trips", import_data_impact=settings.import_data_impact) # d_trip in [2]_
         if point_data is not None:
-            dist_weighted_by_points_dict = _get_weighted_distances(B, "num_points") # d_crash in [2]_
+            dist_weighted_by_points_dict = weight_distances(B, "num_points", import_data_impact=settings.import_data_impact) # d_crash in [2]_
 
         # Combine them
         dist_weighted_dict = {}
@@ -554,7 +554,7 @@ def _gbn_reroute(edges_ordered, edges, g_undir, grown_bikenet_edges_abstract):
             g_undir = weigh_edges(g_undir, constants._ROUTING_PENALTY)
             grown_bikenet_edges_abstract_onerow = route_nodepairs(grown_bikenet_edges_abstract_onerow, edges, g_undir, 'weight')
             grown_bikenet_edge = create_gdf_with_geoms(grown_bikenet_edges_abstract_onerow, edges)
-            if not grown_bikenet_edge.empty: # To do: How can it be empty? See _get_weighted_distances()
+            if not grown_bikenet_edge.empty: # To do: How can it be empty? See weight_distances()
                 edges_reordered.loc[edge.Index, "geometry"] = grown_bikenet_edge['geometry'].iloc[0]
             
         return edges_reordered
