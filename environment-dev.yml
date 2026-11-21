@@ -25,7 +25,4 @@ dependencies:
   - sphinx-copybutton
   - sphinxext-opengraph
   - furo
-  - pip:
-      # not available via conda-forge:
-      - growbikenet # For docs, get latest version fast from pypi
-      - opencv-python # For the generate_video.py script
+  - growbikenet # For docs
