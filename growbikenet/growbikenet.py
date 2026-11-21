@@ -79,7 +79,7 @@ def growbikenet(
         The algorithm for linking up the seed points into an unrouted, abstract 
         network.
 
-        - 'auto' selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [3]_.
+        - 'auto' selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [4]_.
         - 'triangulate_delaunay' uses Delaunay triangulation.
         - 'quadrangulate' uses quadrangulation, which only works for `seed_point_type` 'grid_square' and `existing_network_spacing` None. Useful for grid-like street networks like Manhattan or Barcelona.
     existing_network_spacing : None or 'auto' or int, default None
@@ -161,7 +161,7 @@ def growbikenet(
             of the network links, controlled with `settings.import_data_impact` 
             and `settings.import_data_trip_point_balance`, following [2]_.
     seed_point_tags : None or dict[str, bool or str or list[str]], default None
-        If not None, must be a geocodable `seed_point_tags`, see [4]_, and 
+        If not None, must be a geocodable `seed_point_tags`, see [5]_, and 
         `seed_point_type` must be set to 'tags'. For example, 
         ``seed_point_tags={'railway': ['station', 'halt']}`` retrieves exactly 
         the same as ``seed_point_type='rail'``.
