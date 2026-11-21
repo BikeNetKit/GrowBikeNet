@@ -170,8 +170,10 @@ def growbikenet(
     Returns
     -------
     edges_ordered : geopandas.geodataframe.GeoDataFrame
-        Geodataframe of all edges in street network ordered by the `ordering` 
-        method.
+        GeoDataFrame of all edges in street network ordered by the `ordering` 
+        method. Its columns are: `betweenness` or `closeness` (if one of them 
+        was chosen as `ordering`), `geometry`, `source`, `target`, `ordering`, 
+        `length`, `length_cumulative`. For details see [6]_.
 
     Examples
     --------
@@ -209,6 +211,7 @@ def growbikenet(
     .. [3] https://nominatim.org/release-docs/develop/api/Search/#free-form-query
     .. [4] G. Boeing, `Urban spatial order: Street network orientation, configuration, and entropy`, Applied Network Science 4, 67 (2019)
     .. [5] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
+    .. [6] https://docs.bikenetkit.org/GrowBikeNet/usage_02_network_growth
     """
 
     # Setup
