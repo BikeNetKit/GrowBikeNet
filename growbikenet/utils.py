@@ -535,10 +535,11 @@ def _get_tags_seed_points(city_query, tags, city_boundary_geometry=None):
     ----------
     city_query : str
         Search string for the city that the analysis should be performed on. 
-        This is a free-form query used to fetch the data from OpenStreetMap. 
-        For example "Lyon". This `city_query` is overruled for data fetching if `city_boundary_geometry` is set.
+        This is a free-form query used to fetch the data from OpenStreetMap via 
+        its search engine Nominatim [3]_, for example "Lyon". This `city_query` 
+        is overruled for data fetching if `city_boundary_geometry` is set.
     tags : None or dict[str, bool or str or list[str]], default None
-        Geocodable tags, see [3]_. For example, tags={"railway": ["station", 
+        Geocodable tags, see [4]_. For example, tags={"railway": ["station", 
         "halt"]} will retrieve exactly the same as seed_point_type='rail'.
     city_boundary_geometry : None or shapely Polygon or shapely MultiPolygon, 
     default None
@@ -552,7 +553,8 @@ def _get_tags_seed_points(city_query, tags, city_boundary_geometry=None):
 
     References
     ----------
-    .. [3] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place    
+    .. [3] https://nominatim.org/release-docs/develop/api/Search/#free-form-query
+    .. [4] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place    
     """
     if city_boundary_geometry:
         seed_points = ox.features_from_polygon(

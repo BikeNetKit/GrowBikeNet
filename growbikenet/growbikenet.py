@@ -49,9 +49,10 @@ def growbikenet(
     ----------
     city_query : str
         Search string for the city that the analysis should be performed on. 
-        This is a free-form query used to fetch the data from OpenStreetMap 
-        [3]_, for example "Lyon". This `city_query` is overruled for data 
-        fetching if `city_boundary` or `growable_network` is set.
+        This is a free-form query used to fetch the data from OpenStreetMap via 
+        its search engine Nominatim [3]_, for example "Lyon". This `city_query` 
+        is overruled for data fetching if `city_boundary` or `growable_network` 
+        is set.
     ordering : {'betweenness', 'closeness', 'random'}, default 'betweenness'
         Method used to order the edges.
     seed_point_type : {'auto', 'grid_square', 'grid_triangle', 'rail', 'school', 'park', 'file', 'tags'}, default 'auto'
