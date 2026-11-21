@@ -534,9 +534,9 @@ def _get_tags_seed_points(city_query, tags, city_boundary_geometry=None):
     Parameters
     ----------
     city_query : str
-        Name of the city that the analysis should be performed on. This is the 
-        query string used to fetch the data from nominatim. Overruled (for data 
-        fetching) if `city_boundary_geometry` is set.
+        Search string for the city that the analysis should be performed on. 
+        This is a free-form query used to fetch the data from OpenStreetMap. 
+        For example "Lyon". This `city_query` is overruled for data fetching if `city_boundary_geometry` is set.
     tags : None or dict[str, bool or str or list[str]], default None
         Geocodable tags, see [3]_. For example, tags={"railway": ["station", 
         "halt"]} will retrieve exactly the same as seed_point_type='rail'.

@@ -49,20 +49,21 @@ def growbikenet(
     ----------
     city_query : str
         Search string for the city that the analysis should be performed on. 
-        This is the query used to fetch the data from nominatim. Overruled for 
-        data fetching if `city_boundary` or `growable_network` is set.
+        This is a free-form query used to fetch the data from OpenStreetMap 
+        [3]_, for example "Lyon". This `city_query` is overruled for data 
+        fetching if `city_boundary` or `growable_network` is set.
     ordering : {'betweenness', 'closeness', 'random'}, default 'betweenness'
         Method used to order the edges.
     seed_point_type : {'auto', 'grid_square', 'grid_triangle', 'rail', 'school', 'park', 'file', 'tags'}, default 'auto'
 
-        - 'auto' selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [3]_.
+        - 'auto' selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [4]_.
         - 'grid_square' creates a square grid. 
         - 'grid_triangle' creates a triangle grid. In this case, `seed_point_linking` must not be set to 'quadrangulate'.
         - 'rail', uses railway stations and halts.
         - 'school' uses kindergartens, schools, colleges, and universities.
         - 'park' uses parks, gardens, nature reserves, and public bathing places.
         - 'file' imports seed_point. In this case, the name of the seed points in the exported file name is controlled via `settings.seed_point_type_name`.
-        - 'tags' uses geocodable `seed_point_tags`, see [4]_. 
+        - 'tags' uses geocodable `seed_point_tags`, see [5]_. 
     seed_point_grid_spacing : 'auto' or int, default 'auto'
         If `seed_point_type` is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters. Auto-values for `seed_point_type`.
 
@@ -204,8 +205,9 @@ def growbikenet(
     ----------
     .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, `Growing urban bicycle networks`, Scientific Reports 12, 6765 (2022)
     .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, `Data-driven micromobility network planning for demand and safety`, Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
-    .. [3] G. Boeing, `Urban spatial order: Street network orientation, configuration, and entropy`, Applied Network Science 4, 67 (2019)
-    .. [4] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
+    .. [3] https://nominatim.org/release-docs/develop/api/Search/#free-form-query
+    .. [4] G. Boeing, `Urban spatial order: Street network orientation, configuration, and entropy`, Applied Network Science 4, 67 (2019)
+    .. [5] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
     """
 
     # Setup
