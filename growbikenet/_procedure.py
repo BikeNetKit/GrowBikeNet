@@ -453,7 +453,7 @@ def _gbn_route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped
     geom_dict = dict(zip(edge_list, grown_bikenet_edges["geometry"].tolist()))
     # Add point data to edges
     if point_data is not None:
-        grown_bikenet_edges = add_point_data_to_net(point_data, grown_bikenet_edges, matching_distance=settings.import_trip_data_snap_distance)
+        grown_bikenet_edges = add_point_data_to_net(point_data, grown_bikenet_edges, matching_distance=settings.import_point_data_snap_distance)
         num_points_list = grown_bikenet_edges["num_points"]
         num_points_dict = dict(zip(edge_list, num_points_list))
 
