@@ -95,7 +95,7 @@ def growbikenet(
         shorter than `constants.EXISTING_NETWORK_MINIMUM_COMPONENT_LENGTH` are 
         ignored.
     export_data : bool, default True
-        If set to True, data is saved to a file. The filename is ``[slug]-growbikenet-[ordering]-from_scratch|from_bikenw-[seed_point_type].[settings.export_file_format]``, 
+        If set to True, data is saved to a file. The filename is ``[slug]-growbikenet-[ordering]-[seed_point_type]-from_scratch|from_bikenw.[settings.export_file_format]``, 
         depending on the respective parameters, and where ``[slug]`` is a 
         string id made out of `city_query` (or `city_id` if set). Existing 
         files are overwritten.
