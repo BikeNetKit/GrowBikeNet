@@ -43,29 +43,32 @@ def growbikenet(
 
     The edges form a subnetwork of a city's street network, interpreted as a 
     growing bicycle network following [1]_. By default, growth is from scratch, 
-    but the existing bicycle network can also be used as a starting point [2]_.
+    but the existing bicycle network can also be used as a starting point [2]_. 
+    The idea behind the network construction and growth process is explained in
+    the first few Usage docs [3]_. The network grows until all considered links 
+    have been linked.
 
     Parameters
     ----------
     city_query : str
         Search string for the city that the analysis should be performed on. 
         This is a free-form query used to fetch the data from OpenStreetMap via 
-        its search engine Nominatim [3]_, for example "Lyon". This `city_query` 
+        its search engine Nominatim [4]_, for example "Lyon". This `city_query` 
         is overruled for data fetching if `city_boundary` or `growable_network` 
         is set.
     ordering : {'betweenness', 'closeness', 'random'}, default 'betweenness'
         Method used to order the edges. These are network metrics explained in 
-        [4]_.
+        [5]_.
     seed_point_type : {'auto', 'grid_square', 'grid_triangle', 'rail', 'school', 'park', 'file', 'tags'}, default 'auto'
 
-        - 'auto' selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [5]_.
+        - 'auto' selects 'grid_square' or 'grid_triangle' automatically depending on the street network's orientation entropy, see [6]_.
         - 'grid_square' creates a square grid. 
         - 'grid_triangle' creates a triangle grid. In this case, `seed_point_linking` must not be set to 'quadrangulate'.
         - 'rail', uses railway stations and halts.
         - 'school' uses kindergartens, schools, colleges, and universities.
         - 'park' uses parks, gardens, nature reserves, and public bathing places.
         - 'file' imports seed_point. In this case, the name of the seed points in the exported file name is controlled via `settings.seed_point_type_name`.
-        - 'tags' uses geocodable `seed_point_tags`, see [6]_. 
+        - 'tags' uses geocodable `seed_point_tags`, see [7]_. 
     seed_point_grid_spacing : 'auto' or int, default 'auto'
         If `seed_point_type` is set to 'grid_square' or 'grid_triangle', this is the spacing between seed points, in meters. Auto-values for `seed_point_type`.
 
@@ -81,7 +84,7 @@ def growbikenet(
         The algorithm for linking up the seed points into an unrouted, abstract 
         network.
 
-        - 'auto' selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [5]_.
+        - 'auto' selects 'triangulate_delaunay' or 'quadrangulate' automatically depending on the street network's orientation entropy, see [6]_.
         - 'triangulate_delaunay' uses Delaunay triangulation.
         - 'quadrangulate' uses quadrangulation, which only works for `seed_point_type` 'grid_square' and `existing_network_spacing` None. Useful for grid-like street networks like Manhattan or Barcelona.
     existing_network_spacing : None or 'auto' or int, default None
@@ -163,7 +166,7 @@ def growbikenet(
             of the network links, controlled with `settings.import_data_impact` 
             and `settings.import_data_trip_point_balance`, following [2]_.
     seed_point_tags : None or dict[str, bool or str or list[str]], default None
-        If not None, must be a geocodable `seed_point_tags`, see [6]_, and 
+        If not None, must be a geocodable `seed_point_tags`, see [7]_, and 
         `seed_point_type` must be set to 'tags'. For example, 
         ``seed_point_tags={'railway': ['station', 'halt']}`` retrieves exactly 
         the same as ``seed_point_type='rail'``.
@@ -174,7 +177,7 @@ def growbikenet(
         GeoDataFrame of all edges in street network ordered by the `ordering` 
         method. Its columns are: `betweenness` or `closeness` (if one of them 
         was chosen as `ordering`), `geometry`, `source`, `target`, `ordering`, 
-        `length`, `length_cumulative`. For details see [4]_.
+        `length`, `length_cumulative`. For details see [5]_.
 
     Examples
     --------
@@ -182,15 +185,19 @@ def growbikenet(
 
     >>> edges_ordered = gbn.growbikenet("Lyon")
 
+    Grow a bicycle network from the existing bicycle network of Lyon.
+
+    >>> edges_ordered = gbn.growbikenet("Lyon", existing_network_spacing='auto') 
+
+    Grow a bicycle network from the existing bicycle network of Lyon, 
+    connecting all educational institutions.
+
+    >>> edges_ordered = gbn.growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
+
     Grow a bicycle network from scratch in Copenhagen, providing a study area 
     polygon to include also Frederiksberg and Amager.
 
     >>> edges_ordered = gbn.growbikenet("Copenhagen", import_files={'city_boundary':'./tests/test_data/copenhagen_city_boundary.shp'}) 
-
-    Expand the existing bicycle network of Lyon, connecting all educational 
-    institutions.
-
-    >>> edges_ordered = gbn.growbikenet("Lyon", seed_point_type='school', existing_network_spacing='auto') 
 
     Grow a bicycle network in Oelde from scratch, working offline by importing 
     the street network and custom seed points from file.
@@ -209,10 +216,11 @@ def growbikenet(
     ----------
     .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, `Growing urban bicycle networks`, Scientific Reports 12, 6765 (2022)
     .. [2] P. Folco, L. Gauvin, M. Tizzoni, M. Szell, `Data-driven micromobility network planning for demand and safety`, Environment and planning B: Urban analytics and city science 50(8), 2087-2102 (2023)
-    .. [3] https://nominatim.org/release-docs/develop/api/Search/#free-form-query
-    .. [4] https://docs.bikenetkit.org/GrowBikeNet/usage_02_network_growth
-    .. [5] G. Boeing, `Urban spatial order: Street network orientation, configuration, and entropy`, Applied Network Science 4, 67 (2019)
-    .. [6] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
+    .. [3] https://docs.bikenetkit.org/GrowBikeNet/usage_01_seed_points
+    .. [4] https://nominatim.org/release-docs/develop/api/Search/#free-form-query
+    .. [5] https://docs.bikenetkit.org/GrowBikeNet/usage_02_network_growth
+    .. [6] G. Boeing, `Urban spatial order: Street network orientation, configuration, and entropy`, Applied Network Science 4, 67 (2019)
+    .. [7] https://osmnx.readthedocs.io/en/stable/user-reference.html#osmnx.features.features_from_place
     
     """
 
