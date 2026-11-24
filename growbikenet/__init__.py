@@ -10,9 +10,9 @@ If you use GrowBikeNet, please cite: https://doi.org/10.1038/s41598-022-10783-y
 import contextlib
 from importlib.metadata import PackageNotFoundError, version
 
-from growbikenet.growbikenet import growbikenet
+from growbikenet.growbikenet import growbikenet # function named growbikenet
 from . import constants
-from . import growbikenet
+import growbikenet as gbn # module named gbn
 from . import settings
 from . import utils
 from . import visualization
