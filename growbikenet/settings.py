@@ -46,8 +46,6 @@ seed_point_snap_distance : 'auto' or int, default 'auto'
 seed_point_type_name : str, default 'file'
     The name of the seed points in the exported file name, when 
     `seed_point_type` is set to 'file'.
-bnl.io.silent : bool, default False
-    If set to True, suppresses all user feedback. Useful for batch exports.
 viz : dict
     Dictionary of visualization settings:
 
@@ -62,8 +60,6 @@ viz : dict
     - 'crs' : str, default 'auto'
         The CRS used for plotting. Option 'auto' sets a local azimuthal projection centered on the network. Otherwise, for Europe '3035' (LAEA) and globally '54035' (Equal Earth) or '54030' (Robinson) also produce good results.
 """
-
-import bikenetlib as bnl
 
 allow_edge_overlaps = False
 crs_result = '4326'
@@ -81,7 +77,6 @@ random_seed = 43 # off-by-one error
 reroute = True
 seed_point_snap_distance = 'auto'
 seed_point_type_name = 'file'
-bnl.io.silent = False
 
 # Viz/plot settings
 viz = {
