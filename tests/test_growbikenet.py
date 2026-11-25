@@ -1,3 +1,4 @@
+import sys
 import geopandas as gpd
 import pytest
 import pandas as pd
@@ -227,6 +228,50 @@ def test_growbikenet_betweenness_file_shp_fromscratch_success_offline(validation
 
 
 # Tests with settings
+
+
+def _settings_state():
+    return (
+        gbn.settings.seed_point_snap_distance,
+        gbn.settings.import_data_trip_point_balance,
+        gbn.settings.viz['crs'],
+        gbn.constants._CRS_CALCULATIONS,
+    )
+
+def test_growbikenet_settings_restored_after_run_offline():
+    """Verify that settings resolved during a run do not leak into later runs.
+    """
+    gbn.constants._CRS_CALCULATIONS = 'auto'
+    gbn.settings.seed_point_snap_distance = 'auto'
+    gbn.settings.import_data_trip_point_balance = 0.5
+    state_before = _settings_state()
+    gbn.growbikenet(
+        city_query="Oelde",
+        export_data=False,
+        import_files={
+            'growable_network': "oelde_growable_network.gpkg",
+            'point_data': "oelde_seed_points.geojson", # Point data only sets the balance to 0 during the run
+        },
+    )
+    assert _settings_state() == state_before
+
+def test_growbikenet_settings_restored_after_failed_run_offline(monkeypatch):
+    """Verify that settings are restored also if a run fails halfway.
+    """
+    def fail(*args, **kwargs):
+        raise RuntimeError("Simulated failure")
+    # The growbikenet module is shadowed by the growbikenet function in the package namespace
+    monkeypatch.setattr(sys.modules['growbikenet.growbikenet'], '_gbn_route', fail)
+    gbn.constants._CRS_CALCULATIONS = 'auto'
+    gbn.settings.seed_point_snap_distance = 'auto'
+    state_before = _settings_state()
+    with pytest.raises(RuntimeError):
+        gbn.growbikenet(
+            city_query="Oelde",
+            export_data=False,
+            import_files={'growable_network': "oelde_growable_network.gpkg"},
+        )
+    assert _settings_state() == state_before
 
 
 @pytest.fixture

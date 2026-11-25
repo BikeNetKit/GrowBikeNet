@@ -66,14 +66,8 @@ from growbikenet.visualization import generate_plots
 
 
 def _gbn_validate_settings():
-    """ Check if user settings input is valid. If not, raise an exception or 
+    """ Check if user settings input is valid. If not, raise an exception or
     warning.
-
-    Returns
-    -------
-    setting_was_auto : dict
-        Dictionary remembering which setting or constant was set to auto, so 
-        it can be reset to auto in the end.
     """
 
     if type(constants._CRS_CALCULATIONS) is not str:
@@ -85,15 +79,6 @@ def _gbn_validate_settings():
         raise TypeError("settings.seed_point_snap_distance must be 'auto' or an integer")
     if type(settings.seed_point_snap_distance) is int and settings.seed_point_snap_distance <= 0:
         raise ValueError("settings.seed_point_snap_distance must be a positive integer")
-
-    setting_was_auto = {'crs_calculations': False, 'crs_viz': False}
-    # Ask whether constants._CRS_CALCULATIONS was 'auto' ahead of network 
-    # construction, as 'auto' is resolved inside `prepare_nodes_edges()`.
-    if constants._CRS_CALCULATIONS == 'auto':
-        setting_was_auto['crs_calculations'] = True
-    if settings.viz["crs"] == 'auto':
-        setting_was_auto['crs_viz'] = True
-    return setting_was_auto
 
 
 def _gbn_validate_parameters(
@@ -417,13 +402,34 @@ def _gbn_angulate_seed_points(seed_point_linking, seed_points_snapped_filtered, 
     return grown_bikenet_edges_abstract
 
 
-def _gbn_reset_auto_settings(setting_was_auto):
-    """Reset settings and constants to auto.
+def _gbn_save_settings():
+    """Save the settings and constants that a run may overwrite.
+
+    Some 'auto' values (and `settings.import_data_trip_point_balance`) are
+    resolved by overwriting module-level settings and constants. Saving them
+    allows `_gbn_restore_settings()` to undo this, so that runs do not affect
+    each other.
+
+    Returns
+    -------
+    saved_settings : dict
+        The values to restore after the run.
     """
-    if setting_was_auto['crs_calculations']:
-        constants._CRS_CALCULATIONS = 'auto'
-    if setting_was_auto['crs_viz']:
-        settings.viz["crs"] = 'auto'
+    return {
+        'seed_point_snap_distance': settings.seed_point_snap_distance,
+        'import_data_trip_point_balance': settings.import_data_trip_point_balance,
+        'viz_crs': settings.viz["crs"],
+        'crs_calculations': constants._CRS_CALCULATIONS,
+    }
+
+
+def _gbn_restore_settings(saved_settings):
+    """Restore settings and constants saved by `_gbn_save_settings()`.
+    """
+    settings.seed_point_snap_distance = saved_settings['seed_point_snap_distance']
+    settings.import_data_trip_point_balance = saved_settings['import_data_trip_point_balance']
+    settings.viz["crs"] = saved_settings['viz_crs']
+    constants._CRS_CALCULATIONS = saved_settings['crs_calculations']
 
 
 def _gbn_route(g_undir, edges, grown_bikenet_edges_abstract, seed_points_snapped_filtered, num_data_files, point_data, trip_data):
