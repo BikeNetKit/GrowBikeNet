@@ -212,6 +212,11 @@ def growbikenet(
     for the unrouted, abstract network for which egde lengths are taken from 
     the routed network.
 
+    A further deviation from the original paper: By default, `setting.reroute` 
+    is True, which can lead to slightly different networks grown for different 
+    orderings, because rerouting prefers routing of new links through links 
+    routed in previous steps.
+
     References
     ----------
     .. [1] M. Szell, S. Mimar, T. Perlman, G. Ghoshal, R. Sinatra, `Growing urban bicycle networks`, Scientific Reports 12, 6765 (2022)
